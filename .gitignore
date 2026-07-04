@@ -1,0 +1,21 @@
+# environments & caches
+.venv/
+venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.cache/
+cache/
+
+# large binaries — run dirs stay in git, checkpoints don't
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+*.npz
+*.arrow
+
+# secrets
+.env
+*.key
