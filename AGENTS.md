@@ -148,3 +148,36 @@ dirs that bear on it, and the caveats. Update it whenever a verdict lands. Rules
   session is blocked on the answer.
 - **Don't touch** `PLAN.md` and `CONSTRAINTS.md` — they're the human's. Propose edits
   in RESUME.md instead.
+
+## 9. Long runs: launch, monitor, enforce
+
+Long runs never run in the foreground. Launch them detached, check them at the
+`CONSTRAINTS.md` cadence (~25 min), kill anything over budget or meeting its spec's
+kill criteria. The helpers in `scripts/` handle any number of concurrent runs:
+
+- `scripts/run_bg.sh <expid> <tag> -- <command>` — runs the command in a detached
+  tmux session, tees to `logs/console_<expid>_<tag>.log` (§2c), registers the job.
+  `RUN_BUDGET_SEC` overrides the default 3 h budget. Use it on every host — runs it
+  didn't launch are invisible to `mon.sh` and `watchdog.sh`.
+- `scripts/mon.sh` — one-shot status of all registered runs (state, elapsed vs
+  budget, last metric, console tail). `--ack <session>|all` archives finished runs
+  once you've handled them, keeping the table and the watch about current work.
+- `scripts/watchdog.sh` — kills any run past its wall-clock budget. Purely
+  mechanical; whether a within-budget run is *worth* continuing is your call, and a
+  killed run still gets its `summary.md` (§3).
+
+The cadence loop is the same on every host. `scripts/mon.sh --watch [minutes]`
+(default 25) does one bounded wait: it returns **early** — within ~30 s of *any* run
+finishing, crashing, or going over budget (immediately if nothing is live) — prints
+a snapshot, and exits. Then handle what changed (summaries, kills via
+`watchdog.sh`, follow-up launches, `--ack`) and re-enter the watch while anything is
+live. One watch supervises all parallel runs. The host only changes *where the
+watch runs*:
+
+- **Claude Code**: run `--watch` as a background task; its exit notification wakes
+  you. You stay responsive in between and can launch more runs at any time.
+- **pi**: run it in the foreground; you're idle-blocked for up to one interval
+  (inherent to pi), but still react within ~30 s of any state change.
+
+Never install cron yourself (out-of-repo state, §8). If budgets must hold while no
+session is alive, ask the human to cron `scripts/watchdog.sh`.

@@ -16,6 +16,9 @@ cache/
 *.npz
 *.arrow
 
+# background-run registry (runtime state for scripts/run_bg.sh, not evidence)
+logs/.jobs/
+
 # secrets
 .env
 *.key
