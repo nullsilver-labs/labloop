@@ -5,8 +5,8 @@ AI agent (Claude Code, Pi, or any AGENTS.md-aware agent) runs the experiments, k
 the lab notebook, and leaves enough of a paper trail that — if the results are good —
 you can write a publication from the artifacts alone.
 
-This is the generalization of a workflow that ran a multi-day ML research program
-(frozen-LLM latent prediction) end-to-end: pre-registered experiments, GO/NO-GO gates,
+This is the generalization of a workflow that ran a multi-day ML research program, 
+end-to-end, managed by Claude Fable 5: pre-registered experiments, GO/NO-GO gates, 
 per-run logs, and session-to-session handoffs, with the human only steering.
 
 ## How to use it
