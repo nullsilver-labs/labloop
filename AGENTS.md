@@ -151,33 +151,52 @@ dirs that bear on it, and the caveats. Update it whenever a verdict lands. Rules
 
 ## 9. Long runs: launch, monitor, enforce
 
-Long runs never run in the foreground. Launch them detached, check them at the
-`CONSTRAINTS.md` cadence (~25 min), kill anything over budget or meeting its spec's
-kill criteria. The helpers in `scripts/` handle any number of concurrent runs:
+These invariants hold on every host: a long run **never blocks the foreground**;
+you check live runs at the `CONSTRAINTS.md` cadence (~25 min); you **kill anything
+over its wall-clock budget** or meeting its spec's kill criteria; and a killed run
+still gets its `summary.md` (§3). What differs is only the *mechanism*, which
+depends on the host you're on. Pick the matching path.
+
+### 9a. Claude Code
+
+Claude Code has native backgrounding and self-wake, so you don't need the `scripts/`
+tmux+cron machinery — use the harness directly:
+
+- **Launch:** run the command with Bash's `run_in_background`. The harness keeps it
+  alive across turns and re-invokes you when it exits, so you stay responsive and can
+  launch more runs meanwhile. Tee console output to `logs/console_<expid>_<tag>.log`
+  yourself to satisfy §2c (e.g. `... 2>&1 | tee logs/console_<expid>_<tag>.log`).
+- **Monitor:** you're notified on exit automatically; between exits, read the console
+  log / `results.jsonl` to check progress. Don't busy-poll with short sleeps.
+- **Enforce budget:** note each run's start time and budget; use `ScheduleWakeup`
+  as a fallback timer so you wake to kill an over-budget run even when nothing else
+  fires. No cron, no watchdog process needed.
+
+You *may* still launch via `scripts/run_bg.sh` if you want the `mon.sh` registry view
+across many concurrent runs, but it's optional here — native backgrounding is simpler.
+
+### 9b. pi (scripts required)
+
+pi's bash is synchronous and pi has no self-wake, so the `scripts/` helpers are how
+long runs work at all. They handle any number of concurrent runs:
 
 - `scripts/run_bg.sh <expid> <tag> -- <command>` — runs the command in a detached
   tmux session, tees to `logs/console_<expid>_<tag>.log` (§2c), registers the job.
-  `RUN_BUDGET_SEC` overrides the default 3 h budget. Use it on every host — runs it
-  didn't launch are invisible to `mon.sh` and `watchdog.sh`.
+  `RUN_BUDGET_SEC` overrides the default 3 h budget. Runs it didn't launch are
+  invisible to `mon.sh` and `watchdog.sh`.
 - `scripts/mon.sh` — one-shot status of all registered runs (state, elapsed vs
   budget, last metric, console tail). `--ack <session>|all` archives finished runs
   once you've handled them, keeping the table and the watch about current work.
 - `scripts/watchdog.sh` — kills any run past its wall-clock budget. Purely
-  mechanical; whether a within-budget run is *worth* continuing is your call, and a
-  killed run still gets its `summary.md` (§3).
+  mechanical; whether a within-budget run is *worth* continuing is your call.
 
-The cadence loop is the same on every host. `scripts/mon.sh --watch [minutes]`
-(default 25) does one bounded wait: it returns **early** — within ~30 s of *any* run
-finishing, crashing, or going over budget (immediately if nothing is live) — prints
-a snapshot, and exits. Then handle what changed (summaries, kills via
-`watchdog.sh`, follow-up launches, `--ack`) and re-enter the watch while anything is
-live. One watch supervises all parallel runs. The host only changes *where the
-watch runs*:
-
-- **Claude Code**: run `--watch` as a background task; its exit notification wakes
-  you. You stay responsive in between and can launch more runs at any time.
-- **pi**: run it in the foreground; you're idle-blocked for up to one interval
-  (inherent to pi), but still react within ~30 s of any state change.
+The cadence loop: `scripts/mon.sh --watch [minutes]` (default 25) does one bounded
+wait, returning **early** — within ~30 s of *any* run finishing, crashing, or going
+over budget (immediately if nothing is live) — then prints a snapshot and exits. Run
+it in the **foreground** (pi has no self-wake); you're idle-blocked for up to one
+interval but still react within ~30 s of any state change. Handle what changed
+(summaries, kills via `watchdog.sh`, follow-up launches, `--ack`) and re-enter the
+watch while anything is live. One watch supervises all parallel runs.
 
 Never install cron yourself (out-of-repo state, §8). If budgets must hold while no
 session is alive, ask the human to cron `scripts/watchdog.sh`.

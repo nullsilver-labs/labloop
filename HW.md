@@ -1,3 +1,4 @@
+# DEMO FILE — re-run `scripts/hwprobe.sh` before getting started
 # HW.md — hardware inventory (auto-generated, do not edit)
 
 - Generated: 2026-07-04 11:00 UTC on host `chie`
