@@ -1,8 +1,8 @@
 # The lab
 
 One repo, one research project, rendered live on nullsilver.com. A fixed state machine
-of phases runs it; each phase is a fresh session with its own prompt in
-`.claude/prompts/`. The procedure lives there and in the hooks — **this file is the
+of phases runs it, each phase a fresh session with its own prompt in
+`.claude/prompts/`. Procedure lives there and in the hooks — **this file is the
 judgment**, and it applies in every phase.
 
 ## What you are for
@@ -11,9 +11,9 @@ judgment**, and it applies in every phase.
   trial. An invalidated trial gets a summary saying so and a rerun — never silence.
   A tie is a tie. A NO-GO is a result, not a setback.
 - **Baselines are mandatory.** No headline number without its trivial baseline
-  (copy / majority / random / zero-shot, whatever the spec defines).
-- **Too good means suspect.** If a result looks great, the first hypothesis is a bug
-  or leakage. Check, and write down what you checked, before it appears in writing.
+  (copy / majority / random / zero-shot, whatever the spec defines). If a result looks
+  too good, the first hypothesis is a bug or leakage — check, and write down what you
+  checked, before it appears in writing.
 - **Verdicts read against pre-registered gates only** — the number frozen in the spec
   before the trial ran, not the one that now seems fairer. A gate may change only in a
   decide-phase revision, with `lab log gate.overridden`, and every summary afterwards
@@ -30,6 +30,7 @@ is a gate, not a workaround.
 
 - **`state.json` and `events.jsonl` have exactly one writer: `tools/lab`.** Never edit
   them by hand — a hook blocks it. `lab log`, `lab state set`, `lab trial`, `lab gate`.
+  `FORMAT.json` is generated too: `lab format sync`, never by hand.
 - **The event feed is public in realtime.** `msg` is one line, ≤ 140 chars, and reads
   like a person wrote it. Secrets are redacted mechanically, but don't test that.
   Heartbeats and "still running" are not events.

@@ -20,6 +20,7 @@ Subcommands:
     lab protocol activate         adopt a new revision, emit protocol.revised
     lab gate request|resolve      raise / clear a human checkpoint
     lab validate                  lint the whole repo against the contract
+    lab format show|sync|version  the output-format contract for consumers
 """
 from __future__ import annotations
 
@@ -41,6 +42,21 @@ from typing import Any
 # ---------------------------------------------------------------------------
 # The contract: phases, transitions, statuses, event types and their feed class.
 # ---------------------------------------------------------------------------
+
+# Output format version, as consumed by nullsilver.com and any other parser.
+# MAJOR bumps when a consumer that ignores the change would misread the data:
+# a key renamed or removed, a phase or status renamed, an event type's feed class
+# changed, a limit tightened. MINOR bumps for additive changes a consumer can
+# safely ignore: a new event type, a new optional key, a new phase appended.
+#
+# It is stamped into state.json, into every event as it is written, and into each
+# trial's config.json, and published whole in FORMAT.json. Per-event stamping is
+# what makes an append-only feed readable across upgrades: lines written by an
+# older lab keep their old version forever, so a consumer never has to guess which
+# rules applied to a given line. A missing `format` means pre-1.0.
+#
+# Version history lives in README.md under "Format versioning".
+FORMAT_VERSION = "1.0"
 
 PHASES = ["init", "build", "pilot", "execute", "analyze", "decide", "conclude"]
 
@@ -168,6 +184,7 @@ def load_state() -> dict:
 
 
 def save_state(state: dict) -> None:
+    state["format"] = FORMAT_VERSION   # always reflects the lab that last wrote it
     state["updated_at"] = now_iso()
     write_json_atomic(STATE_PATH, state)
 
@@ -400,6 +417,7 @@ def emit(etype: str, msg: str, data: dict | None = None,
         data.setdefault("trial", trial)
 
     event = {
+        "format": FORMAT_VERSION,
         "ts": now_iso(),
         "type": etype,
         "phase": st.get("phase"),
@@ -412,6 +430,94 @@ def emit(etype: str, msg: str, data: dict | None = None,
     append_event(event)
     ingest_push(event)
     return event
+
+
+# ---------------------------------------------------------------------------
+# FORMAT.json — the contract, published for machines
+# ---------------------------------------------------------------------------
+
+FORMAT_PATH = ROOT / "FORMAT.json"
+
+
+def format_manifest() -> dict:
+    """The whole machine-readable contract, derived from the constants above.
+
+    Published so a consumer can build its filters from the repo instead of
+    hardcoding this table and drifting from it — the feed classes especially,
+    since that is what decides whether an event reaches RSS.
+    """
+    return {
+        "format": FORMAT_VERSION,
+        "generator": "nullsilver-lab",
+        "generated_by": "tools/lab format sync",
+        "note": ("Generated file — do not edit. Regenerate with `tools/lab format "
+                 "sync`; `tools/lab validate` fails if it has drifted from the code."),
+        "files": {
+            "state": "state.json",
+            "events": "events.jsonl",
+            "protocol": "PROTOCOL.md",
+            "protocol_revisions": "protocol/rev<NNN>.md",
+            "plan": "plan.json",
+            "ledger": "LEDGER.md",
+            "notes": "NOTES.md",
+            "handoff": "HANDOFF.md",
+            "run_summary": "runs/r<NNN>/summary.md",
+            "experiment_spec": "runs/r<NNN>/specs/exp<NN>_<slug>.md",
+            "trial_dir": "runs/r<NNN>/trials/<trial_id>/",
+            "report": "REPORT.md",
+            "claims": "CLAIMS.md",
+        },
+        "state": {
+            "keys": ["format", "project", "kind", "phase", "run", "revision",
+                     "status", "active_trials", "awaiting", "updated_at"],
+            "statuses": STATUSES,
+            "status_badges": {"running": "Running",
+                              "awaiting_gate": "Waiting for review",
+                              "idle": "Idle",
+                              "concluded": "Concluded"},
+            "awaiting_keys": ["type", "question", "since"],
+        },
+        "phases": {"names": PHASES, "transitions": TRANSITIONS},
+        "events": {
+            "keys": ["format", "ts", "type", "phase", "run", "revision", "msg", "data"],
+            "types": EVENT_FEED,
+            "feed_classes": {
+                "news": "homepage news column; eligible for RSS",
+                "activity": "project activity timeline only; never RSS",
+                "none": "chart data; never a feed item",
+            },
+            "ts_format": "%Y-%m-%dT%H:%M:%SZ (UTC)",
+        },
+        "verdicts": VERDICTS,
+        "trial": {
+            "id_format": "<UTC %Y%m%dT%H%M>-<4 hex chars>",
+            "required_files": ["config.json", "results.jsonl", "summary.md"],
+            "optional_files": ["console.log"],
+            "note": "summary.md is written when the trial ends, including when killed.",
+        },
+        "protocol": {
+            "frontmatter_keys": PROTOCOL_REQUIRED_KEYS,
+            "sections": PROTOCOL_SECTIONS,
+            "kinds": ["research", "artifact", "writing"],
+            "autonomy": ["gated", "auto"],
+        },
+        "limits": {
+            "msg_max_chars": MSG_MAX,
+            "event_max_bytes": EVENT_MAX_BYTES,
+            "metric_min_interval_sec": METRIC_MIN_INTERVAL_SEC,
+        },
+    }
+
+
+def cmd_format(args) -> None:
+    if args.action == "show":
+        print(json.dumps(format_manifest(), indent=2))
+        return
+    if args.action == "version":
+        print(FORMAT_VERSION)
+        return
+    write_json_atomic(FORMAT_PATH, format_manifest())
+    print(f"FORMAT.json synced to format {FORMAT_VERSION}")
 
 
 # ---------------------------------------------------------------------------
@@ -520,6 +626,7 @@ def cmd_init(args) -> None:
         die("state.json already exists (use --force only on a fresh clone)")
 
     state = {
+        "format": FORMAT_VERSION,
         "project": fm["id"],
         "kind": fm.get("kind", "research"),
         "phase": "init",
@@ -531,6 +638,7 @@ def cmd_init(args) -> None:
         "updated_at": now_iso(),
     }
     write_json_atomic(STATE_PATH, state)
+    write_json_atomic(FORMAT_PATH, format_manifest())
     EVENTS_PATH.touch()
     (ROOT / "protocol").mkdir(exist_ok=True)
     run_dir(1).joinpath("specs").mkdir(parents=True, exist_ok=True)
@@ -712,6 +820,7 @@ def cmd_trial_new(args) -> None:
     config["seed"] = seed
 
     snapshot = {
+        "format": FORMAT_VERSION,
         "trial_id": trial_id,
         "exp_id": args.exp_id,
         "run": state["run"],
@@ -928,10 +1037,13 @@ def cmd_validate(args) -> None:
         except json.JSONDecodeError as e:
             err(f"state.json is not valid JSON: {e}")
         if state:
-            for k in ("project", "kind", "phase", "run", "revision", "status",
-                      "active_trials", "awaiting", "updated_at"):
+            for k in ("format", "project", "kind", "phase", "run", "revision",
+                      "status", "active_trials", "awaiting", "updated_at"):
                 if k not in state:
                     err(f"state.json missing key '{k}'")
+            if state.get("format") != FORMAT_VERSION:
+                err(f"state.json declares format {state.get('format')!r}, this lab "
+                    f"writes {FORMAT_VERSION!r} — any `lab` write will restamp it")
             if state.get("phase") not in PHASES:
                 err(f"state.json phase='{state.get('phase')}' is not a legal phase")
             if state.get("status") not in STATUSES:
@@ -952,6 +1064,23 @@ def cmd_validate(args) -> None:
             if fm and state.get("project") != fm.get("id"):
                 err(f"state.json project={state.get('project')} disagrees with "
                     f"PROTOCOL.md id={fm.get('id')}")
+
+    # --- FORMAT.json -------------------------------------------------------
+    if not FORMAT_PATH.exists():
+        err("FORMAT.json is missing — run `lab format sync`")
+    else:
+        try:
+            published = json.loads(FORMAT_PATH.read_text())
+            if published != format_manifest():
+                if published.get("format") != FORMAT_VERSION:
+                    err(f"FORMAT.json declares format {published.get('format')} but this "
+                        f"lab writes {FORMAT_VERSION}. Consumers parse the declared "
+                        "version, so it must be true: run `lab format sync`.")
+                else:
+                    err("FORMAT.json has drifted from the contract in tools/lab — "
+                        "run `lab format sync` (it is generated, never hand-edited)")
+        except json.JSONDecodeError as e:
+            err(f"FORMAT.json is not valid JSON: {e}")
 
     # --- events.jsonl ------------------------------------------------------
     if not EVENTS_PATH.exists():
@@ -1165,6 +1294,12 @@ def main(argv: list[str] | None = None) -> None:
 
     sp = sub.add_parser("validate", help="lint the repo against the contract")
     sp.set_defaults(func=cmd_validate)
+
+    sp = sub.add_parser("format", help="the output-format contract for consumers")
+    sp.add_argument("action", choices=["show", "sync", "version"],
+                    help="show = print the manifest; sync = write FORMAT.json; "
+                         "version = print the format version alone")
+    sp.set_defaults(func=cmd_format)
 
     sp = sub.add_parser("conf", help="read .claude/loop.conf")
     sp.add_argument("key", nargs="?")

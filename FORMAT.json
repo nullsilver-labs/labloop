@@ -1,0 +1,179 @@
+{
+  "format": "1.0",
+  "generator": "nullsilver-lab",
+  "generated_by": "tools/lab format sync",
+  "note": "Generated file \u2014 do not edit. Regenerate with `tools/lab format sync`; `tools/lab validate` fails if it has drifted from the code.",
+  "files": {
+    "state": "state.json",
+    "events": "events.jsonl",
+    "protocol": "PROTOCOL.md",
+    "protocol_revisions": "protocol/rev<NNN>.md",
+    "plan": "plan.json",
+    "ledger": "LEDGER.md",
+    "notes": "NOTES.md",
+    "handoff": "HANDOFF.md",
+    "run_summary": "runs/r<NNN>/summary.md",
+    "experiment_spec": "runs/r<NNN>/specs/exp<NN>_<slug>.md",
+    "trial_dir": "runs/r<NNN>/trials/<trial_id>/",
+    "report": "REPORT.md",
+    "claims": "CLAIMS.md"
+  },
+  "state": {
+    "keys": [
+      "format",
+      "project",
+      "kind",
+      "phase",
+      "run",
+      "revision",
+      "status",
+      "active_trials",
+      "awaiting",
+      "updated_at"
+    ],
+    "statuses": [
+      "running",
+      "awaiting_gate",
+      "idle",
+      "concluded"
+    ],
+    "status_badges": {
+      "running": "Running",
+      "awaiting_gate": "Waiting for review",
+      "idle": "Idle",
+      "concluded": "Concluded"
+    },
+    "awaiting_keys": [
+      "type",
+      "question",
+      "since"
+    ]
+  },
+  "phases": {
+    "names": [
+      "init",
+      "build",
+      "pilot",
+      "execute",
+      "analyze",
+      "decide",
+      "conclude"
+    ],
+    "transitions": {
+      "init": [
+        "build"
+      ],
+      "build": [
+        "pilot"
+      ],
+      "pilot": [
+        "execute",
+        "build"
+      ],
+      "execute": [
+        "analyze"
+      ],
+      "analyze": [
+        "decide"
+      ],
+      "decide": [
+        "init",
+        "conclude"
+      ],
+      "conclude": []
+    }
+  },
+  "events": {
+    "keys": [
+      "format",
+      "ts",
+      "type",
+      "phase",
+      "run",
+      "revision",
+      "msg",
+      "data"
+    ],
+    "types": {
+      "project.created": "news",
+      "session.start": "activity",
+      "session.end": "activity",
+      "phase.enter": "activity",
+      "phase.exit": "activity",
+      "protocol.revised": "news",
+      "prediction": "activity",
+      "trial.launch": "activity",
+      "trial.done": "activity",
+      "metric": "none",
+      "run.done": "news",
+      "surprise": "activity",
+      "kill": "activity",
+      "error": "activity",
+      "gate.requested": "activity",
+      "gate.resolved": "activity",
+      "gate.overridden": "activity",
+      "project.concluded": "news"
+    },
+    "feed_classes": {
+      "news": "homepage news column; eligible for RSS",
+      "activity": "project activity timeline only; never RSS",
+      "none": "chart data; never a feed item"
+    },
+    "ts_format": "%Y-%m-%dT%H:%M:%SZ (UTC)"
+  },
+  "verdicts": [
+    "GO",
+    "NO-GO",
+    "INCONCLUSIVE"
+  ],
+  "trial": {
+    "id_format": "<UTC %Y%m%dT%H%M>-<4 hex chars>",
+    "required_files": [
+      "config.json",
+      "results.jsonl",
+      "summary.md"
+    ],
+    "optional_files": [
+      "console.log"
+    ],
+    "note": "summary.md is written when the trial ends, including when killed."
+  },
+  "protocol": {
+    "frontmatter_keys": [
+      "id",
+      "title",
+      "kind",
+      "revision",
+      "status",
+      "autonomy",
+      "budgets",
+      "created",
+      "updated"
+    ],
+    "sections": [
+      "Idea",
+      "Questions",
+      "Hypotheses",
+      "Success criteria",
+      "Prior & related work",
+      "Experiment sketch",
+      "Guardrails",
+      "Out of scope",
+      "Changelog"
+    ],
+    "kinds": [
+      "research",
+      "artifact",
+      "writing"
+    ],
+    "autonomy": [
+      "gated",
+      "auto"
+    ]
+  },
+  "limits": {
+    "msg_max_chars": 140,
+    "event_max_bytes": 4096,
+    "metric_min_interval_sec": 60
+  }
+}

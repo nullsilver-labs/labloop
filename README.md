@@ -75,6 +75,7 @@ PROTOCOL.md          # the project: frontmatter contract + prose        (YOU wri
 protocol/revNNN.md   # frozen revisions — the history of the question
 state.json           # machine state; the site polls it                 (lab writes)
 events.jsonl         # append-only public event feed; the site tails it (lab writes)
+FORMAT.json          # the output-format contract, for machine consumers (generated)
 plan.json            # the current run's machine plan (init compiles it)
 HANDOFF.md           # phase → phase handoff, overwritten every session
 NOTES.md             # lab notebook: predictions, interpretations, surprises
@@ -109,7 +110,37 @@ lab log <type> --msg "…" [--data '{…}'] [--trial <id>]
 lab protocol freeze | activate --diff-summary "…"
 lab gate request --type … --question "…" | gate resolve --approve|--reject
 lab events tail -n 20 [--class news|activity]
+lab format show | sync | version
 ```
+
+## Format versioning
+
+Everything here is parsed by machines, so every artifact declares the format it was
+written in. `FORMAT.json` at the repo root publishes the whole contract — file
+locations, the phase list and legal transitions, the status→badge map, **the feed
+class of every event type**, the trial-dir requirements, and the limits. A consumer
+should build its filters from that file rather than hardcoding this README, and can
+then adapt per-repo instead of assuming every project is on the same version.
+
+- `state.json` carries `format`, restamped on every write.
+- **Every event carries its own `format`**, fixed at write time. This is the one that
+  matters: `events.jsonl` is append-only, so a long-running project's feed contains
+  lines written by several versions of `lab`. A per-line stamp means a consumer never
+  has to guess which rules applied to a given line. A missing `format` means pre-1.0.
+- Each trial's `config.json` carries it too, so a trial stays interpretable.
+
+`FORMAT.json` is generated from the constants in `tools/lab` — never hand-edit it.
+`lab validate` fails if it has drifted from the code or declares a version the lab
+doesn't write, so the published contract cannot quietly become a lie.
+
+**Bump policy.** MAJOR when a consumer that ignored the change would misread the
+data: a key renamed or removed, a phase or status renamed, an event type's feed class
+changed, a limit tightened. MINOR for additive changes it can safely ignore: a new
+event type, a new optional key.
+
+| version | change |
+|---|---|
+| 1.0 | initial contract |
 
 ## The public feed
 
@@ -124,6 +155,7 @@ Each type has a fixed feed class: `news` (`project.created`, `protocol.revised`,
 `run.done`, `project.concluded`) reaches the homepage and RSS; `activity` (phases,
 sessions, predictions, trials, surprises, kills, gates) reaches only the project
 timeline; `metric` is chart data and never a feed item. Heartbeats are not events.
+The authoritative table is `FORMAT.json` → `events.types`; read it from there.
 
 Set `NULLSILVER_INGEST_URL` (+ `NULLSILVER_TOKEN`) for realtime push; it is
 best-effort and silent on failure, because git is the source of truth and the site
