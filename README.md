@@ -46,8 +46,10 @@ instead of improvising.
    placeholders are still there.
 4. **`./loop.sh`** — runs phases until a gate, the conclusion, or the iteration cap.
 
-   Or, attended: start an interactive session, `/orchestrate`, and enable Remote
-   Control (`/remote`) to answer gates from your phone.
+   Or, attended: start `LAB_ROLE=orchestrator claude`, run `/orchestrate`, and enable
+   Remote Control (`/remote`) to answer gates from your phone. `LAB_ROLE` marks it an
+   operator session — kept out of the public feed and exempt from the handoff rule
+   that phase sessions owe.
 5. **When it stops at a gate**: `tools/lab gate resolve --approve|--reject --note "…"`,
    then rerun `./loop.sh`.
 
@@ -133,6 +135,11 @@ phase that moved the state.
 `.claude/loop.conf` is the single place model and driver choices live: one model per
 phase, `orchestrator=` for attended mode, `permission_mode`, and the loop's safety
 knobs (`max_iterations`, `max_no_progress`, backoff). `lab validate` checks it.
+
+Run `claude` interactively in the project once and accept the trust dialog before the
+first `loop.sh`. Until you do, Claude Code ignores the `permissions.allow` entries in
+`.claude/settings.json` for that workspace (hooks still run), so headless phases lean
+entirely on the classifier and lose more actions to auto-deny than they need to.
 
 `permission_mode=auto` means anything the classifier won't approve is auto-denied
 rather than prompting, so an unattended loop can never hang — a phase can lose an

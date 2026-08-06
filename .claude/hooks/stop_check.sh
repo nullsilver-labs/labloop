@@ -23,6 +23,12 @@ read -r sid active <<<"$(printf '%s' "$input" | python3 -c \
   'import json,sys;d=json.load(sys.stdin);print(d.get("session_id","unknown"),
    str(d.get("stop_hook_active", False)).lower())' 2>/dev/null || echo "unknown false")"
 
+# Operator sessions (attended mode) own no phase and owe no handoff.
+if [ "${LAB_ROLE:-phase}" = "orchestrator" ] || \
+   grep -q '"role": *"orchestrator"' ".lab/sessions/${sid}.json" 2>/dev/null; then
+  exit 0
+fi
+
 validate_out=$("$LAB" validate 2>&1) ; validate_rc=$?
 
 reasons=$(python3 - "$sid" "$validate_rc" <<'PY'

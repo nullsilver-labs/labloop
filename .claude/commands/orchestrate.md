@@ -3,9 +3,15 @@ description: Attended driver — runs the phase loop and relays gates to the hum
 ---
 
 <!--
-  Attended mode. Start this in an *interactive* Claude Code session on the lab
-  machine with Remote Control enabled (`/remote`, or the enable-for-all-sessions
-  setting) — headless `-p` sessions cannot be remote-controlled. The human then
+  Attended mode. Start the session as:
+
+      LAB_ROLE=orchestrator claude
+
+  in an *interactive* Claude Code session on the lab machine with Remote Control
+  enabled (`/remote`, or the enable-for-all-sessions setting) — headless `-p`
+  sessions cannot be remote-controlled. LAB_ROLE tells the hooks this is an
+  operator session: it keeps session.start/end out of the public feed and exempts
+  it from the handoff requirement, which only phase sessions owe. The human then
   answers gates from the Claude mobile app or claude.ai/code as ordinary chat
   messages; only chat and tool results cross the bridge, while execution, files and
   credentials stay on this machine. The terminal process must stay alive.
@@ -33,8 +39,10 @@ Repeat until you stop for a gate or the project concludes:
    ```bash
    claude -p "$(cat .claude/prompts/<phase>.md)" --model "<model from the map>" \
      --permission-mode "<mode from the map>" --output-format stream-json --verbose \
-     2>&1 | tee ".lab/sessions/$(date -u +%Y%m%dT%H%M%S)-<phase>.log"
+     </dev/null 2>&1 | tee ".lab/sessions/$(date -u +%Y%m%dT%H%M%S)-<phase>.log"
    ```
+
+   The `</dev/null` matters: a headless session otherwise blocks waiting on stdin.
 
 5. Supervise it. You are woken when it exits. While it runs, or while trials it
    launched are live, schedule your next wake with `ScheduleWakeup` at

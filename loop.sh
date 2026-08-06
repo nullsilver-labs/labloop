@@ -115,11 +115,12 @@ while :; do
     exit 0
   fi
 
+  # </dev/null: headless sessions otherwise wait on stdin before starting.
   claude -p "$(cat "$prompt_file")" \
       --model "$model" \
       --permission-mode "$PERMISSION_MODE" \
       --output-format stream-json --verbose \
-      >"$session_log" 2>&1
+      >"$session_log" 2>&1 </dev/null
   rc=$?
 
   if [ $rc -ne 0 ]; then

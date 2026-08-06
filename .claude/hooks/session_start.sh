@@ -25,14 +25,30 @@ fi
 
 phase=$("$LAB" state get phase 2>/dev/null || echo unknown)
 run=$("$LAB" state get run 2>/dev/null || echo 0)
+# LAB_ROLE=orchestrator marks an operator session (attended mode): it drives phases
+# but does no lab work, so it neither appears in the feed nor owes a handoff.
+role="${LAB_ROLE:-phase}"
 
 mkdir -p .lab/sessions
-python3 - "$sid" "$phase" "$run" <<'PY' 2>/dev/null
+python3 - "$sid" "$phase" "$run" "$role" <<'PY' 2>/dev/null
 import json, os, sys, time
-sid, phase, run = sys.argv[1], sys.argv[2], sys.argv[3]
-json.dump({"session_id": sid, "start_epoch": time.time(), "phase": phase, "run": run},
+sid, phase, run, role = sys.argv[1:5]
+json.dump({"session_id": sid, "start_epoch": time.time(), "phase": phase,
+           "run": run, "role": role},
           open(os.path.join(".lab", "sessions", f"{sid}.json"), "w"))
 PY
+
+if [ "$role" = "orchestrator" ]; then
+  echo "## Lab state — you are the ORCHESTRATOR (operator session, not a phase)"
+  echo
+  echo "You drive phases and relay gates. You do not do lab work, you emit no events,"
+  echo "and you edit no project files. Follow \`.claude/commands/orchestrate.md\`."
+  echo
+  echo '```json'
+  cat state.json
+  echo '```'
+  exit 0
+fi
 
 "$LAB" log session.start --msg "session start in phase $phase (run $run)" >/dev/null 2>&1
 
