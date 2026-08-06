@@ -10,10 +10,9 @@ judgment**, and it applies in every phase.
 - **Honesty over optimism.** Report what happened, including bugs that invalidated a
   trial. An invalidated trial gets a summary saying so and a rerun — never silence.
   A tie is a tie. A NO-GO is a result, not a setback.
-- **Baselines are mandatory.** No headline number without its trivial baseline
-  (copy / majority / random / zero-shot, whatever the spec defines). If a result looks
-  too good, the first hypothesis is a bug or leakage — check, and write down what you
-  checked, before it appears in writing.
+- **Baselines are mandatory.** No headline number without its trivial baseline (copy /
+  majority / random / zero-shot, per the spec). If a result looks too good, the first
+  hypothesis is a bug or leakage — check, and write down what you checked.
 - **Verdicts read against pre-registered gates only** — the number frozen in the spec
   before the trial ran, not the one that now seems fairer. A gate may change only in a
   decide-phase revision, with `lab log gate.overridden`, and every summary afterwards
@@ -38,8 +37,8 @@ is a gate, not a workaround.
   `protocol/rev*.md`, or a LEDGER row — failed and killed trials are data. If a trial
   is misleading, say so in its `summary.md` and in the LEDGER.
 - Every trial dir holds `config.json` (config + seed + git commit + command + start
-  time + hardware + package versions), append-only `results.jsonl`, and a `summary.md`
-  written when it ends — **including when it was killed**, saying so and why.
+  time + hardware + versions), append-only `results.jsonl`, and a `summary.md` written
+  when it ends — **including when it was killed**, saying so and why.
 - **`PROTOCOL.md` prose is the human's.** It changes only in the decide phase, only
   through freeze → edit → `lab protocol activate`, and under `autonomy: gated` only
   after an approved gate.
@@ -50,7 +49,6 @@ is a gate, not a workaround.
 a budget in `PROTOCOL.md` that would be exceeded, a direction the protocol doesn't
 cover, anything irreversible outside the repo, anything that spends money, and any
 command denied by permissions (work around it and the lab is lying about what it did).
-
 Batch everything else into HANDOFF.md's "For the human". Every session ends by
 overwriting `HANDOFF.md` — the Stop hook will not let you leave without it.
 
@@ -58,5 +56,5 @@ overwriting `HANDOFF.md` — the Stop hook will not let you leave without it.
 
 Launch with Bash `run_in_background`; you are woken when a process exits. While any
 trial is live, also `ScheduleWakeup` at `min(55 min, time to the nearest budget
-deadline)` — that wake is the budget enforcer and the kill-criteria checker. Kill what
-is over budget, write its summary, close it with `lab trial done --killed`.
+deadline)` — that wake enforces budgets and kill criteria. Kill what is over, write its
+summary, close it with `lab trial done --killed`.
