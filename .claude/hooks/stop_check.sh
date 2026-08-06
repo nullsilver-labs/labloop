@@ -23,6 +23,12 @@ read -r sid active <<<"$(printf '%s' "$input" | python3 -c \
   'import json,sys;d=json.load(sys.stdin);print(d.get("session_id","unknown"),
    str(d.get("stop_hook_active", False)).lower())' 2>/dev/null || echo "unknown false")"
 
+# The phase this session actually ran. A session ends *after* transitioning, so
+# reading state.json here would attribute the end to the phase that follows it.
+phase_ran=$(python3 -c \
+  'import json,sys;print(json.load(open(sys.argv[1])).get("phase") or "")' \
+  ".lab/sessions/${sid}.json" 2>/dev/null || echo "")
+
 # Operator sessions (attended mode) own no phase and owe no handoff.
 if [ "${LAB_ROLE:-phase}" = "orchestrator" ] || \
    grep -q '"role": *"orchestrator"' ".lab/sessions/${sid}.json" 2>/dev/null; then
@@ -129,5 +135,6 @@ if [ -n "$reasons" ]; then
   exit 2
 fi
 
-"$LAB" log session.end --msg "session end in phase $("$LAB" state get phase)" >/dev/null 2>&1
+"$LAB" log session.end --msg "session end in phase ${phase_ran:-$("$LAB" state get phase)}" \
+  --data "{\"phase_ran\":\"${phase_ran}\"}" >/dev/null 2>&1
 exit 0
