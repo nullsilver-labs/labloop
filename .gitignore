@@ -7,7 +7,7 @@ __pycache__/
 .cache/
 cache/
 
-# large binaries — run dirs stay in git, checkpoints don't
+# large binaries — trial dirs stay in git, checkpoints don't
 *.pt
 *.pth
 *.ckpt
@@ -16,8 +16,9 @@ cache/
 *.npz
 *.arrow
 
-# background-run registry (runtime state for scripts/run_bg.sh, not evidence)
-logs/.jobs/
+# lab runtime state: session records, phase session logs, metric throttle.
+# Not evidence — state.json, events.jsonl and the trial dirs are.
+.lab/
 
 # secrets
 .env

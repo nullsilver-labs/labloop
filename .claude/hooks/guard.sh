@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# PreToolUse(Bash) hook — evidence is immutable, and the feed has one writer.
+# Denies commands that would delete or rewrite trial dirs, frozen protocol
+# revisions, or the two machine files. Exit 2 blocks the call and shows stderr
+# to the agent; the message names the `lab` subcommand it should have used.
+set -uo pipefail
+
+LAB_HOOK_INPUT=$(cat 2>/dev/null || echo '{}')
+export LAB_HOOK_INPUT
+
+python3 - <<'PY'
+import json, os, re, sys
+
+try:
+    data = json.loads(os.environ.get("LAB_HOOK_INPUT", "{}"))
+except Exception:
+    sys.exit(0)
+
+if data.get("tool_name") != "Bash":
+    sys.exit(0)
+cmd = (data.get("tool_input") or {}).get("command", "")
+if not cmd:
+    sys.exit(0)
+
+EVIDENCE = r"(runs/|protocol/rev|protocol/\s|events\.jsonl|state\.json|LEDGER\.md)"
+START = r"(?:^|[;&|]\s*|\$\(\s*)"
+NOSEP = r"[^;&|]*"
+
+RULES = [
+    (rf"{START}(?:sudo\s+)?(?:rm|rmdir|shred|unlink|trash)\b{NOSEP}{EVIDENCE}",
+     "that deletes evidence. Trial dirs, frozen protocol revisions, events.jsonl and "
+     "state.json are append-only history — a failed or killed trial is data. If a trial "
+     "is misleading, say so in its summary.md and in LEDGER.md instead."),
+    (rf"{START}(?:sudo\s+)?mv\b{NOSEP}{EVIDENCE}",
+     "that moves evidence out from under its recorded path. Paths in LEDGER.md, "
+     "config.json and the event feed must keep resolving."),
+    (rf"{START}(?:sudo\s+)?git\s+(?:rm|clean|checkout\s+--|restore)\b{NOSEP}{EVIDENCE}",
+     "that removes or reverts committed evidence."),
+    (rf">{NOSEP}?\s*\.?/?(events\.jsonl|state\.json)",
+     "that writes the machine files directly. events.jsonl and state.json have exactly "
+     "one writer: `tools/lab`. Use `lab log <type> --msg ...` and `lab state set ...`."),
+    (rf"{START}(?:tee|truncate|dd)\b{NOSEP}(events\.jsonl|state\.json)",
+     "that rewrites a machine file. Use `tools/lab log` / `tools/lab state set`."),
+    (rf"{START}sed\b{NOSEP}-i{NOSEP}(events\.jsonl|state\.json|protocol/rev)",
+     "that edits history in place. Events and frozen revisions are never edited; "
+     "append a correcting event or a new revision."),
+    (rf"curl{NOSEP}\|\s*(?:ba|z|)sh",
+     "that pipes a download straight into a shell."),
+]
+
+for pattern, why in RULES:
+    if re.search(pattern, cmd):
+        print(f"Blocked: `{cmd}` — {why}", file=sys.stderr)
+        sys.exit(2)
+sys.exit(0)
+PY

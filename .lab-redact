@@ -1,0 +1,10 @@
+# Names of environment variables whose literal values must never reach the public
+# event feed. `lab log` replaces any occurrence of these values with [REDACTED],
+# on top of the built-in pattern matching (sk-…, AKIA…, hf_…, ghp_…, bearer …).
+# One name per line. The names are public; the values are what gets stripped.
+NULLSILVER_TOKEN
+ANTHROPIC_API_KEY
+HF_TOKEN
+OPENAI_API_KEY
+AWS_SECRET_ACCESS_KEY
+GITHUB_TOKEN
