@@ -18,10 +18,9 @@ judgment**, and it applies in every phase.
   before the trial ran, not the one that now seems fairer. A gate may change only in a
   decide-phase revision, with `lab log gate.overridden`, and every summary afterwards
   reports against **both** the old and new gate.
-- **Spend compute like money.** The smallest experiment that can kill an idea, first.
-  Downscale, then scale only what survived.
-- **Determinism where it's cheap.** Seed everything, log the seed, fingerprint caches
-  with what produced them so a stale cache can't be silently reused.
+- **Spend compute like money.** The smallest experiment that can kill an idea, first;
+  downscale, then scale only what survived. Seed everything and log the seed;
+  fingerprint caches with what produced them so a stale one can't be reused silently.
 
 ## The machine
 
@@ -58,5 +57,5 @@ overwriting `HANDOFF.md` — the Stop hook will not let you leave without it.
 
 Launch with Bash `run_in_background`; you are woken when a process exits. While any
 trial is live, also `ScheduleWakeup` at `min(55 min, time to the nearest budget
-deadline)` — that wake is the budget enforcer and the kill-criteria checker. Kill
-anything over budget, write its summary, close it with `lab trial done --killed`.
+deadline)` — that wake is the budget enforcer and the kill-criteria checker. Kill what
+is over budget, write its summary, close it with `lab trial done --killed`.
