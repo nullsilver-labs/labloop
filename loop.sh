@@ -115,10 +115,6 @@ while :; do
     exit 0
   fi
 
-  # LAB_MODEL travels with the session so `lab` can record which model produced
-  # each event and each trial. loop.conf is current config; this is the record.
-  export LAB_MODEL="$model"
-
   # </dev/null: headless sessions otherwise wait on stdin before starting.
   claude -p "$(cat "$prompt_file")" \
       --model "$model" \

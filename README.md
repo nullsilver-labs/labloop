@@ -90,41 +90,9 @@ scripts/acceptance.sh
 ```
 
 A trial dir is the unit of evidence: `config.json` (config, seed, git commit, command,
-start time, hardware, package versions, agent model), append-only `results.jsonl`,
-`console.log`, and a `summary.md` written when it ends — including when it was killed,
-saying so and why. Trial dirs are committed and never deleted.
-
-### Which model ran it
-
-`.claude/loop.conf` chooses a model per phase, and it gets edited over a project's
-life — so it is current config, not history. The record is written while the session
-runs: the launchers export `LAB_MODEL` next to `claude --model`, and `lab` stamps it
-onto every `session.start` event and every trial's `config.json` as
-`agent: {model, model_source}`. `model_source` says how much to trust it — `env` is a
-record of the session that ran, `conf` is `lab` reading loop.conf as it stands today
-(a guess, and `lab trial new` warns when it has to fall back), `none` is unknown.
-
-This is what makes a `prediction` event readable after the fact: a confidence is a
-claim by a particular model, and calibration you cannot attribute is not calibration.
-`tools/lab model [--json]` prints what the current session would record.
-
-**For the site**, `lab` rolls the sessions up so nothing has to scan the feed —
-`FORMAT.json` → `provenance` maps all four places:
-
-| where | what |
-|---|---|
-| `state.json` → `models` | the run in progress, rewritten as each session starts |
-| `run.done` → `data.models` | the same, frozen next to the verdict — injected by `lab`, not by the analyze prompt, so a run can never end unattributable |
-| `session.start` → `data` | per session, the raw record |
-| trial `config.json` → `agent` | per trial |
-
-`models` is `{started_with, by_phase, sources}`. `started_with` is the run's first
-session; `by_phase` exists because it is not the whole truth — loop.conf's default puts
-`init` on a different model from the research phases, so a single string would
-misdescribe the run. `sources` is the distinct `model_source` values seen: exactly
-`["env"]` means recorded, anything else means partly reconstructed and should render
-as such. `started_with` can be `null` (no attributed session yet) — render that as
-unknown, never as a default model.
+start time, hardware, package versions), append-only `results.jsonl`, `console.log`,
+and a `summary.md` written when it ends — including when it was killed, saying so and
+why. Trial dirs are committed and never deleted.
 
 ## `tools/lab`
 
@@ -142,7 +110,6 @@ lab log <type> --msg "…" [--data '{…}'] [--trial <id>]
 lab protocol freeze | activate --diff-summary "…"
 lab gate request --type … --question "…" | gate resolve --approve|--reject
 lab events tail -n 20 [--class news|activity]
-lab model [--json]             which model is driving this session
 lab format show | sync | version
 ```
 
@@ -174,7 +141,6 @@ event type, a new optional key.
 | version | change |
 |---|---|
 | 1.0 | initial contract |
-| 1.1 | additive: model provenance — `state.json.models`, `run.done` `data.models`, `session.start` `data.{model, model_source}`, trial `config.json` `agent`, and the `provenance` block that maps them |
 
 ## The public feed
 

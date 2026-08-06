@@ -1,5 +1,5 @@
 {
-  "format": "1.1",
+  "format": "1.0",
   "generator": "nullsilver-lab",
   "generated_by": "tools/lab format sync",
   "note": "Generated file \u2014 do not edit. Regenerate with `tools/lab format sync`; `tools/lab validate` fails if it has drifted from the code.",
@@ -27,15 +27,9 @@
       "run",
       "revision",
       "status",
-      "models",
       "active_trials",
       "awaiting",
       "updated_at"
-    ],
-    "models_keys": [
-      "started_with",
-      "by_phase",
-      "sources"
     ],
     "statuses": [
       "running",
@@ -132,19 +126,6 @@
     "NO-GO",
     "INCONCLUSIVE"
   ],
-  "provenance": {
-    "note": "Which model produced a piece of work. loop.conf is current config and gets edited mid-project, so it is never the answer \u2014 these are written at the time and are.",
-    "session": "session.start event -> data {model, model_source}",
-    "run_live": "state.json -> models (the run in progress)",
-    "run_final": "run.done event -> data.models (frozen with the verdict)",
-    "trial": "<trial_dir>/config.json -> agent {model, model_source}",
-    "model_source": {
-      "env": "recorded by the session that ran (LAB_MODEL)",
-      "conf": "reconstructed from .claude/loop.conf as it reads today \u2014 a guess",
-      "none": "unknown; model is the string 'unknown'"
-    },
-    "display": "started_with may be null and by_phase may be partial; a run whose sources are not exactly ['env'] is reconstructed, not recorded, and should be shown as such."
-  },
   "trial": {
     "id_format": "<UTC %Y%m%dT%H%M>-<4 hex chars>",
     "required_files": [
