@@ -351,6 +351,14 @@ def ingest_push(event: dict) -> None:
         pass
 
 
+def has_event(etype: str) -> bool:
+    """True if an event of this type is already in the feed."""
+    if not EVENTS_PATH.exists():
+        return False
+    needle = f'"type":"{etype}"'
+    return any(needle in line for line in EVENTS_PATH.read_text().splitlines())
+
+
 def _metric_throttled(trial: str) -> bool:
     """True if a metric event for this trial was emitted < 60s ago."""
     LAB_DIR.mkdir(parents=True, exist_ok=True)
@@ -656,7 +664,11 @@ def _set_status(state: dict, target: str) -> None:
             die("status=concluded is only legal from phase=conclude")
         state["status"] = "concluded"
         state["awaiting"] = None
-        emit("project.concluded", "project concluded", {"runs": state["run"]}, state=state)
+        # The conclude phase logs its own headline; emitting a second one here would
+        # put a duplicate — and the less informative of the two — on the homepage
+        # and in RSS. Only backstop a phase that forgot.
+        if not has_event("project.concluded"):
+            emit("project.concluded", "project concluded", {"runs": state["run"]}, state=state)
         return
     if state["status"] == "concluded":
         die("project is concluded — reopening needs a human editing state.json by hand")

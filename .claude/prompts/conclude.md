@@ -48,8 +48,9 @@ tools/lab log project.concluded --msg "<the finding in one line — this is the 
 tools/lab state set status=concluded
 ```
 
-(`lab` also emits `project.concluded` on the status change; one explicit event with
-your headline is what the site shows, so make that line good.)
+Log your headline **first**: `lab` only emits a generic `project.concluded` on the
+status change if you haven't already logged one, and yours is what the site shows.
+That line is the last thing this project says in public — make it good.
 
 ## Forbidden
 

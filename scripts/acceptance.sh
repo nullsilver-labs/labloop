@@ -329,8 +329,14 @@ assert_ok   "decide -> conclude" "$LAB" state set phase=conclude
 echo "# REPORT — H1 unresolved after 3 runs." > REPORT.md
 echo "| # | claim | status | evidence | caveats |" > CLAIMS.md
 assert_fail "an unknown status is rejected" "$LAB" state set status=finished
+assert_ok   "conclude logs its own headline first" "$LAB" log project.concluded \
+              --msg "sorted() scales as n log n: b=1.106 in the pre-registered [0.9,1.15]"
 assert_ok   "status=concluded"  "$LAB" state set status=concluded
 assert_grep "project.concluded in feed" '"type":"project.concluded"' events.jsonl
+assert_eq   "exactly one project.concluded reaches the news feed" \
+            "$(grep -c '"type":"project.concluded"' events.jsonl)" "1"
+assert_grep "and it is the phase's headline, not the generic one" \
+            "sorted() scales as n log n" events.jsonl
 assert_fail "no transitions after conclusion" "$LAB" state set phase=init
 assert_fail "no trials after conclusion"      "$LAB" trial new exp01
 
