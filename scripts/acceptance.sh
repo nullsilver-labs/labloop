@@ -262,6 +262,26 @@ assert_grep "ledger marks it killed" "killed"        LEDGER.md
 assert_grep "config.json keeps the kill reason" '"kill_reason"' "$KDIR/config.json"
 assert_ok   "the killed trial dir is still there" test -d "$KDIR"
 
+# Which model produced this evidence. loop.conf is edited over a project's life, so
+# the answer has to be written down while the session runs, not looked up afterwards.
+MDIR=$(LAB_MODEL=claude-fable-5 "$LAB" trial new exp01 --seed 2 --command "python code/exp01.py" 2>/dev/null)
+assert_grep "trial config records the model that ran it" '"model": "claude-fable-5"' "$MDIR/config.json"
+assert_grep "and marks it a record, not a guess"         '"model_source": "env"'      "$MDIR/config.json"
+echo "# provenance smoke" > "$MDIR/summary.md"; "$LAB" trial done "$MDIR" >/dev/null 2>&1
+
+GDIR=$(env -u LAB_MODEL "$LAB" trial new exp01 --seed 3 --command "python code/exp01.py" 2>/dev/null)
+assert_grep "without LAB_MODEL it falls back to loop.conf" '"model_source": "conf"' "$GDIR/config.json"
+assert_grep "and the fallback is labelled as such"        '"model": "claude-fable-5"' "$GDIR/config.json"
+echo "# provenance smoke" > "$GDIR/summary.md"; "$LAB" trial done "$GDIR" >/dev/null 2>&1
+
+assert_eq "lab model --json is the shape the SessionStart hook passes to --data" \
+  "$(LAB_MODEL=claude-opus-5 "$LAB" model --json)" '{"model":"claude-opus-5","model_source":"env"}'
+
+printf '{"session_id":"acceptance"}' | LAB_MODEL=claude-opus-5 CLAUDE_PROJECT_DIR="$WORK" \
+  bash "$WORK/.claude/hooks/session_start.sh" >/dev/null 2>&1
+assert_grep "session.start carries the model into the feed" \
+  '"data":{"model":"claude-opus-5","model_source":"env"}' events.jsonl
+
 section "5. metric throttling and event hygiene"
 assert_ok   "first metric event is accepted" "$LAB" log metric --msg "b=0.02 at n=1e5" \
               --trial "$TRIAL_ID" --data '{"b":0.02}'
@@ -299,6 +319,24 @@ cp templates/run-summary.md runs/r001/summary.md
 assert_ok "run.done verdict event" "$LAB" log run.done \
   --msg "H1 INCONCLUSIVE: 2 of 5 sizes measured, gate |b|<=0.1 unresolved" \
   --data '{"verdicts":{"H1":"INCONCLUSIVE"}}'
+
+# The verdict event is what the site renders; it has to say who produced the run
+# without the analyze phase being asked to remember.
+assert_ok "run.done carries the run's models unasked" python3 -c "
+import json
+ev=[json.loads(l) for l in open('events.jsonl') if l.strip()]
+d=[e for e in ev if e['type']=='run.done'][-1]['data']
+m=d['models']
+assert m['started_with']=='claude-opus-5', m
+assert m['by_phase']=={'execute':'claude-opus-5'}, m
+assert m['sources']==['env'], m
+"
+assert_ok "state.json tracks the live run's models" python3 -c "
+import json
+m=json.load(open('state.json'))['models']
+assert m['started_with']=='claude-opus-5', m
+assert m['sources']==['env'], m
+"
 assert_ok "analyze -> decide" "$LAB" state set phase=decide
 
 assert_fail "status=concluded is illegal outside the conclude phase" \

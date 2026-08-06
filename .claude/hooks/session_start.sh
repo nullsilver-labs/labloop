@@ -50,7 +50,10 @@ if [ "$role" = "orchestrator" ]; then
   exit 0
 fi
 
-"$LAB" log session.start --msg "session start in phase $phase (run $run)" >/dev/null 2>&1
+# The model is recorded on the event, not looked up later: loop.conf is edited
+# over a project's life, so only the session that ran can say what drove it.
+"$LAB" log session.start --msg "session start in phase $phase (run $run)" \
+  --data "$("$LAB" model --json 2>/dev/null || echo '{}')" >/dev/null 2>&1
 
 echo "## Lab state (injected by the SessionStart hook — this is your reading order)"
 echo

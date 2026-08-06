@@ -37,7 +37,7 @@ is a gate, not a workaround.
   `protocol/rev*.md`, or a LEDGER row — failed and killed trials are data. If a trial
   is misleading, say so in its `summary.md` and in the LEDGER.
 - Every trial dir holds `config.json` (config + seed + git commit + command + start
-  time + hardware + versions), append-only `results.jsonl`, and a `summary.md` written
+  time + hardware + versions + agent model), append-only `results.jsonl`, `summary.md`
   when it ends — **including when it was killed**, saying so and why.
 - **`PROTOCOL.md` prose is the human's.** It changes only in the decide phase, only
   through freeze → edit → `lab protocol activate`, and under `autonomy: gated` only
