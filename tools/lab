@@ -196,8 +196,16 @@ def _coerce(raw: str) -> Any:
     v = raw.strip()
     if not v:
         return ""
-    if (v[0] == '"' and v[-1] == '"') or (v[0] == "'" and v[-1] == "'"):
-        return v[1:-1]
+    # Quoted scalar: take what's inside the quotes, ignore any trailing comment.
+    if v[0] in "\"'":
+        close = v.find(v[0], 1)
+        if close != -1:
+            return v[1:close]
+    # Unquoted scalar: ' #' starts a comment, as in real YAML. The shipped
+    # templates annotate their frontmatter this way.
+    v = re.split(r"\s+#", v, maxsplit=1)[0].strip()
+    if not v:
+        return ""
     low = v.lower()
     if low in ("true", "false"):
         return low == "true"

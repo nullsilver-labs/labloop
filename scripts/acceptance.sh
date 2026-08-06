@@ -136,6 +136,20 @@ EOF
 sed 's/expNN/exp01/' templates/experiment-spec.md > runs/r001/specs/exp01_sortscale.md
 assert_ok   "validate passes with plan.json + spec"      "$LAB" validate
 
+# The shipped template annotates its frontmatter with inline comments; a copied
+# template must parse to the same values a hand-written one would.
+assert_ok "the shipped protocol template's frontmatter parses" python3 -c "
+ns={'__name__':'labmod'}
+exec(compile(open('tools/lab').read(),'lab','exec'),ns)
+fm,_=ns['parse_frontmatter'](open('templates/protocol.md').read())
+assert fm['kind']=='research', fm['kind']
+assert fm['status']=='active', fm['status']
+assert fm['autonomy']=='gated', fm['autonomy']
+assert fm['revision']==1, fm['revision']
+assert fm['budgets']['max_wall_clock_per_trial']=='3h', fm['budgets']
+assert fm['budgets']['total_gpu_hours']==0, fm['budgets']
+"
+
 section "1b. plan.json is checked, not trusted"
 cp plan.json plan.json.bak
 python3 - <<'PY'
