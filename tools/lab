@@ -19,6 +19,7 @@ Subcommands:
     lab protocol freeze           snapshot PROTOCOL.md -> protocol/revNNN.md
     lab protocol activate         adopt a new revision, emit protocol.revised
     lab gate request|resolve      raise / clear a human checkpoint
+    lab model [--json]            which model drives this session (requested + served)
     lab validate                  lint the whole repo against the contract
     lab format show|sync|version  the output-format contract for consumers
 """
@@ -56,7 +57,7 @@ from typing import Any
 # rules applied to a given line. A missing `format` means pre-1.0.
 #
 # Version history lives in README.md under "Format versioning".
-FORMAT_VERSION = "1.0"
+FORMAT_VERSION = "1.1"
 
 PHASES = ["init", "build", "pilot", "execute", "analyze", "decide", "conclude"]
 
@@ -415,6 +416,14 @@ def emit(etype: str, msg: str, data: dict | None = None,
     data = dict(data or {})
     if trial:
         data.setdefault("trial", trial)
+    # Provenance is injected here, never asked of a prompt or a hook: the feed is
+    # append-only, so a session or run that forgot would stay unattributable forever.
+    if etype == "session.start":
+        data = {**requested_model(st.get("phase")), **data}
+    elif etype == "session.end":
+        data = {**agent_record(data.get("phase_ran") or st.get("phase")), **data}
+    elif etype == "run.done":
+        data.setdefault("models", run_models(st.get("run")))
 
     event = {
         "format": FORMAT_VERSION,
@@ -469,7 +478,8 @@ def format_manifest() -> dict:
         },
         "state": {
             "keys": ["format", "project", "kind", "phase", "run", "revision",
-                     "status", "active_trials", "awaiting", "updated_at"],
+                     "status", "models", "active_trials", "awaiting", "updated_at"],
+            "models_keys": ["started_with", "by_phase", "sources"],
             "statuses": STATUSES,
             "status_badges": {"running": "Running",
                               "awaiting_gate": "Waiting for review",
@@ -489,6 +499,35 @@ def format_manifest() -> dict:
             "ts_format": "%Y-%m-%dT%H:%M:%SZ (UTC)",
         },
         "verdicts": VERDICTS,
+        "provenance": {
+            "note": ("Which model produced a piece of work — two facts, kept apart: "
+                     "`requested` is what the launcher asked for (LAB_MODEL, else "
+                     ".claude/loop.conf as it reads today), `served` is what actually "
+                     "answered, read from the Claude Code session transcript. "
+                     "loop.conf is current config, edited over a project's life — "
+                     "never the answer by itself."),
+            "session_start": "session.start event -> data {requested, requested_source}",
+            "session_end": ("session.end event -> data {requested, requested_source, "
+                            "served, served_source}"),
+            "trial": ("<trial_dir>/config.json -> agent {requested, requested_source, "
+                      "served, served_source} (served as of trial launch)"),
+            "run_live": "state.json -> models (the run in progress)",
+            "run_final": "run.done event -> data.models (frozen with the verdict)",
+            "sources": {
+                "transcript": ("served: read from the session transcript — the record "
+                               "of what answered, fallbacks and switches included"),
+                "env": "requested: recorded by the session that ran (LAB_MODEL)",
+                "conf": ("requested: reconstructed from .claude/loop.conf as it reads "
+                         "today — a guess"),
+                "none": "unknown; requested is the string 'unknown', served is []",
+            },
+            "display": ("models is {started_with, by_phase, sources}. by_phase values "
+                        "are ordered lists — more than one entry means a fallback or "
+                        "mid-session switch; show them all. started_with may be null: "
+                        "render it as unknown, never as a default model. sources "
+                        "within {transcript, env} is a record; any conf or none means "
+                        "partly reconstructed, and a consumer should say so."),
+        },
         "trial": {
             "id_format": "<UTC %Y%m%dT%H%M>-<4 hex chars>",
             "required_files": ["config.json", "results.jsonl", "summary.md"],
@@ -611,6 +650,155 @@ def hardware_fingerprint() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Model provenance — who was asked to run a session, and who actually answered.
+# Two facts, kept apart on purpose, each labelled with how it was obtained.
+# ---------------------------------------------------------------------------
+
+SESSION_POINTER = LAB_DIR / "session-current"
+
+
+def requested_model(phase: str | None = None) -> dict[str, str]:
+    """What the launcher asked for — and how sure we are of the answer.
+
+    The launchers (`loop.sh`, `/orchestrate`) export `LAB_MODEL` alongside
+    `claude --model`, so the value travels with the session that actually ran;
+    `requested_source: env` marks that record. Falling back to `.claude/loop.conf`
+    reads the file as it is *now* — current config, not history — so it is
+    labelled `conf`, a guess a reader must never mistake for the record.
+    """
+    env = os.environ.get("LAB_MODEL", "").strip()
+    if env:
+        return {"requested": env, "requested_source": "env"}
+    conf = load_conf(required=False) or {}
+    if phase and conf.get(phase):
+        return {"requested": conf[phase], "requested_source": "conf"}
+    return {"requested": "unknown", "requested_source": "none"}
+
+
+def session_transcript() -> Path | None:
+    """The transcript of the session driving this process, if a hook recorded it.
+
+    The SessionStart hook writes `.lab/session-current` (the session id) and a
+    record in `.lab/sessions/<sid>.json` carrying `transcript_path`; the Stop
+    hook clears the pointer. No pointer — a human running `lab` by hand — means
+    no transcript, and served-model provenance honestly reports `none`.
+    """
+    try:
+        sid = SESSION_POINTER.read_text().strip()
+        rec = json.loads((LAB_DIR / "sessions" / f"{sid}.json").read_text())
+        path = Path(rec["transcript_path"])
+        return path if path.is_file() else None
+    except Exception:
+        return None
+
+
+def served_models(transcript: Path | None) -> list[str]:
+    """Models that actually answered, in order of first appearance.
+
+    Read from the Claude Code session transcript — the ground truth that
+    survives `--fallback-model`, usage-limit downgrades and mid-session
+    switches, none of which the `--model` flag (or LAB_MODEL) can see. More
+    than one entry means the session changed model partway through.
+    """
+    if transcript is None:
+        return []
+    out: list[str] = []
+    try:
+        with open(transcript) as f:
+            for line in f:
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if entry.get("type") != "assistant":
+                    continue
+                model = (entry.get("message") or {}).get("model")
+                if model and model != "<synthetic>" and model not in out:
+                    out.append(model)
+    except OSError:
+        return []
+    return out
+
+
+def agent_record(phase: str | None = None) -> dict[str, Any]:
+    """The full who-ran-this record: requested and served, with their sources."""
+    rec: dict[str, Any] = requested_model(phase)
+    served = served_models(session_transcript())
+    rec["served"] = served
+    rec["served_source"] = "transcript" if served else "none"
+    return rec
+
+
+def run_models(run: Any) -> dict[str, Any]:
+    """Which models drove a run, rolled up from the feed so the site never scans it.
+
+    `session.start` events record what was requested; `session.end` events
+    record what the transcript says was served. Per phase, served supersedes
+    requested — the transcript outranks the flag — and requested only fills
+    phases whose sessions left no transcript record. `by_phase` values are
+    ordered lists: a list longer than one is a fallback or a mid-session
+    switch, made visible instead of silent. `sources` is the distinct
+    provenance values the rollup is built from — within {transcript, env} it
+    is a record; any `conf` or `none` means partly reconstructed.
+    """
+    out: dict[str, Any] = {"started_with": None, "by_phase": {}, "sources": []}
+    if run is None or not EVENTS_PATH.exists():
+        return out
+
+    requested: dict[str, list[str]] = {}       # phase -> models, by first appearance
+    req_sources: dict[str, set[str]] = {}
+    served: dict[str, list[str]] = {}
+    order: list[str] = []                      # phases in first-seen order
+
+    for line in EVENTS_PATH.read_text().splitlines():
+        if not line.strip():
+            continue
+        try:
+            e = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if e.get("run") != run:
+            continue
+        d = e.get("data") or {}
+        if e.get("type") == "session.start":
+            phase, model = e.get("phase"), d.get("requested")
+            if phase and model and model != "unknown":
+                if phase not in order:
+                    order.append(phase)
+                bucket = requested.setdefault(phase, [])
+                if model not in bucket:
+                    bucket.append(model)
+                req_sources.setdefault(phase, set()).add(
+                    d.get("requested_source", "none"))
+        elif e.get("type") == "session.end":
+            # A session ends *after* transitioning, so the event's own `phase`
+            # may already be the next one; `phase_ran` is the session's truth.
+            phase, models = d.get("phase_ran") or e.get("phase"), d.get("served") or []
+            if phase and models:
+                if phase not in order:
+                    order.append(phase)
+                bucket = served.setdefault(phase, [])
+                for m in models:
+                    if m not in bucket:
+                        bucket.append(m)
+
+    sources: set[str] = set()
+    for phase in order:
+        if phase in served:
+            out["by_phase"][phase] = served[phase]
+            sources.add("transcript")
+        else:
+            out["by_phase"][phase] = requested[phase]
+            sources |= req_sources[phase]
+    for phase in order:
+        if out["by_phase"].get(phase):
+            out["started_with"] = out["by_phase"][phase][0]
+            break
+    out["sources"] = sorted(sources)
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Commands
 # ---------------------------------------------------------------------------
 
@@ -633,6 +821,7 @@ def cmd_init(args) -> None:
         "run": 1,
         "revision": int(fm.get("revision", 1)),
         "status": "running",
+        "models": run_models(1),
         "active_trials": [],
         "awaiting": None,
         "updated_at": now_iso(),
@@ -680,6 +869,12 @@ def cmd_log(args) -> None:
     ev = emit(args.type, args.msg, data, trial=args.trial)
     if ev is None:
         sys.exit(0)
+    # A session boundary changes who is driving the current run — live state the
+    # site reads off state.json rather than by scanning the feed.
+    if args.type in ("session.start", "session.end") and STATE_PATH.exists():
+        state = load_state()
+        state["models"] = run_models(state.get("run"))
+        save_state(state)
     print(json.dumps(ev, separators=(",", ":")))
 
 
@@ -754,6 +949,7 @@ def _set_phase(state: dict, target: str) -> None:
     state["phase"] = target
     if cur == "decide" and target == "init":
         state["run"] = int(state["run"]) + 1
+        state["models"] = run_models(state["run"])   # a fresh run starts unattributed
         rd = run_dir(state["run"])
         (rd / "specs").mkdir(parents=True, exist_ok=True)
         (rd / "trials").mkdir(parents=True, exist_ok=True)
@@ -836,8 +1032,14 @@ def cmd_trial_new(args) -> None:
         "git_dirty": bool(git("status", "--porcelain")),
         "hardware": hardware_fingerprint(),
         "packages": package_versions(args.packages.split(",") if args.packages else []),
+        "agent": agent_record(state["phase"]),
         "config": config,
     }
+    agent = snapshot["agent"]
+    if agent["requested_source"] != "env" and not agent["served"]:
+        warn(f"agent model is a guess ({agent['requested']!r} from "
+             f"{agent['requested_source']}): the launcher did not export LAB_MODEL "
+             "and no session transcript is known")
     write_json_atomic(tdir / "config.json", snapshot)
     (tdir / "results.jsonl").touch()
     (tdir / "console.log").touch()
@@ -1038,9 +1240,14 @@ def cmd_validate(args) -> None:
             err(f"state.json is not valid JSON: {e}")
         if state:
             for k in ("format", "project", "kind", "phase", "run", "revision",
-                      "status", "active_trials", "awaiting", "updated_at"):
+                      "status", "models", "active_trials", "awaiting", "updated_at"):
                 if k not in state:
                     err(f"state.json missing key '{k}'")
+            if "models" in state:
+                models = state["models"]
+                if not isinstance(models, dict) or not {
+                        "started_with", "by_phase", "sources"} <= set(models):
+                    err("state.json models must be {started_with, by_phase, sources}")
             if state.get("format") != FORMAT_VERSION:
                 err(f"state.json declares format {state.get('format')!r}, this lab "
                     f"writes {FORMAT_VERSION!r} — any `lab` write will restamp it")
@@ -1202,6 +1409,17 @@ def load_conf(required: bool = True) -> dict[str, str] | None:
     return conf
 
 
+def cmd_model(args) -> None:
+    phase = load_state().get("phase") if STATE_PATH.exists() else None
+    rec = agent_record(phase)
+    if args.json:
+        print(json.dumps(rec, separators=(",", ":")))
+    else:
+        served = ", ".join(rec["served"]) or "unknown"
+        print(f"requested {rec['requested']} ({rec['requested_source']}); "
+              f"served {served} ({rec['served_source']})")
+
+
 def cmd_conf(args) -> None:
     conf = load_conf() or {}
     if args.key:
@@ -1300,6 +1518,11 @@ def main(argv: list[str] | None = None) -> None:
                     help="show = print the manifest; sync = write FORMAT.json; "
                          "version = print the format version alone")
     sp.set_defaults(func=cmd_format)
+
+    sp = sub.add_parser("model", help="which model drives this session (requested + served)")
+    sp.add_argument("--json", action="store_true",
+                    help="print {requested, requested_source, served, served_source}")
+    sp.set_defaults(func=cmd_model)
 
     sp = sub.add_parser("conf", help="read .claude/loop.conf")
     sp.add_argument("key", nargs="?")

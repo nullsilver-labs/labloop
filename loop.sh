@@ -115,6 +115,10 @@ while :; do
     exit 0
   fi
 
+  # LAB_MODEL travels with the session so `lab` records what was requested;
+  # what actually answered is read from the session transcript at the time.
+  export LAB_MODEL="$model"
+
   # </dev/null: headless sessions otherwise wait on stdin before starting.
   claude -p "$(cat "$prompt_file")" \
       --model "$model" \

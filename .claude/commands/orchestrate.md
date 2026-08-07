@@ -37,12 +37,16 @@ Repeat until you stop for a gate or the project concludes:
 4. Launch the phase as a background subprocess (Bash `run_in_background`):
 
    ```bash
+   LAB_MODEL="<model from the map>" \
    claude -p "$(cat .claude/prompts/<phase>.md)" --model "<model from the map>" \
      --permission-mode "<mode from the map>" --output-format stream-json --verbose \
      </dev/null 2>&1 | tee ".lab/sessions/$(date -u +%Y%m%dT%H%M%S)-<phase>.log"
    ```
 
    The `</dev/null` matters: a headless session otherwise blocks waiting on stdin.
+   `LAB_MODEL` must match `--model`: it is the *requested*-model record `lab` stamps
+   onto the session's events and trials; what actually served is read from the
+   session transcript, so a fallback can never pass itself off as the request.
 
 5. Supervise it. You are woken when it exits. While it runs, or while trials it
    launched are live, schedule your next wake with `ScheduleWakeup` at

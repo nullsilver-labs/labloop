@@ -90,9 +90,49 @@ scripts/acceptance.sh
 ```
 
 A trial dir is the unit of evidence: `config.json` (config, seed, git commit, command,
-start time, hardware, package versions), append-only `results.jsonl`, `console.log`,
-and a `summary.md` written when it ends — including when it was killed, saying so and
-why. Trial dirs are committed and never deleted.
+start time, hardware, package versions, the agent's requested and served models),
+append-only `results.jsonl`, `console.log`, and a `summary.md` written when it ends —
+including when it was killed, saying so and why. Trial dirs are committed and never
+deleted.
+
+### Which model ran it
+
+`.claude/loop.conf` chooses a model per phase, and it gets edited over a project's
+life — it is current config, not history. So the record is written while the session
+runs, and it keeps two facts apart:
+
+- **requested** — what the launcher asked for. `loop.sh` and `/orchestrate` export
+  `LAB_MODEL` next to `claude --model`, and `requested_source` says how much to
+  trust the value: `env` is recorded by the session that ran; `conf` is loop.conf as
+  it reads today, a guess; `none` is unknown.
+- **served** — what actually answered, read from the Claude Code session transcript
+  (`served_source: transcript`). This survives `--fallback-model`, usage-limit
+  downgrades and mid-session model switches, none of which the `--model` flag can
+  see. More than one entry means the session changed model partway through.
+
+The SessionStart hook records the transcript path under `.lab/`; from there `lab`
+stamps provenance everywhere evidence is written. No phase prompt is ever asked to
+remember it: the feed is append-only, so a session that forgot would stay
+unattributable forever. `FORMAT.json` → `provenance` maps the locations:
+
+| where | what |
+|---|---|
+| `session.start` → `data` | requested, per session |
+| `session.end` → `data` | requested **and served**, per session |
+| trial `config.json` → `agent` | requested and served-so-far, per trial |
+| `state.json` → `models` | the run in progress, refreshed at session boundaries |
+| `run.done` → `data.models` | the same, frozen next to the verdict |
+
+`models` is `{started_with, by_phase, sources}`. `by_phase` values are ordered
+lists — per phase, served supersedes requested, and a list longer than one is a
+fallback or a mid-session switch, visible instead of silent. `sources` holds the
+distinct provenance values used: within `{transcript, env}` the rollup is a record;
+any `conf` or `none` means partly reconstructed, and a consumer should say so.
+`started_with` may be `null` — render it as unknown, never as a default model.
+
+This is what keeps `prediction` events readable after the fact: a confidence is a
+claim by a particular model, and calibration you cannot attribute is not calibration.
+`tools/lab model [--json]` prints what the current session would record.
 
 ## `tools/lab`
 
@@ -110,6 +150,7 @@ lab log <type> --msg "…" [--data '{…}'] [--trial <id>]
 lab protocol freeze | activate --diff-summary "…"
 lab gate request --type … --question "…" | gate resolve --approve|--reject
 lab events tail -n 20 [--class news|activity]
+lab model [--json]             which model drives this session (requested + served)
 lab format show | sync | version
 ```
 
@@ -141,6 +182,7 @@ event type, a new optional key.
 | version | change |
 |---|---|
 | 1.0 | initial contract |
+| 1.1 | additive: model provenance — requested vs served (transcript-read) models on `session.start`/`session.end` `data`, trial `config.json` `agent`, `state.json` `models`, `run.done` `data.models`, and the `provenance` block that maps them |
 
 ## The public feed
 

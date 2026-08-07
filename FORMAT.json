@@ -1,5 +1,5 @@
 {
-  "format": "1.0",
+  "format": "1.1",
   "generator": "nullsilver-lab",
   "generated_by": "tools/lab format sync",
   "note": "Generated file \u2014 do not edit. Regenerate with `tools/lab format sync`; `tools/lab validate` fails if it has drifted from the code.",
@@ -27,9 +27,15 @@
       "run",
       "revision",
       "status",
+      "models",
       "active_trials",
       "awaiting",
       "updated_at"
+    ],
+    "models_keys": [
+      "started_with",
+      "by_phase",
+      "sources"
     ],
     "statuses": [
       "running",
@@ -126,6 +132,21 @@
     "NO-GO",
     "INCONCLUSIVE"
   ],
+  "provenance": {
+    "note": "Which model produced a piece of work \u2014 two facts, kept apart: `requested` is what the launcher asked for (LAB_MODEL, else .claude/loop.conf as it reads today), `served` is what actually answered, read from the Claude Code session transcript. loop.conf is current config, edited over a project's life \u2014 never the answer by itself.",
+    "session_start": "session.start event -> data {requested, requested_source}",
+    "session_end": "session.end event -> data {requested, requested_source, served, served_source}",
+    "trial": "<trial_dir>/config.json -> agent {requested, requested_source, served, served_source} (served as of trial launch)",
+    "run_live": "state.json -> models (the run in progress)",
+    "run_final": "run.done event -> data.models (frozen with the verdict)",
+    "sources": {
+      "transcript": "served: read from the session transcript \u2014 the record of what answered, fallbacks and switches included",
+      "env": "requested: recorded by the session that ran (LAB_MODEL)",
+      "conf": "requested: reconstructed from .claude/loop.conf as it reads today \u2014 a guess",
+      "none": "unknown; requested is the string 'unknown', served is []"
+    },
+    "display": "models is {started_with, by_phase, sources}. by_phase values are ordered lists \u2014 more than one entry means a fallback or mid-session switch; show them all. started_with may be null: render it as unknown, never as a default model. sources within {transcript, env} is a record; any conf or none means partly reconstructed, and a consumer should say so."
+  },
   "trial": {
     "id_format": "<UTC %Y%m%dT%H%M>-<4 hex chars>",
     "required_files": [

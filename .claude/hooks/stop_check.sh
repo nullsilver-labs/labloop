@@ -19,9 +19,11 @@ LAB="$ROOT/tools/lab"
 [ -f state.json ] || exit 0   # uninitialized template repo: nothing to hand off
 
 input=$(cat 2>/dev/null || echo '{}')
-read -r sid active <<<"$(printf '%s' "$input" | python3 -c \
+# transcript_path prints last: `read` folds any remaining words into its final var.
+read -r sid active transcript <<<"$(printf '%s' "$input" | python3 -c \
   'import json,sys;d=json.load(sys.stdin);print(d.get("session_id","unknown"),
-   str(d.get("stop_hook_active", False)).lower())' 2>/dev/null || echo "unknown false")"
+   str(d.get("stop_hook_active", False)).lower(),
+   d.get("transcript_path",""))' 2>/dev/null || echo "unknown false ")"
 
 # The phase this session actually ran. A session ends *after* transitioning, so
 # reading state.json here would attribute the end to the phase that follows it.
@@ -37,10 +39,10 @@ fi
 
 validate_out=$("$LAB" validate 2>&1) ; validate_rc=$?
 
-reasons=$(python3 - "$sid" "$validate_rc" <<'PY'
+reasons=$(python3 - "$sid" "$validate_rc" "${transcript:-}" <<'PY'
 import calendar, json, os, sys, time
 
-sid, validate_rc = sys.argv[1], int(sys.argv[2])
+sid, validate_rc, transcript = sys.argv[1], int(sys.argv[2]), sys.argv[3]
 sess_path = os.path.join(".lab", "sessions", f"{sid}.json")
 reasons = []
 
@@ -56,7 +58,8 @@ except Exception:
     try:
         state = json.load(open("state.json"))
         json.dump({"session_id": sid, "start_epoch": time.time(),
-                   "phase": state.get("phase"), "run": state.get("run")},
+                   "phase": state.get("phase"), "run": state.get("run"),
+                   "transcript_path": transcript},
                   open(sess_path, "w"))
     except Exception:
         pass
@@ -120,6 +123,7 @@ if [ -n "$reasons" ]; then
   if [ "$active" = "true" ]; then
     "$LAB" log error --msg "session ended with an incomplete handoff" \
       --data "{\"reasons\":$(printf '%s' "$reasons" | python3 -c 'import json,sys;print(json.dumps(sys.stdin.read()))')}" >/dev/null 2>&1
+    rm -f .lab/session-current   # the session is over; a stale pointer would misattribute
     echo "Stop allowed (already blocked once), but the handoff is incomplete — logged." >&2
     exit 0
   fi
@@ -135,6 +139,12 @@ if [ -n "$reasons" ]; then
   exit 2
 fi
 
+# session.end is where served-model provenance lands: `lab` reads the session's
+# transcript through the pointer and stamps requested + served onto the event.
+# Ensure the pointer exists (SessionStart may have been added mid-session), emit,
+# then clear it — the transcript stops being "the live session" the moment we exit.
+printf '%s' "$sid" > .lab/session-current
 "$LAB" log session.end --msg "session end in phase ${phase_ran:-$("$LAB" state get phase)}" \
   --data "{\"phase_ran\":\"${phase_ran}\"}" >/dev/null 2>&1
+rm -f .lab/session-current
 exit 0

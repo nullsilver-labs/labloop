@@ -9,8 +9,10 @@ cd "$ROOT" || exit 0
 LAB="$ROOT/tools/lab"
 
 input=$(cat 2>/dev/null || echo '{}')
-sid=$(printf '%s' "$input" | python3 -c \
-  'import json,sys;print(json.load(sys.stdin).get("session_id","unknown"))' 2>/dev/null || echo unknown)
+# transcript_path prints last: `read` folds any remaining words into its final var.
+read -r sid transcript <<<"$(printf '%s' "$input" | python3 -c \
+  'import json,sys;d=json.load(sys.stdin);print(d.get("session_id","unknown"),
+   d.get("transcript_path",""))' 2>/dev/null || echo "unknown ")"
 
 if [ ! -f state.json ]; then
   cat <<'EOF'
@@ -30,11 +32,11 @@ run=$("$LAB" state get run 2>/dev/null || echo 0)
 role="${LAB_ROLE:-phase}"
 
 mkdir -p .lab/sessions
-python3 - "$sid" "$phase" "$run" "$role" <<'PY' 2>/dev/null
+python3 - "$sid" "$phase" "$run" "$role" "${transcript:-}" <<'PY' 2>/dev/null
 import json, os, sys, time
-sid, phase, run, role = sys.argv[1:5]
+sid, phase, run, role, transcript = sys.argv[1:6]
 json.dump({"session_id": sid, "start_epoch": time.time(), "phase": phase,
-           "run": run, "role": role},
+           "run": run, "role": role, "transcript_path": transcript},
           open(os.path.join(".lab", "sessions", f"{sid}.json"), "w"))
 PY
 
@@ -49,6 +51,11 @@ if [ "$role" = "orchestrator" ]; then
   echo '```'
   exit 0
 fi
+
+# The pointer lets `lab` find this session's transcript mid-session: that is
+# where served-model provenance (fallbacks included) comes from. The requested
+# model rides in as LAB_MODEL; `lab` stamps both onto events and trials itself.
+printf '%s' "$sid" > .lab/session-current
 
 "$LAB" log session.start --msg "session start in phase $phase (run $run)" >/dev/null 2>&1
 

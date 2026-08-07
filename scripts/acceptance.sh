@@ -262,6 +262,75 @@ assert_grep "ledger marks it killed" "killed"        LEDGER.md
 assert_grep "config.json keeps the kill reason" '"kill_reason"' "$KDIR/config.json"
 assert_ok   "the killed trial dir is still there" test -d "$KDIR"
 
+section "4b. model provenance — requested vs served"
+# Two facts, kept apart: what the launcher asked for (LAB_MODEL, else loop.conf as
+# it reads today) and what actually answered (the session transcript). Neither is
+# ever looked up after the fact — loop.conf is edited over a project's life.
+
+# A fake Claude Code transcript: the session started on fable and switched mid-way.
+TRANSCRIPT="$WORK/.lab/transcript-test.jsonl"
+mkdir -p .lab
+cat > "$TRANSCRIPT" <<'EOF'
+{"type":"user","message":{"role":"user","content":"go"}}
+{"type":"assistant","message":{"role":"assistant","model":"claude-fable-5","content":[]}}
+{"type":"assistant","message":{"role":"assistant","model":"<synthetic>","content":[]}}
+{"type":"assistant","message":{"role":"assistant","model":"claude-fable-5","content":[]}}
+{"type":"assistant","message":{"role":"assistant","model":"claude-sonnet-5","content":[]}}
+EOF
+
+printf '{"session_id":"prov","transcript_path":"%s"}' "$TRANSCRIPT" | \
+  LAB_MODEL=claude-opus-5 CLAUDE_PROJECT_DIR="$WORK" \
+  bash .claude/hooks/session_start.sh >/dev/null 2>&1
+assert_grep "the SessionStart hook records the transcript path" \
+            "transcript-test.jsonl" .lab/sessions/prov.json
+assert_eq   "and points lab at the live session" "$(cat .lab/session-current)" "prov"
+assert_grep "session.start carries the requested model unasked" \
+            '"requested":"claude-opus-5"' events.jsonl
+assert_grep "and marks it a record, not a guess" '"requested_source":"env"' events.jsonl
+
+MDIR=$(LAB_MODEL=claude-fable-5 "$LAB" trial new exp01 --seed 2 \
+        --command "python code/exp01.py" 2>/dev/null)
+assert_grep "trial config records the requested model" \
+            '"requested": "claude-fable-5"' "$MDIR/config.json"
+assert_grep "trial served models come from the transcript" \
+            '"served_source": "transcript"' "$MDIR/config.json"
+assert_ok   "served keeps order, drops synthetic, keeps the switch visible" python3 -c "
+import json
+a=json.load(open('$MDIR/config.json'))['agent']
+assert a['served']==['claude-fable-5','claude-sonnet-5'], a
+"
+echo "# provenance smoke" > "$MDIR/summary.md"; "$LAB" trial done "$MDIR" >/dev/null 2>&1
+
+GDIR=$(env -u LAB_MODEL "$LAB" trial new exp01 --seed 3 \
+        --command "python code/exp01.py" 2>/dev/null)
+assert_grep "without LAB_MODEL, requested falls back to loop.conf" \
+            '"requested_source": "conf"' "$GDIR/config.json"
+assert_grep "and the fallback is the conf value" \
+            '"requested": "claude-fable-5"' "$GDIR/config.json"
+echo "# provenance smoke" > "$GDIR/summary.md"; "$LAB" trial done "$GDIR" >/dev/null 2>&1
+
+assert_eq "lab model --json reports both facts in the recorded shape" \
+  "$(LAB_MODEL=claude-opus-5 "$LAB" model --json)" \
+  '{"requested":"claude-opus-5","requested_source":"env","served":["claude-fable-5","claude-sonnet-5"],"served_source":"transcript"}'
+
+LAB_MODEL=claude-opus-5 "$LAB" log session.end \
+  --msg "session end in phase execute" --data '{"phase_ran":"execute"}' >/dev/null 2>&1
+assert_ok "session.end carries what the transcript says was served" python3 -c "
+import json
+ev=[json.loads(l) for l in open('events.jsonl') if l.strip()]
+d=[e for e in ev if e['type']=='session.end'][-1]['data']
+assert d['served']==['claude-fable-5','claude-sonnet-5'], d
+assert d['requested']=='claude-opus-5', d
+"
+assert_ok "state.json tracks the live run's models, served superseding requested" python3 -c "
+import json
+m=json.load(open('state.json'))['models']
+assert m['started_with']=='claude-fable-5', m
+assert m['by_phase']=={'execute':['claude-fable-5','claude-sonnet-5']}, m
+assert m['sources']==['transcript'], m
+"
+rm -f .lab/session-current   # the fake session is over
+
 section "5. metric throttling and event hygiene"
 assert_ok   "first metric event is accepted" "$LAB" log metric --msg "b=0.02 at n=1e5" \
               --trial "$TRIAL_ID" --data '{"b":0.02}'
@@ -299,6 +368,18 @@ cp templates/run-summary.md runs/r001/summary.md
 assert_ok "run.done verdict event" "$LAB" log run.done \
   --msg "H1 INCONCLUSIVE: 2 of 5 sizes measured, gate |b|<=0.1 unresolved" \
   --data '{"verdicts":{"H1":"INCONCLUSIVE"}}'
+
+# The verdict event is the run's permanent public record; it says who produced the
+# run without the analyze phase being asked to remember — and the transcript, not
+# the request, is what it repeats.
+assert_ok "run.done carries the run's models unasked" python3 -c "
+import json
+ev=[json.loads(l) for l in open('events.jsonl') if l.strip()]
+m=[e for e in ev if e['type']=='run.done'][-1]['data']['models']
+assert m['started_with']=='claude-fable-5', m
+assert m['by_phase']=={'execute':['claude-fable-5','claude-sonnet-5']}, m
+assert m['sources']==['transcript'], m
+"
 assert_ok "analyze -> decide" "$LAB" state set phase=decide
 
 assert_fail "status=concluded is illegal outside the conclude phase" \
