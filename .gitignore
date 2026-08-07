@@ -23,3 +23,6 @@ cache/
 # secrets
 .env
 *.key
+
+# not ready to publish
+WHITEPAPER.md
