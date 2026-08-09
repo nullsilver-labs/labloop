@@ -119,6 +119,11 @@ while :; do
   # what actually answered is read from the session transcript at the time.
   export LAB_MODEL="$model"
 
+  # A phase session that inherits LAB_ROLE=orchestrator (e.g. loop.sh started from
+  # an operator shell) would identify as the orchestrator and recurse instead of
+  # doing phase work.
+  unset LAB_ROLE
+
   # </dev/null: headless sessions otherwise wait on stdin before starting.
   claude -p "$(cat "$prompt_file")" \
       --model "$model" \
