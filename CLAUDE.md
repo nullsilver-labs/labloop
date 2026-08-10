@@ -54,7 +54,21 @@ overwriting `HANDOFF.md` — the Stop hook will not let you leave without it.
 
 ## Long runs
 
-Launch with Bash `run_in_background`; you are woken when a process exits. While any
-trial is live, also `ScheduleWakeup` at `min(55 min, time to the nearest budget
-deadline)` — that wake enforces budgets and kill criteria. Kill what is over, write its
-summary, close it with `lab trial done --killed`.
+Phase sessions are **headless one-shots** (`claude -p`): the process exits the moment
+your turn ends, and everything it spawned dies with it — background tasks, monitors,
+pending wakeups. `ScheduleWakeup` will never fire for you; do not call it. Never end a
+turn while a trial, download, or server you still need is running — "I'll check when
+I'm woken" is how one project's pilot lost the same 9 GB download twice.
+
+Instead: launch with Bash `run_in_background` so the console tees to a log, then wait
+in the **foreground** — bounded blocking checks, each within the Bash timeout, e.g.
+`timeout 540 tail -f <console log> | grep -m1 -E '(done|error|Traceback|OOM)'`, then
+inspect `results.jsonl` — repeated until the process exits. Enforce budget deadlines
+and kill criteria at every check: kill what is over, write its summary, close it with
+`lab trial done --killed`. Work that cannot finish within one session is a gate, not a
+`nohup` — a detached orphan has no one enforcing its budget.
+
+(The attended orchestrator session is the exception: it is persistent, so for *it*
+`run_in_background` + `ScheduleWakeup` is correct — see
+`.claude/commands/orchestrate.md`. That pattern is the orchestrator's, never a
+phase's.)

@@ -26,13 +26,14 @@ If you predicted in the pilot phase and the design changed since, log an updated
 
 ## Supervise — this is most of the job
 
-You are woken automatically when a background process exits. In addition, whenever
-any trial is live, schedule your next wake with `ScheduleWakeup` at
-**`min(55 minutes, time until the nearest budget deadline)`**. 55 min sits just under
-the prompt-cache TTL, so the check is nearly free; the deadline term is what makes
-budgets real.
+You are a headless one-shot: nothing wakes you, and ending your turn kills every
+trial you launched (see CLAUDE.md "Long runs"). Never call `ScheduleWakeup`. Wait in
+the **foreground** with bounded blocking checks, each within the Bash timeout and
+sized by **`min(~9 minutes, time until the nearest budget deadline)`** — e.g.
+`timeout 540 tail -f "$DIR/console.log" | grep -m1 -E '(done|error|Traceback|OOM)'` —
+repeated until every trial exits. The deadline term is what makes budgets real.
 
-On every wake:
+At every check:
 
 1. **Enforce wall-clock.** Any trial past its budget: kill the process, write its
    `summary.md` saying it was killed and why, then
@@ -43,8 +44,8 @@ On every wake:
    has produced no new rows in an hour is stalled — treat it as a kill.
 4. **Emit at most one `metric` event per trial per minute** (`lab log` throttles
    harder than you will remember to). Full resolution stays in `results.jsonl`.
-5. If nothing changed: do the checks, emit **no events**, reschedule. Heartbeat noise
-   is banned from the public feed.
+5. If nothing changed: do the checks, emit **no events**, re-enter the foreground
+   wait. Heartbeat noise is banned from the public feed.
 6. Close every finished trial with a `summary.md` and `tools/lab trial done`.
 
 **A config change mid-trial is a new trial.** Kill the old one, note why in its
