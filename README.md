@@ -183,6 +183,7 @@ event type, a new optional key.
 |---|---|
 | 1.0 | initial contract |
 | 1.1 | additive: model provenance — requested vs served (transcript-read) models on `session.start`/`session.end` `data`, trial `config.json` `agent`, `state.json` `models`, `run.done` `data.models`, and the `provenance` block that maps them |
+| 1.2 | additive: `note` event type (feed class `activity`) — one-line operational notes, e.g. a logged support-model substitution or a watch lifecycle fact |
 
 ## The public feed
 

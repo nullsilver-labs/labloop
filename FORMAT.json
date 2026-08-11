@@ -1,5 +1,5 @@
 {
-  "format": "1.1",
+  "format": "1.2",
   "generator": "nullsilver-lab",
   "generated_by": "tools/lab format sync",
   "note": "Generated file \u2014 do not edit. Regenerate with `tools/lab format sync`; `tools/lab validate` fails if it has drifted from the code.",
@@ -115,6 +115,7 @@
       "surprise": "activity",
       "kill": "activity",
       "error": "activity",
+      "note": "activity",
       "gate.requested": "activity",
       "gate.resolved": "activity",
       "gate.overridden": "activity",

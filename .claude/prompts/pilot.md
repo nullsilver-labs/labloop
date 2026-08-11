@@ -33,6 +33,23 @@ timestamps are public.
 - A NOTES.md entry if anything surprised you, plus a `surprise` event if it is worth
   the public feed.
 
+## Long blocking steps
+
+A model download, a corpus build — anything that blocks longer than ~15 minutes —
+must not hold this session hostage, and must not die with it either. Detach it under
+a watcher with an explicit budget:
+
+```bash
+tools/lab watch start --op model-download --budget-min 90 --stall-min 15 \
+    -- hf download Qwen/Qwen3.5-9B
+```
+
+then note in `HANDOFF.md` what you are waiting on, commit, and end your turn with
+**phase untouched**. The driver waits and relaunches the pilot when the watch
+finishes; that next session checks `tools/lab watch list`, verifies the artifact,
+runs `tools/lab watch close <id>`, and continues. Never end a turn with unwatched
+work running, and never `nohup` around it (CLAUDE.md "Long runs").
+
 ## Exit criterion
 
 Either the pipeline measures what the spec says it measures — go to `execute` — or it

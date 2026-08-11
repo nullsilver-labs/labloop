@@ -42,6 +42,8 @@ BACKOFF="$(conf backoff_sec)"; BACKOFF="${BACKOFF:-30}"
 MAX_FAILURES="$(conf max_failures)"; MAX_FAILURES="${MAX_FAILURES:-3}"
 MAX_NO_PROGRESS="$(conf max_no_progress)"; MAX_NO_PROGRESS="${MAX_NO_PROGRESS:-2}"
 PUSH="$(conf push)"; PUSH="${PUSH:-false}"
+SUPERVISE_INTERVAL="$(conf supervise_interval_sec)"; SUPERVISE_INTERVAL="${SUPERVISE_INTERVAL:-1800}"
+WATCH_POLL="$(conf watch_poll_sec)"; WATCH_POLL="${WATCH_POLL:-60}"
 
 case "$PERMISSION_MODE" in
   auto|bypassPermissions) ;;
@@ -57,16 +59,21 @@ mkdir -p .lab/sessions
 
 log() { printf '[loop %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 
-# Fingerprint of "has anything moved": phase, run, revision, gate state.
+# Fingerprint of "has anything moved": phase, run, revision, gate state, open
+# trials, and the watch registry — closing one of three trials is progress even
+# though phase and status never moved.
 snapshot() {
   "$LAB" state get 2>/dev/null | python3 -c \
     'import json,sys;d=json.load(sys.stdin);print(d.get("phase"),d.get("run"),
-     d.get("revision"),d.get("status"),(d.get("awaiting") or {}).get("since"))' 2>/dev/null
+     d.get("revision"),d.get("status"),(d.get("awaiting") or {}).get("since"),
+     len(d.get("active_trials") or []))' 2>/dev/null
+  "$LAB" watch check --fingerprint 2>/dev/null
 }
 
 iteration=0
 failures=0
 no_progress=0
+last_session=0
 
 while :; do
   if [ "$iteration" -ge "$MAX_ITERATIONS" ]; then
@@ -96,19 +103,53 @@ while :; do
       exit 0 ;;
   esac
 
-  model="$(conf "$phase")"
+  # --- watch supervision --------------------------------------------------
+  # Phase sessions may exit with work still running under `lab watch` watchers
+  # (long trials, model downloads). While every watch is healthy and running,
+  # waiting is bash's job — free — not a session's. A session is launched only
+  # when one needs judgment: a watch finished or was killed (paperwork), or the
+  # execute-phase judgment interval elapsed (curve reading the watchdog can't do).
+  counts="$("$LAB" watch check --counts 2>/dev/null)" || counts=""
+  counts="${counts:-live=0 pending=0}"
+  live="${counts#live=}"; live="${live%% *}"
+  pending="${counts##*pending=}"
+  interval_check=0
+  if [ "${live:-0}" -gt 0 ] && [ "${pending:-0}" -eq 0 ]; then
+    now="$(date +%s)"
+    if [ "$phase" = "execute" ] && [ $((now - last_session)) -ge "$SUPERVISE_INTERVAL" ]; then
+      interval_check=1
+    else
+      if [ "$DRY_RUN" = "1" ]; then
+        log "dry run: $counts — would sleep ${WATCH_POLL}s between watch checks"
+        exit 0
+      fi
+      sleep "$WATCH_POLL"
+      continue
+    fi
+  fi
+
+  # Finished/killed watches (any phase) resume the phase's own prompt, which
+  # owns the paperwork; in execute, the narrower supervise prompt runs instead.
+  session_kind="$phase"
+  if [ "$phase" = "execute" ] && [ -f .claude/prompts/supervise.md ] \
+     && { [ "${pending:-0}" -gt 0 ] || [ "$interval_check" = 1 ]; }; then
+    session_kind="supervise"
+  fi
+
+  model="$(conf "$session_kind")"
+  [ -z "$model" ] && model="$(conf "$phase")"
   if [ -z "$model" ]; then
     log "no model configured for phase '$phase' in .claude/loop.conf"
     exit 1
   fi
 
-  prompt_file=".claude/prompts/${phase}.md"
+  prompt_file=".claude/prompts/${session_kind}.md"
   [ -f "$prompt_file" ] || { log "missing $prompt_file"; exit 1; }
 
   before="$(snapshot)"
   iteration=$((iteration + 1))
-  session_log=".lab/sessions/$(date -u +%Y%m%dT%H%M%S)-${phase}.log"
-  log "iteration $iteration: phase=$phase run=$run model=$model -> $session_log"
+  session_log=".lab/sessions/$(date -u +%Y%m%dT%H%M%S)-${session_kind}.log"
+  log "iteration $iteration: phase=$phase run=$run session=$session_kind model=$model -> $session_log"
 
   if [ "$DRY_RUN" = "1" ]; then
     log "dry run: would launch claude -p \"\$(cat $prompt_file)\" --model $model --permission-mode $PERMISSION_MODE"
@@ -131,6 +172,7 @@ while :; do
       --output-format stream-json --verbose \
       >"$session_log" 2>&1 </dev/null
   rc=$?
+  last_session="$(date +%s)"
 
   if [ $rc -ne 0 ]; then
     failures=$((failures + 1))
@@ -150,6 +192,12 @@ while :; do
 
   after="$(snapshot)"
   if [ "$before" = "$after" ]; then
+    if [ "$interval_check" = 1 ]; then
+      # A judgment visit that found nothing to change is the expected outcome
+      # of a healthy long run, not a stall.
+      log "quiet supervision check; trials still running"
+      continue
+    fi
     no_progress=$((no_progress + 1))
     log "session made no progress ($no_progress/$MAX_NO_PROGRESS)"
     if [ "$no_progress" -ge "$MAX_NO_PROGRESS" ]; then

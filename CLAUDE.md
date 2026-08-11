@@ -55,18 +55,31 @@ overwriting `HANDOFF.md` — the Stop hook will not let you leave without it.
 ## Long runs
 
 Phase sessions are **headless one-shots** (`claude -p`): the process exits the moment
-your turn ends, and everything it spawned dies with it — background tasks, monitors,
-pending wakeups. `ScheduleWakeup` will never fire for you; do not call it. Never end a
-turn while a trial, download, or server you still need is running — "I'll check when
-I'm woken" is how one project's pilot lost the same 9 GB download twice.
+your turn ends, and everything it spawned dies with it — except work detached under
+`lab watch`. `ScheduleWakeup` will never fire for you; do not call it. The rule:
+**never leave running work without an enforcer.** There are exactly two:
 
-Instead: launch with Bash `run_in_background` so the console tees to a log, then wait
-in the **foreground** — bounded blocking checks, each within the Bash timeout, e.g.
-`timeout 540 tail -f <console log> | grep -m1 -E '(done|error|Traceback|OOM)'`, then
-inspect `results.jsonl` — repeated until the process exits. Enforce budget deadlines
-and kill criteria at every check: kill what is over, write its summary, close it with
-`lab trial done --killed`. Work that cannot finish within one session is a gate, not a
-`nohup` — a detached orphan has no one enforcing its budget.
+- **You, in the foreground** — for work that finishes within this session (minutes,
+  not hours). Launch with Bash `run_in_background` so the console tees to a log, then
+  wait with bounded blocking checks, each within the Bash timeout, e.g.
+  `timeout 540 tail -f <console log> | grep -m1 -E '(done|error|Traceback|OOM)'`,
+  repeated until the process exits, enforcing budgets and kill criteria at every
+  check. Never end a turn while unwatched work runs — "I'll check when I'm woken" is
+  how one project's pilot lost the same 9 GB download twice.
+- **A `lab watch` watcher** — for work that outlives the session: a training run, a
+  model download. `lab watch start (--trial DIR | --op NAME) [--budget-min N]
+  [--stall-min N] [--kill-regex RE] -- <command>` detaches it under a mechanical
+  supervisor that heartbeats and kills on wall-clock, stall, or pattern; a killed
+  trial gets a facts-only summary stub and `lab trial done --killed` on the spot,
+  so the LEDGER never waits for a session to come back. With every live process
+  under a watcher you may end your turn: the driver (loop.sh or the orchestrator)
+  waits in bash for free and launches a session when a watch needs judgment or
+  paperwork — in execute, the `supervise.md` visit; elsewhere, the phase's own
+  prompt resumed.
+
+A bare `nohup`/`setsid` remains forbidden — an orphan without a watcher has no one
+enforcing its budget. Kills end with a summary and `lab trial done --killed`, however
+they happen; watchers write the mechanical half, sessions the judgment half.
 
 (The attended orchestrator session is the exception: it is persistent, so for *it*
 `run_in_background` + `ScheduleWakeup` is correct — see

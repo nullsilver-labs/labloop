@@ -16,6 +16,8 @@ Subcommands:
     lab trial new <exp_id>        create a compliant trial dir, emit trial.launch
     lab trial log <dir> --data    append a record to results.jsonl
     lab trial done <dir>          close a trial, update LEDGER, emit trial.done
+    lab watch start|list|check|kill|close
+                                  detached watchdog for long-running work
     lab protocol freeze           snapshot PROTOCOL.md -> protocol/revNNN.md
     lab protocol activate         adopt a new revision, emit protocol.revised
     lab gate request|resolve      raise / clear a human checkpoint
@@ -26,12 +28,14 @@ Subcommands:
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
 import os
 import platform
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -57,7 +61,7 @@ from typing import Any
 # rules applied to a given line. A missing `format` means pre-1.0.
 #
 # Version history lives in README.md under "Format versioning".
-FORMAT_VERSION = "1.1"
+FORMAT_VERSION = "1.2"
 
 PHASES = ["init", "build", "pilot", "execute", "analyze", "decide", "conclude"]
 
@@ -93,6 +97,7 @@ EVENT_FEED: dict[str, str] = {
     "surprise": "activity",
     "kill": "activity",
     "error": "activity",
+    "note": "activity",
     "gate.requested": "activity",
     "gate.resolved": "activity",
     "gate.overridden": "activity",
@@ -1119,6 +1124,332 @@ def cmd_trial_done(args) -> None:
     print(rel)
 
 
+# ---------------------------------------------------------------------------
+# watch — a detached, mechanical supervisor for long-running work.
+#
+# The contract that makes detachment legal (CLAUDE.md "Long runs"): a phase session
+# may end its turn while work runs ONLY if that work is under a watcher, because the
+# watcher — not the session — enforces the budget. One watcher per process, setsid so
+# it survives the session; it heartbeats, kills on wall-clock / stall / kill-regex /
+# session request, and for trials it writes a facts-only summary stub and closes the
+# trial through `lab trial done --killed`, so the LEDGER never depends on a session
+# coming back. Judgment (real summaries, curve reading) stays with sessions; the
+# driver (loop.sh / orchestrator) launches one when a watch needs paperwork.
+#
+# Registry: .lab/watch/<id>.json, written only by its watcher while status=running,
+# then never again — so `close` can archive it to .lab/watch/done/ without racing.
+# A session asks for a kill by writing .lab/watch/<id>.kill (the reason, one line);
+# the watcher picks it up within one poll and owns the paperwork.
+# ---------------------------------------------------------------------------
+
+WATCH_DIR = LAB_DIR / "watch"
+WATCH_ARCHIVE = WATCH_DIR / "done"
+WATCH_POLL_SEC = 15
+WATCH_TERM_GRACE_SEC = 30
+WATCH_HEARTBEAT_STALE_SEC = 120   # 8 missed polls => the watcher itself is presumed dead
+
+
+def _watch_path(wid: str) -> Path:
+    return WATCH_DIR / f"{wid}.json"
+
+
+def _pid_alive(pid: int | None) -> bool:
+    if not pid:
+        return False
+    try:
+        os.kill(pid, 0)
+        return True
+    except (OSError, ProcessLookupError):
+        return False
+
+
+def _watch_entries() -> list[dict]:
+    if not WATCH_DIR.exists():
+        return []
+    out = []
+    for p in sorted(WATCH_DIR.glob("*.json")):
+        try:
+            out.append(json.loads(p.read_text()))
+        except (json.JSONDecodeError, OSError):
+            warn(f"unreadable watch entry {p}")
+    return out
+
+
+def _watch_repair(entry: dict) -> dict:
+    """If a watcher died without finalizing its entry, say so on disk (idempotent)."""
+    if entry.get("status") != "running" or _pid_alive(entry.get("pid")):
+        return entry
+    hb = entry.get("heartbeat") or entry.get("started")
+    stale = True
+    try:
+        age = time.time() - datetime.fromisoformat(hb.replace("Z", "+00:00")).timestamp()
+        stale = age > WATCH_HEARTBEAT_STALE_SEC
+    except (ValueError, AttributeError):
+        pass
+    if not stale:
+        return entry
+    entry["status"] = "failed"
+    entry["kill_reason"] = "watcher process died without finalizing (repaired by `lab watch check`)"
+    entry["ended"] = now_iso()
+    if _pid_alive(entry.get("child_pid")):
+        warn(f"watch {entry['id']}: watcher dead but child {entry['child_pid']} still "
+             f"alive — an unenforced orphan. Kill it or re-watch it.")
+    write_json_atomic(_watch_path(entry["id"]), entry)
+    return entry
+
+
+def cmd_watch_start(args) -> None:
+    cmd = list(args.command or [])
+    if cmd and cmd[0] == "--":
+        cmd = cmd[1:]
+    if not cmd:
+        die("no command given. Usage: lab watch start (--trial DIR | --op NAME) "
+            "[--budget-min N] [--stall-min N] [--kill-regex RE] -- <command...>")
+    if bool(args.trial) == bool(args.op):
+        die("exactly one of --trial DIR or --op NAME is required")
+
+    budget_min = args.budget_min
+    if args.trial:
+        tdir = Path(args.trial)
+        if not tdir.is_absolute():
+            tdir = ROOT / tdir
+        if not (tdir / "config.json").exists():
+            die(f"{args.trial} is not a trial dir")
+        wid = tdir.name
+        log_path = tdir / "console.log"
+        if budget_min is None:
+            cfg = json.loads((tdir / "config.json").read_text())
+            hours = (cfg.get("config", {}).get("kill", {}) or {}).get("max_wall_clock_hours")
+            if hours:
+                budget_min = int(float(hours) * 60)
+        name = wid
+    else:
+        slug = re.sub(r"[^a-z0-9-]+", "-", args.op.lower()).strip("-") or "op"
+        wid = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M") + "-" + slug
+        log_path = WATCH_DIR / f"{wid}.log"
+        name = args.op
+    if budget_min is None:
+        die("a watch without a wall-clock budget is an unenforced orphan: pass "
+            "--budget-min (trials may omit it if config kill.max_wall_clock_hours is set)")
+    if _watch_path(wid).exists():
+        die(f"watch {wid} already exists")
+
+    WATCH_DIR.mkdir(parents=True, exist_ok=True)
+    WATCH_ARCHIVE.mkdir(parents=True, exist_ok=True)
+    entry = {
+        "format": FORMAT_VERSION,
+        "id": wid,
+        "kind": "trial" if args.trial else "op",
+        "name": name,
+        "trial_dir": str(tdir.relative_to(ROOT)) if args.trial else None,
+        "cmd": cmd,
+        "log": str(log_path.relative_to(ROOT)),
+        "budget_min": budget_min,
+        "stall_min": args.stall_min or 0,
+        "kill_regex": args.kill_regex or "",
+        "started": now_iso(),
+        "heartbeat": now_iso(),
+        "pid": None,
+        "child_pid": None,
+        "status": "running",
+        "exit_code": None,
+        "kill_reason": None,
+        "ended": None,
+    }
+    write_json_atomic(_watch_path(wid), entry)
+    # Detach: re-exec ourselves as the watcher in a fresh session (setsid), so the
+    # watcher and its child survive the phase session that launched them.
+    subprocess.Popen(
+        [sys.executable, str(Path(__file__).resolve()), "watch", "_run", wid],
+        start_new_session=True, cwd=str(ROOT),
+        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    print(wid)
+
+
+def cmd_watch_run(args) -> None:
+    """The watcher process itself (internal; launched detached by `watch start`)."""
+    path = _watch_path(args.id)
+    entry = json.loads(path.read_text())
+    log_path = ROOT / entry["log"]
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    logf = open(log_path, "ab", buffering=0)
+    child = subprocess.Popen(entry["cmd"], cwd=str(ROOT), stdin=subprocess.DEVNULL,
+                             stdout=logf, stderr=subprocess.STDOUT,
+                             start_new_session=True)
+    entry["pid"] = os.getpid()
+    entry["child_pid"] = child.pid
+    write_json_atomic(path, entry)
+
+    started = time.time()
+    deadline = started + entry["budget_min"] * 60
+    stall_sec = (entry.get("stall_min") or 0) * 60
+    pattern = re.compile(entry["kill_regex"]) if entry.get("kill_regex") else None
+    kill_file = WATCH_DIR / f"{entry['id']}.kill"
+    tdir = (ROOT / entry["trial_dir"]) if entry.get("trial_dir") else None
+    log_offset = 0
+    kill_reason = None
+
+    def freshest_output_age() -> float:
+        newest = 0.0
+        for f in ([log_path] + ([tdir / "results.jsonl"] if tdir else [])):
+            try:
+                newest = max(newest, f.stat().st_mtime)
+            except OSError:
+                pass
+        return (time.time() - newest) if newest else 0.0
+
+    while True:
+        rc = child.poll()
+        if rc is not None:
+            break
+        if kill_file.exists():
+            kill_reason = kill_file.read_text().strip() or "killed by session request"
+        elif time.time() > deadline:
+            kill_reason = f"wall-clock budget {entry['budget_min']} min exceeded"
+        elif stall_sec and freshest_output_age() > stall_sec:
+            kill_reason = f"stalled: no new output in {entry['stall_min']} min"
+        elif pattern:
+            try:
+                with open(log_path, "rb") as f:
+                    f.seek(log_offset)
+                    chunk = f.read()
+                log_offset += len(chunk)
+                m = pattern.search(chunk.decode("utf-8", "replace"))
+                if m:
+                    kill_reason = f"kill pattern matched: {m.group(0)[:80]!r}"
+            except OSError:
+                pass
+        if kill_reason:
+            try:
+                os.killpg(child.pid, signal.SIGTERM)
+            except (OSError, ProcessLookupError):
+                pass
+            t0 = time.time()
+            while child.poll() is None and time.time() - t0 < WATCH_TERM_GRACE_SEC:
+                time.sleep(1)
+            if child.poll() is None:
+                try:
+                    os.killpg(child.pid, signal.SIGKILL)
+                except (OSError, ProcessLookupError):
+                    pass
+            rc = child.wait()
+            break
+        entry["heartbeat"] = now_iso()
+        write_json_atomic(path, entry)
+        time.sleep(WATCH_POLL_SEC)
+
+    logf.close()
+    entry["exit_code"] = rc
+    entry["ended"] = now_iso()
+    entry["heartbeat"] = now_iso()
+    if kill_reason:
+        entry["status"] = "killed"
+        entry["kill_reason"] = kill_reason
+    else:
+        entry["status"] = "done" if rc == 0 else "failed"
+    write_json_atomic(path, entry)
+
+    # A watchdog-killed trial is closed mechanically, right now: the LEDGER must not
+    # depend on a session coming back to admit the kill. The stub summary states
+    # facts only; the next session may enrich it, never delete it.
+    if tdir is not None and kill_reason:
+        summary = tdir / "summary.md"
+        if not summary.exists() or not summary.read_text().strip():
+            n_rows = 0
+            try:
+                n_rows = sum(1 for _ in open(tdir / "results.jsonl"))
+            except OSError:
+                pass
+            summary.write_text(
+                f"# summary — {entry['name']} (KILLED by watchdog)\n\n"
+                f"- reason: {kill_reason}\n"
+                f"- started {entry['started']}, killed {entry['ended']}, "
+                f"exit code {rc}\n"
+                f"- results.jsonl rows at kill: {n_rows}\n\n"
+                f"Facts-only stub written mechanically by `lab watch`. Verdict: n/a. "
+                f"The next session should read results.jsonl/console.log and enrich "
+                f"this summary if the numbers matter.\n")
+        subprocess.run(
+            [sys.executable, str(Path(__file__).resolve()), "trial", "done",
+             str(tdir), "--killed", "--reason", kill_reason],
+            cwd=str(ROOT), stdin=subprocess.DEVNULL, capture_output=True)
+
+
+def cmd_watch_list(args) -> None:
+    entries = [_watch_repair(e) for e in _watch_entries()]
+    if args.json:
+        print(json.dumps(entries, indent=2))
+        return
+    if not entries:
+        print("no watches (archive: .lab/watch/done/)")
+        return
+    for e in entries:
+        extra = f" kill_reason={e['kill_reason']!r}" if e.get("kill_reason") else ""
+        print(f"{e['id']}  {e['kind']}:{e['name']}  {e['status']}"
+              f"  budget={e['budget_min']}min  log={e['log']}{extra}")
+
+
+def cmd_watch_check(args) -> None:
+    entries = [_watch_repair(e) for e in _watch_entries()]
+    live = [e for e in entries if e["status"] == "running"]
+    pending = [e for e in entries if e["status"] != "running"]
+    if args.counts:
+        print(f"live={len(live)} pending={len(pending)}")
+        return
+    if args.fingerprint:
+        sig = ";".join(f"{e['id']}:{e['status']}" for e in entries)
+        print(hashlib.sha256(sig.encode()).hexdigest()[:12])
+        return
+    if args.next_deadline:
+        secs = []
+        for e in live:
+            try:
+                t0 = datetime.fromisoformat(e["started"].replace("Z", "+00:00")).timestamp()
+                secs.append(int(t0 + e["budget_min"] * 60 - time.time()))
+            except (ValueError, KeyError):
+                pass
+        print(min(secs) if secs else "")
+        return
+    for e in entries:
+        print(f"{e['id']}  {e['status']}  heartbeat={e.get('heartbeat')}")
+    if not entries:
+        print("no watches")
+
+
+def cmd_watch_kill(args) -> None:
+    entry = next((e for e in _watch_entries() if e["id"] == args.id), None)
+    if entry is None:
+        die(f"no watch {args.id}")
+    if entry["status"] != "running":
+        die(f"watch {args.id} is {entry['status']}, not running")
+    if not args.reason:
+        die("--reason is required: the kill reason lands in the trial summary and LEDGER")
+    (WATCH_DIR / f"{args.id}.kill").write_text(args.reason.strip() + "\n")
+    print(f"kill requested; the watcher will act within {WATCH_POLL_SEC}s and "
+          f"handle the paperwork")
+
+
+def cmd_watch_close(args) -> None:
+    path = _watch_path(args.id)
+    if not path.exists():
+        die(f"no watch {args.id}")
+    entry = _watch_repair(json.loads(path.read_text()))
+    if entry["status"] == "running":
+        die(f"watch {args.id} is still running — kill it or wait for it")
+    if entry["kind"] == "trial":
+        state = load_state()
+        if entry["id"] in state.get("active_trials", []):
+            die(f"trial {entry['id']} is still open — write its summary.md and run "
+                f"`lab trial done` before closing the watch")
+    WATCH_ARCHIVE.mkdir(parents=True, exist_ok=True)
+    path.rename(WATCH_ARCHIVE / path.name)
+    kf = WATCH_DIR / f"{args.id}.kill"
+    if kf.exists():
+        kf.rename(WATCH_ARCHIVE / kf.name)
+    print(f"archived to .lab/watch/done/{path.name}")
+
+
 def cmd_protocol_freeze(args) -> None:
     fm, _ = load_protocol()
     rev = int(fm["revision"])
@@ -1488,6 +1819,40 @@ def main(argv: list[str] | None = None) -> None:
     t.add_argument("--note", help="one-line ledger note / event message")
     t.set_defaults(func=cmd_trial_done)
 
+    sp = sub.add_parser("watch", help="detached watchdog for long-running work")
+    wsub = sp.add_subparsers(dest="watch_cmd", required=True)
+    w = wsub.add_parser("start", help="launch a command under a detached watcher")
+    w.add_argument("--trial", help="trial dir: console.log is the log, kills auto-close the trial")
+    w.add_argument("--op", help="name for non-trial work (a download, a corpus build)")
+    w.add_argument("--budget-min", type=int,
+                   help="wall-clock kill budget (trials default to config kill.max_wall_clock_hours)")
+    w.add_argument("--stall-min", type=int, default=0,
+                   help="kill if no new output (log/results.jsonl) for this many minutes")
+    w.add_argument("--kill-regex", help="kill when this pattern appears in new log output")
+    w.add_argument("command", nargs=argparse.REMAINDER,
+                   help="-- <command...> to run and supervise")
+    w.set_defaults(func=cmd_watch_start)
+    w = wsub.add_parser("_run")           # internal: the detached watcher process
+    w.add_argument("id")
+    w.set_defaults(func=cmd_watch_run)
+    w = wsub.add_parser("list")
+    w.add_argument("--json", action="store_true")
+    w.set_defaults(func=cmd_watch_list)
+    w = wsub.add_parser("check", help="repair dead watchers; report live/pending")
+    w.add_argument("--counts", action="store_true", help="print 'live=N pending=M'")
+    w.add_argument("--fingerprint", action="store_true",
+                   help="stable hash of watch ids+statuses (drivers detect change)")
+    w.add_argument("--next-deadline", action="store_true",
+                   help="seconds until the nearest live watch budget deadline")
+    w.set_defaults(func=cmd_watch_check)
+    w = wsub.add_parser("kill", help="ask the watcher to kill its child and do the paperwork")
+    w.add_argument("id")
+    w.add_argument("--reason", required=True)
+    w.set_defaults(func=cmd_watch_kill)
+    w = wsub.add_parser("close", help="archive a finished watch after its paperwork is done")
+    w.add_argument("id")
+    w.set_defaults(func=cmd_watch_close)
+
     sp = sub.add_parser("protocol", help="revision mechanism")
     psub = sp.add_subparsers(dest="protocol_cmd", required=True)
     f = psub.add_parser("freeze")
@@ -1529,6 +1894,27 @@ def main(argv: list[str] | None = None) -> None:
     sp.set_defaults(func=cmd_conf)
 
     args = p.parse_args(argv)
+
+    # state.json / events.jsonl / LEDGER.md are read-modify-write; with detached
+    # watchers closing trials while a session works, writers can now be concurrent.
+    # One blocking flock serializes them. The watcher's long-lived `_run` loop never
+    # takes it (it mutates only its own registry file and shells back into `lab
+    # trial done`, which takes the lock in its own short-lived process).
+    mutating = args.cmd in ("init", "log", "state", "trial", "protocol", "gate") \
+        and not (args.cmd == "state" and getattr(args, "state_cmd", "") == "get")
+    if mutating:
+        LAB_DIR.mkdir(parents=True, exist_ok=True)
+        lock = open(LAB_DIR / "lab.lock", "w")
+        t0 = time.time()
+        while True:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError:
+                if time.time() - t0 > 120:
+                    die("could not take .lab/lab.lock within 120s — another lab "
+                        "process is stuck holding it")
+                time.sleep(0.2)
     args.func(args)
 
 

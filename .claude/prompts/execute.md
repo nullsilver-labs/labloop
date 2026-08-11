@@ -12,49 +12,59 @@ that have earned stopping. You are the operator of the experiment, not its reade
 
 ## Launch
 
-One `lab trial new` per trial, then launch **in the background** (Bash
-`run_in_background`) so you stay responsive and can supervise several at once:
+One `lab trial new` per trial, then hand the command to a detached watcher — never
+run it bare:
 
 ```bash
 DIR=$(tools/lab trial new exp01 --seed 1 --spec runs/r001/specs/exp01_slug.md \
         --config @configs/exp01_arm_a.json --command "python code/exp01_slug.py")
-python code/exp01_slug.py --trial-dir "$DIR" 2>&1 | tee "$DIR/console.log"
+tools/lab watch start --trial "$DIR" --stall-min 60 \
+    --kill-regex 'Traceback|CUDA out of memory' \
+    -- python code/exp01_slug.py --trial-dir "$DIR"
 ```
+
+The watcher tees `console.log`, heartbeats, and mechanically enforces the config's
+`kill.max_wall_clock_hours`, the stall window, and the kill pattern; if it kills, it
+writes a facts-only summary stub and closes the trial with `lab trial done --killed`
+itself. Put every *machine-checkable* kill criterion from the spec into those flags;
+what remains is judgment, and stays yours.
 
 If you predicted in the pilot phase and the design changed since, log an updated
 `prediction` event before launching. Never after.
 
-## Supervise — this is most of the job
+## Supervise, or hand off
 
-You are a headless one-shot: nothing wakes you, and ending your turn kills every
-trial you launched (see CLAUDE.md "Long runs"). Never call `ScheduleWakeup`. Wait in
-the **foreground** with bounded blocking checks, each within the Bash timeout and
-sized by **`min(~9 minutes, time until the nearest budget deadline)`** — e.g.
-`timeout 540 tail -f "$DIR/console.log" | grep -m1 -E '(done|error|Traceback|OOM)'` —
-repeated until every trial exits. The deadline term is what makes budgets real.
+You are a headless one-shot: nothing wakes you, and anything running *without a
+watcher* dies with your turn (see CLAUDE.md "Long runs"). Never call
+`ScheduleWakeup`. With every trial under `lab watch`, you have two legal moves:
 
-At every check:
+**Short trials — every remaining budget within ~30 min: stay.** Wait in the
+foreground with bounded blocking checks, each within the Bash timeout and sized by
+`min(~9 minutes, time until the nearest budget deadline)` — e.g.
+`timeout 540 tail -f "$DIR/console.log" | grep -m1 -E '(done|error|Traceback|OOM)'`
+— repeated until every trial exits. At each check, apply the spec's *judgment* kill
+criteria (divergence, no signal by step N) with
+`tools/lab watch kill <id> --reason "..."` — the watcher owns the paperwork either
+way. Then close each finished trial: real `summary.md`, `tools/lab trial done`,
+`tools/lab watch close <id>`. Emit at most one `metric` event per trial per minute;
+if nothing changed, emit **no events** — heartbeat noise is banned from the feed.
 
-1. **Enforce wall-clock.** Any trial past its budget: kill the process, write its
-   `summary.md` saying it was killed and why, then
-   `tools/lab trial done "$DIR" --killed --reason "wall-clock 3h exceeded at step N"`.
-2. **Enforce the spec's kill criteria** — divergence, NaN, no signal by step N. Same
-   close-out path. Killing early is thrift, not failure.
-3. **Check progress**: tail `results.jsonl` and `console.log`. A silent process that
-   has produced no new rows in an hour is stalled — treat it as a kill.
-4. **Emit at most one `metric` event per trial per minute** (`lab log` throttles
-   harder than you will remember to). Full resolution stays in `results.jsonl`.
-5. If nothing changed: do the checks, emit **no events**, re-enter the foreground
-   wait. Heartbeat noise is banned from the public feed.
-6. Close every finished trial with a `summary.md` and `tools/lab trial done`.
+**Long trials — any budget beyond that: hand off.** Babysitting a 12-hour run turn
+by turn is compute spent on `tail`. Instead: confirm `tools/lab watch check` shows
+every watcher live with a fresh heartbeat, write per-trial status into `HANDOFF.md`,
+commit, and end your turn with the trials still running and **phase untouched**. The
+driver (loop.sh or the orchestrator) waits for free and sends supervision visits
+(`.claude/prompts/supervise.md`) for judgment and paperwork; the last visit is the
+one that moves phase to analyze.
 
 **A config change mid-trial is a new trial.** Kill the old one, note why in its
 summary, launch a fresh one. Never edit a running trial's config.
 
 ## Exit criterion
 
-Every trial in `plan.json` is `done` or `killed`, each with a summary.md, and
-`state.active_trials` is empty (`lab state set phase=analyze` refuses otherwise).
+Either you closed everything: every trial in `plan.json` `done` or `killed` with a
+summary.md, `state.active_trials` empty, phase set to analyze — or you handed off:
+every running trial under a live watcher, HANDOFF.md current, phase untouched.
 
 ## Forbidden
 
@@ -67,10 +77,11 @@ Every trial in `plan.json` is `done` or `killed`, each with a summary.md, and
 
 ## End by
 
-1. Updating `HANDOFF.md` with each trial's headline numbers inline, so analyze does
-   not have to open log files to know what landed.
+1. Updating `HANDOFF.md` with each trial's headline numbers (or running status)
+   inline, so the next session does not have to open log files to know what landed.
 2. `git add -A && git commit -m "execute run N: <n> trials done, <m> killed"`.
-3. `tools/lab state set phase=analyze`.
+3. `tools/lab state set phase=analyze` — **only** if every trial is closed; on the
+   hand-off path the last supervision visit does this instead.
 
 ---
 **Universal rules.** All writes to `state.json` and `events.jsonl` go through

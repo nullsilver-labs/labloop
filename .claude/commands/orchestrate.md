@@ -52,16 +52,26 @@ Repeat until you stop for a gate or the project concludes:
    onto the session's events and trials; what actually served is read from the
    session transcript, so a fallback can never pass itself off as the request.
 
-5. Supervise it. You are woken when it exits. While it runs, or while trials it
-   launched are live, schedule your next wake with `ScheduleWakeup` at
-   `min(55 minutes, time until the nearest trial budget deadline)`. On each wake:
-   tail the session log and `tools/lab state get`, and report only if something
-   changed. Do not emit events — the phases own the feed.
-6. When the session exits, re-read state. If `phase` did not change and no gate was
-   raised, that session made no progress: retry **once**, and if the second attempt
-   also makes no progress, run
-   `tools/lab gate request --type stalled --question "phase <phase> made no progress in two sessions; last log: <path>"`
-   and stop.
+5. Supervise it. You are woken when it exits. While it runs, or while `lab watch`
+   watchers are live, schedule your next wake with `ScheduleWakeup` at
+   `min(55 minutes, tools/lab watch check --next-deadline seconds)`. On each wake:
+   tail the session log, `tools/lab state get`, `tools/lab watch check`, and report
+   only if something changed. Do not emit events — the phases own the feed.
+6. When the session exits, read `tools/lab watch check --counts` before judging it:
+   - **Live watches, none pending** — the session deliberately handed off (long
+     trials, a download). Not a stall. Keep waking as in step 5; while `phase` is
+     execute, also launch a supervision visit every `supervise_interval_sec`
+     (`tools/lab conf supervise_interval_sec`, default 1800).
+   - **Pending watches** (finished or killed, paperwork owed) — launch a session as
+     in step 4: prompt `.claude/prompts/supervise.md` when phase is execute, the
+     phase's own prompt otherwise; model `tools/lab conf supervise`, falling back to
+     the phase's model.
+   - **A stale-heartbeat or orphan warning from `watch check`** — report it to the
+     human plainly and stop.
+   - **No live watches and no state change** — that session made no progress: retry
+     **once**, and if the second attempt also makes no progress, run
+     `tools/lab gate request --type stalled --question "phase <phase> made no progress in two sessions; last log: <path>"`
+     and stop.
 
 ## Gates
 
