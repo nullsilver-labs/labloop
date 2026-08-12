@@ -152,6 +152,7 @@ lab protocol freeze | activate --diff-summary "…"
 lab gate request --type … --question "…" | gate resolve --approve|--reject
 lab events tail -n 20 [--class news|activity]
 lab model [--json]             which model drives this session (requested + served)
+lab usage [--since YYYY-MM-DD] [--json]   token usage per session/model/role, subagents attributed
 lab format show | sync | version
 ```
 
@@ -185,6 +186,7 @@ event type, a new optional key.
 | 1.0 | initial contract |
 | 1.1 | additive: model provenance — requested vs served (transcript-read) models on `session.start`/`session.end` `data`, trial `config.json` `agent`, `state.json` `models`, `run.done` `data.models`, and the `provenance` block that maps them |
 | 1.2 | additive: `note` event type (feed class `activity`) — one-line operational notes, e.g. a logged support-model substitution or a watch lifecycle fact |
+| 1.3 | additive: `trial.verdict` event type (feed class `activity`) — judging a closed trial is its own write, separate from `trial.done` |
 
 ## The public feed
 

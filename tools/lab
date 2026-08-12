@@ -61,7 +61,7 @@ from typing import Any
 # rules applied to a given line. A missing `format` means pre-1.0.
 #
 # Version history lives in README.md under "Format versioning".
-FORMAT_VERSION = "1.2"
+FORMAT_VERSION = "1.3"
 
 PHASES = ["init", "build", "pilot", "execute", "analyze", "decide", "conclude"]
 
@@ -1615,6 +1615,180 @@ def cmd_gate_resolve(args) -> None:
 # validate
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# usage — where the tokens went.
+#
+# Reads the session records in .lab/sessions/*.json (written by the SessionStart
+# hook for every session: phase, orchestrator and ad-hoc alike) and pulls per-turn
+# usage from each session's Claude Code transcript; if the transcript has been
+# cleaned up, falls back to the phase session's stream-json log in .lab/sessions/.
+# Subagent (sidechain) turns are counted and attributed separately, so delegation
+# shows up as delegation instead of vanishing into the parent's numbers.
+#
+# `in_equiv` is input-equivalent tokens per model, using the price ratios shared
+# by all current Claude models (in 1.0, cache write 1.25, cache read 0.1, out 5.0).
+# It compares sessions on the same model; across models, weight by the per-MTok
+# price of each before comparing.
+# ---------------------------------------------------------------------------
+
+USAGE_KEYS = ("input_tokens", "output_tokens",
+              "cache_creation_input_tokens", "cache_read_input_tokens")
+IN_EQUIV_WEIGHTS = {"input_tokens": 1.0, "output_tokens": 5.0,
+                    "cache_creation_input_tokens": 1.25,
+                    "cache_read_input_tokens": 0.1}
+
+
+def _in_equiv(agg: dict) -> int:
+    return int(sum(agg.get(k, 0) * w for k, w in IN_EQUIV_WEIGHTS.items()))
+
+
+def _usage_add(dst: dict, usage: dict) -> None:
+    for k in USAGE_KEYS:
+        dst[k] = dst.get(k, 0) + (usage.get(k) or 0)
+
+
+def _usage_from_lines(lines, sidechain_of) -> dict:
+    """Aggregate assistant-message usage from an iterable of JSONL lines.
+    sidechain_of(event) says whether the event belongs to a subagent."""
+    out = {"turns": 0, "models": {}, "total": {}, "sub": {}, "sub_turns": 0}
+    for line in lines:
+        try:
+            e = json.loads(line)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            continue
+        if e.get("type") != "assistant":
+            continue
+        msg = e.get("message") or {}
+        usage = msg.get("usage") or {}
+        if not usage:
+            continue
+        out["turns"] += 1
+        model = msg.get("model") or "?"
+        _usage_add(out["models"].setdefault(model, {}), usage)
+        _usage_add(out["total"], usage)
+        if sidechain_of(e):
+            out["sub_turns"] += 1
+            _usage_add(out["sub"], usage)
+    return out
+
+
+def _phase_log_index() -> dict:
+    """Map session_id -> stream-json log path, for transcripts that are gone."""
+    index = {}
+    for log in sorted((LAB_DIR / "sessions").glob("*.log")):
+        try:
+            with open(log, encoding="utf-8", errors="replace") as f:
+                for _ in range(3):
+                    line = f.readline()
+                    if not line:
+                        break
+                    try:
+                        sid = json.loads(line).get("session_id")
+                    except json.JSONDecodeError:
+                        continue
+                    if sid:
+                        index[sid] = log
+                        break
+        except OSError:
+            continue
+    return index
+
+
+def cmd_usage(args) -> None:
+    since = None
+    if args.since:
+        try:
+            since = datetime.strptime(args.since, "%Y-%m-%d").timestamp()
+        except ValueError:
+            die("--since wants YYYY-MM-DD")
+
+    log_index = None
+    sessions = []
+    for rec_path in sorted((LAB_DIR / "sessions").glob("*.json")):
+        try:
+            rec = json.loads(rec_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        start = rec.get("start_epoch") or 0
+        if since and start < since:
+            continue
+        sid = rec.get("session_id", rec_path.stem)
+        transcript = rec.get("transcript_path") or ""
+        source = None
+        if transcript and os.path.exists(transcript):
+            source, sidechain_of = transcript, (lambda e: bool(e.get("isSidechain")))
+        else:
+            if log_index is None:
+                log_index = _phase_log_index()
+            if sid in log_index:
+                source = log_index[sid]
+                sidechain_of = (lambda e: bool(e.get("parent_tool_use_id")))
+        row = {"session": sid, "start": start,
+               "date": datetime.fromtimestamp(start, tz=timezone.utc)
+                       .strftime("%m-%d %H:%M") if start else "?",
+               "role": rec.get("role", "phase"), "phase": rec.get("phase", "?"),
+               "run": rec.get("run", "?"), "source": str(source) if source else None}
+        if source:
+            u = _usage_from_lines(open(source, encoding="utf-8", errors="replace"),
+                                  sidechain_of)
+            row.update(u)
+            row["in_equiv"] = _in_equiv(u["total"])
+        sessions.append(row)
+    sessions.sort(key=lambda r: r["start"])
+
+    if args.json:
+        print(json.dumps(sessions, indent=2))
+        return
+
+    by_model: dict[str, dict] = {}
+    by_role: dict[str, dict] = {}
+    missing = 0
+    for r in sessions:
+        if not r.get("source"):
+            missing += 1
+            continue
+        for model, agg in r["models"].items():
+            m = by_model.setdefault(model, {"sessions": 0, "turns": 0})
+            m["sessions"] += 1
+            _usage_add(m, agg)
+        m = by_role.setdefault(r["role"], {"sessions": 0, "turns": 0,
+                                           "sub_turns": 0, "sub": {}})
+        m["sessions"] += 1
+        m["turns"] += r["turns"]
+        m["sub_turns"] += r["sub_turns"]
+        _usage_add(m, r["total"])
+        _usage_add(m["sub"], r["sub"])
+
+    print(f"{'date (UTC)':11} {'role':6} {'phase':9} {'turns':>5} {'sub':>4} "
+          f"{'out':>8} {'cache_r':>12} {'in_equiv':>10}")
+    for r in sessions:
+        if not r.get("source"):
+            print(f"{r['date']:11} {r['role'][:6]:6} {r['phase'][:9]:9} "
+                  f"{'—':>5} {'—':>4} {'—':>8} {'—':>12} {'—':>10}  (no transcript/log)")
+            continue
+        t = r["total"]
+        print(f"{r['date']:11} {r['role'][:6]:6} {r['phase'][:9]:9} {r['turns']:>5} "
+              f"{r['sub_turns']:>4} {t.get('output_tokens',0):>8,} "
+              f"{t.get('cache_read_input_tokens',0):>12,} {r['in_equiv']:>10,}")
+
+    print("\nby model (in_equiv compares sessions on the SAME model; across models,"
+          " weight by each model's per-MTok price):")
+    for model, m in sorted(by_model.items(),
+                           key=lambda kv: -_in_equiv(kv[1])):
+        print(f"  {model:22} sessions={m['sessions']:<3} in={m.get('input_tokens',0):<10,} "
+              f"out={m.get('output_tokens',0):<9,} cache_w={m.get('cache_creation_input_tokens',0):<11,} "
+              f"cache_r={m.get('cache_read_input_tokens',0):<13,} in_equiv={_in_equiv(m):,}")
+    print("by role:")
+    for role, m in sorted(by_role.items(), key=lambda kv: -_in_equiv(kv[1])):
+        sub = (f"  (subagents: {m['sub_turns']} turns, in_equiv={_in_equiv(m['sub']):,})"
+               if m["sub_turns"] else "")
+        print(f"  {role:12} sessions={m['sessions']:<3} turns={m['turns']:<5} "
+              f"cache_r={m.get('cache_read_input_tokens',0):<13,} in_equiv={_in_equiv(m):,}{sub}")
+    if missing:
+        print(f"\n{missing} session(s) had no transcript and no matching phase log — "
+              "their tokens are not counted above.")
+
+
 def cmd_validate(args) -> None:
     errors: list[str] = []
     notes: list[str] = []
@@ -1974,6 +2148,12 @@ def main(argv: list[str] | None = None) -> None:
     mx.add_argument("--reject", action="store_true")
     v.add_argument("--note")
     v.set_defaults(func=cmd_gate_resolve)
+
+    sp = sub.add_parser("usage", help="token usage per session/model/role — reads "
+                                      "session transcripts and phase logs")
+    sp.add_argument("--since", help="YYYY-MM-DD (UTC); default: all recorded sessions")
+    sp.add_argument("--json", action="store_true")
+    sp.set_defaults(func=cmd_usage)
 
     sp = sub.add_parser("validate", help="lint the repo against the contract")
     sp.set_defaults(func=cmd_validate)
