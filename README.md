@@ -146,6 +146,7 @@ lab state get [key] | set phase=analyze
 lab trial new <exp> [--seed N --config @f.json --spec … --command …]
 lab trial log <dir> --data '{"step":1,"loss":0.4}'
 lab trial done <dir> [--verdict GO|NO-GO|INCONCLUSIVE] [--killed --reason …]
+lab trial verdict <dir> --verdict GO|NO-GO|INCONCLUSIVE [--note …]   judge a closed trial
 lab log <type> --msg "…" [--data '{…}'] [--trial <id>]
 lab protocol freeze | activate --diff-summary "…"
 lab gate request --type … --question "…" | gate resolve --approve|--reject

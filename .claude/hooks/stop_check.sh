@@ -31,9 +31,14 @@ phase_ran=$(python3 -c \
   'import json,sys;print(json.load(open(sys.argv[1])).get("phase") or "")' \
   ".lab/sessions/${sid}.json" 2>/dev/null || echo "")
 
-# Operator sessions (attended mode) own no phase and owe no handoff.
-if [ "${LAB_ROLE:-phase}" = "orchestrator" ] || \
-   grep -q '"role": *"orchestrator"' ".lab/sessions/${sid}.json" 2>/dev/null; then
+# Only phase sessions owe the handoff contract. Operator (orchestrator) and
+# ad-hoc interactive sessions are exempt: the session record's role wins, the
+# env is the fallback, and a missing record with no LAB_ROLE defaults to phase
+# so a legacy headless launch is still held to the contract.
+file_role=$(grep -o '"role": *"[a-z]*"' ".lab/sessions/${sid}.json" 2>/dev/null \
+            | sed 's/.*"\([a-z]*\)"$/\1/')
+role="${file_role:-${LAB_ROLE:-phase}}"
+if [ "$role" != "phase" ]; then
   exit 0
 fi
 

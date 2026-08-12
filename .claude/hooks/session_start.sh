@@ -27,9 +27,12 @@ fi
 
 phase=$("$LAB" state get phase 2>/dev/null || echo unknown)
 run=$("$LAB" state get run 2>/dev/null || echo 0)
-# LAB_ROLE=orchestrator marks an operator session (attended mode): it drives phases
-# but does no lab work, so it neither appears in the feed nor owes a handoff.
-role="${LAB_ROLE:-phase}"
+# LAB_ROLE tells the hooks what this session is. The drivers set it explicitly:
+# loop.sh and the orchestrator launch phase sessions with LAB_ROLE=phase; an
+# attended operator session sets LAB_ROLE=orchestrator. A session with no
+# LAB_ROLE is an ad-hoc interactive one (a human working in the repo): it owes
+# no handoff, emits nothing to the feed, and must not move the state machine.
+role="${LAB_ROLE:-adhoc}"
 
 mkdir -p .lab/sessions
 python3 - "$sid" "$phase" "$run" "$role" "${transcript:-}" <<'PY' 2>/dev/null
@@ -45,6 +48,21 @@ if [ "$role" = "orchestrator" ]; then
   echo
   echo "You drive phases and relay gates. You do not do lab work, you emit no events,"
   echo "and you edit no project files. Follow \`.claude/commands/orchestrate.md\`."
+  echo
+  echo '```json'
+  cat state.json
+  echo '```'
+  exit 0
+fi
+
+if [ "$role" = "adhoc" ]; then
+  echo "## Lab state — AD-HOC session (interactive, not a phase)"
+  echo
+  echo "You were not launched by a driver, so you are not a phase session: you owe no"
+  echo "handoff, you emit no events, and you do not move the state machine or write"
+  echo "HANDOFF.md unless the human explicitly asks. Working on the machinery, the"
+  echo "code, or answering questions is fine. To run a phase properly, use ./loop.sh"
+  echo "or /orchestrate (they set LAB_ROLE=phase)."
   echo
   echo '```json'
   cat state.json

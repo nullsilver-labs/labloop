@@ -20,6 +20,14 @@ judgment**, and it applies in every phase.
 - **Spend compute like money.** The smallest experiment that can kill an idea, first;
   downscale, then scale only what survived. Seed everything and log the seed;
   fingerprint caches with what produced them so a stale one can't be reused silently.
+- **Spend context like compute.** Every turn re-reads the whole conversation, so a
+  session's cost grows with the square of its length: 200 turns at 150k context reads
+  ~30M tokens. Delegate bulk reading — logs, results.jsonl, corpora, long diffs — to
+  a subagent that returns conclusions; `grep`/`tail` into your context, never `cat` a
+  big file; make scripts print one-line summaries and write detail to files. When the
+  remaining work is separable and your context has grown long, checkpoint: update
+  HANDOFF.md, commit, end with the phase untouched. The driver relaunches you fresh
+  at a fraction of the cost — it counts your commit as progress, not a stall.
 
 ## The machine
 
@@ -49,8 +57,10 @@ is a gate, not a workaround.
 a budget in `PROTOCOL.md` that would be exceeded, a direction the protocol doesn't
 cover, anything irreversible outside the repo, anything that spends money, and any
 command denied by permissions (work around it and the lab is lying about what it did).
-Batch everything else into HANDOFF.md's "For the human". Every session ends by
-overwriting `HANDOFF.md` — the Stop hook will not let you leave without it.
+Batch everything else into HANDOFF.md's "For the human". Every **phase** session ends
+by overwriting `HANDOFF.md` — the Stop hook will not let a phase session leave without
+it. Operator and ad-hoc sessions (anything not launched by a driver with
+`LAB_ROLE=phase`) owe no handoff and must not move the state machine.
 
 ## Long runs
 
@@ -65,7 +75,11 @@ your turn ends, and everything it spawned dies with it — except work detached 
   `timeout 540 tail -f <console log> | grep -m1 -E '(done|error|Traceback|OOM)'`,
   repeated until the process exits, enforcing budgets and kill criteria at every
   check. Never end a turn while unwatched work runs — "I'll check when I'm woken" is
-  how one project's pilot lost the same 9 GB download twice.
+  how one project's pilot lost the same 9 GB download twice. If you background a
+  completion check, it must be a command that exits on its own: `run_in_background`
+  on the work itself, never on a `tail -f | grep` wrapper — without a `timeout`, that
+  pipeline structurally never completes once the log goes quiet, and no notification
+  can fire.
 - **A `lab watch` watcher** — for work that outlives the session: a training run, a
   model download. `lab watch start (--trial DIR | --op NAME) [--budget-min N]
   [--stall-min N] [--kill-regex RE] -- <command>` detaches it under a mechanical

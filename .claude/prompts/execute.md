@@ -87,5 +87,9 @@ every running trial under a live watcher, HANDOFF.md current, phase untouched.
 **Universal rules.** All writes to `state.json` and `events.jsonl` go through
 `tools/lab`; never edit them by hand (a hook blocks it). If a command is denied by
 permissions, do not work around it — `tools/lab gate request --type blocked
---question "<what was denied and why you need it>"` and stop. Judgment rules are in
-CLAUDE.md.
+--question "<what was denied and why you need it>"` and stop. **Context is budget**
+(CLAUDE.md): delegate bulk reading — logs, results, corpora, long diffs — to a
+subagent that returns conclusions; `grep`/`tail` into your context, never `cat` a big
+file; and when the remaining work is separable and your context has grown long,
+checkpoint (update HANDOFF.md, commit, phase untouched) — the driver relaunches you
+fresh, and counts the commit as progress. Judgment rules are in CLAUDE.md.

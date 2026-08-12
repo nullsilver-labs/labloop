@@ -44,6 +44,7 @@ MAX_NO_PROGRESS="$(conf max_no_progress)"; MAX_NO_PROGRESS="${MAX_NO_PROGRESS:-2
 PUSH="$(conf push)"; PUSH="${PUSH:-false}"
 SUPERVISE_INTERVAL="$(conf supervise_interval_sec)"; SUPERVISE_INTERVAL="${SUPERVISE_INTERVAL:-1800}"
 WATCH_POLL="$(conf watch_poll_sec)"; WATCH_POLL="${WATCH_POLL:-60}"
+MAX_TURNS="$(conf max_turns)"        # empty = uncapped; a backstop, not a target
 
 case "$PERMISSION_MODE" in
   auto|bypassPermissions) ;;
@@ -60,14 +61,17 @@ mkdir -p .lab/sessions
 log() { printf '[loop %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 
 # Fingerprint of "has anything moved": phase, run, revision, gate state, open
-# trials, and the watch registry — closing one of three trials is progress even
-# though phase and status never moved.
+# trials, the watch registry, and git HEAD — closing one of three trials is
+# progress even though phase and status never moved, and so is a checkpoint
+# commit from a session that ended early to reset its context (CLAUDE.md
+# "Spend context like compute").
 snapshot() {
   "$LAB" state get 2>/dev/null | python3 -c \
     'import json,sys;d=json.load(sys.stdin);print(d.get("phase"),d.get("run"),
      d.get("revision"),d.get("status"),(d.get("awaiting") or {}).get("since"),
      len(d.get("active_trials") or []))' 2>/dev/null
   "$LAB" watch check --fingerprint 2>/dev/null
+  git -C "$ROOT" rev-parse HEAD 2>/dev/null
 }
 
 iteration=0
@@ -160,15 +164,18 @@ while :; do
   # what actually answered is read from the session transcript at the time.
   export LAB_MODEL="$model"
 
-  # A phase session that inherits LAB_ROLE=orchestrator (e.g. loop.sh started from
-  # an operator shell) would identify as the orchestrator and recurse instead of
-  # doing phase work.
-  unset LAB_ROLE
+  # LAB_ROLE=phase marks the session as a driver-launched phase: the hooks
+  # enforce the handoff contract only on phase sessions, and an ad-hoc
+  # interactive session (no LAB_ROLE) is left alone. Setting it explicitly also
+  # prevents a child inheriting LAB_ROLE=orchestrator (e.g. loop.sh started from
+  # an operator shell), which would identify as the orchestrator and recurse.
+  export LAB_ROLE=phase
 
   # </dev/null: headless sessions otherwise wait on stdin before starting.
   claude -p "$(cat "$prompt_file")" \
       --model "$model" \
       --permission-mode "$PERMISSION_MODE" \
+      ${MAX_TURNS:+--max-turns "$MAX_TURNS"} \
       --output-format stream-json --verbose \
       >"$session_log" 2>&1 </dev/null
   rc=$?

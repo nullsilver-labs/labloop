@@ -18,7 +18,10 @@ Deliberately *not* the execute session's reasoning. The numbers are the evidence
 1. **A `summary.md` for any trial missing one**, from `templates/trial-summary.md`.
 2. **`runs/rNNN/summary.md`** from `templates/run-summary.md`: the headline table,
    every hypothesis against its pre-registered gate, and what the run means.
-3. **LEDGER.md** — verdict column filled for every trial of this run.
+3. **LEDGER.md** — verdict column filled for every trial of this run, via
+   `tools/lab trial verdict <dir> --verdict GO|NO-GO|INCONCLUSIVE [--note "..."]`.
+   Judging a closed trial is its own write: it never touches the trial's clock, and
+   omitting `--note` keeps the existing ledger note.
 4. **A dated NOTES.md entry**: your reading, what surprised you, how your pilot
    prediction scored against the outcome (name it explicitly — calibration is data).
 5. **The verdict event**, one line, public:
@@ -67,5 +70,9 @@ exists, LEDGER is current, and the `run.done` event is logged.
 **Universal rules.** All writes to `state.json` and `events.jsonl` go through
 `tools/lab`; never edit them by hand (a hook blocks it). If a command is denied by
 permissions, do not work around it — `tools/lab gate request --type blocked
---question "<what was denied and why you need it>"` and stop. Judgment rules are in
-CLAUDE.md.
+--question "<what was denied and why you need it>"` and stop. **Context is budget**
+(CLAUDE.md): delegate bulk reading — logs, results, corpora, long diffs — to a
+subagent that returns conclusions; `grep`/`tail` into your context, never `cat` a big
+file; and when the remaining work is separable and your context has grown long,
+checkpoint (update HANDOFF.md, commit, phase untouched) — the driver relaunches you
+fresh, and counts the commit as progress. Judgment rules are in CLAUDE.md.

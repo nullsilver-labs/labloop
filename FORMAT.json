@@ -110,6 +110,7 @@
       "prediction": "activity",
       "trial.launch": "activity",
       "trial.done": "activity",
+      "trial.verdict": "activity",
       "metric": "none",
       "run.done": "news",
       "surprise": "activity",

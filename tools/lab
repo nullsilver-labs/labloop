@@ -92,6 +92,7 @@ EVENT_FEED: dict[str, str] = {
     "prediction": "activity",
     "trial.launch": "activity",
     "trial.done": "activity",
+    "trial.verdict": "activity",
     "metric": "none",
     "run.done": "news",
     "surprise": "activity",
@@ -600,6 +601,21 @@ def ledger_upsert(trial_id: str, row: dict) -> None:
     LEDGER_PATH.write_text("\n".join(lines) + "\n")
 
 
+def ledger_row(trial_id: str) -> dict | None:
+    """Parse the existing LEDGER row for trial_id, so an update can preserve
+    fields it was not given — a later pass must not blank an earlier one's work."""
+    if not LEDGER_PATH.exists():
+        return None
+    for line in LEDGER_PATH.read_text().splitlines():
+        if line.startswith("|") and f"| {trial_id} |" in line:
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) >= 7:
+                return {"run": cells[0], "exp": cells[1], "trial": cells[2],
+                        "status": cells[3], "verdict": cells[4],
+                        "path": cells[5].strip("`"), "note": cells[6]}
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Environment fingerprinting (absorbed from labloop's explogger.py)
 # ---------------------------------------------------------------------------
@@ -1096,7 +1112,10 @@ def cmd_trial_done(args) -> None:
         die("--killed requires --reason")
 
     cfg = json.loads((tdir / "config.json").read_text())
-    cfg["ended_at"] = now_iso()
+    # ended_at is provenance: stamp it once, when the trial actually ends. A later
+    # call (e.g. a verdict backfill) must not rewrite the clock (RUN_PROBLEMS #4).
+    if not cfg.get("ended_at"):
+        cfg["ended_at"] = now_iso()
     cfg["outcome"] = "killed" if args.killed else "done"
     if args.killed:
         cfg["kill_reason"] = args.reason
@@ -1106,11 +1125,13 @@ def cmd_trial_done(args) -> None:
     save_state(state)
 
     rel = str(tdir.relative_to(ROOT))
+    prev = ledger_row(trial_id) or {}
     ledger_upsert(trial_id, {
         "run": cfg.get("run", state["run"]), "exp": cfg.get("exp_id", ""),
         "status": "killed" if args.killed else "done",
-        "verdict": args.verdict or "", "path": rel,
-        "note": args.note or (args.reason if args.killed else ""),
+        "verdict": args.verdict or prev.get("verdict") or "", "path": rel,
+        "note": args.note or (args.reason if args.killed else "")
+                or prev.get("note") or "",
     })
     if args.killed:
         emit("kill", f"{cfg.get('exp_id','trial')} killed: {args.reason}",
@@ -1121,6 +1142,38 @@ def cmd_trial_done(args) -> None:
                        f"{': ' + args.verdict if args.verdict else ''}"),
          {"exp": cfg.get("exp_id", ""), "verdict": args.verdict or None,
           "killed": bool(args.killed)}, state=state, trial=trial_id)
+    print(rel)
+
+
+def cmd_trial_verdict(args) -> None:
+    """Judge a closed trial. Closing and judging are separate writes: this fills
+    the LEDGER verdict column and never touches the trial's clock or outcome."""
+    state = load_state()
+    tdir = Path(args.dir)
+    if not tdir.is_absolute():
+        tdir = ROOT / tdir
+    if not (tdir / "config.json").exists():
+        die(f"{args.dir} is not a trial dir")
+    trial_id = tdir.name
+    if args.verdict not in VERDICTS:
+        die(f"verdict must be one of {', '.join(VERDICTS)}")
+    cfg = json.loads((tdir / "config.json").read_text())
+    if cfg.get("outcome") not in ("done", "killed"):
+        die(f"{args.dir} is still open — close it with `lab trial done` first")
+
+    rel = str(tdir.relative_to(ROOT))
+    prev = ledger_row(trial_id) or {}
+    ledger_upsert(trial_id, {
+        "run": prev.get("run") or cfg.get("run", state["run"]),
+        "exp": prev.get("exp") or cfg.get("exp_id", ""),
+        "status": prev.get("status") or cfg.get("outcome", ""),
+        "verdict": args.verdict, "path": rel,
+        "note": args.note or prev.get("note") or "",
+    })
+    emit("trial.verdict",
+         args.note or f"{cfg.get('exp_id','trial')} verdict: {args.verdict}",
+         {"exp": cfg.get("exp_id", ""), "verdict": args.verdict},
+         state=state, trial=trial_id)
     print(rel)
 
 
@@ -1267,6 +1320,28 @@ def cmd_watch_start(args) -> None:
     print(wid)
 
 
+def _session_cpu_seconds(sid_pid: int) -> float:
+    """Total CPU seconds consumed by the child's session (it is launched with
+    start_new_session=True, so `ps -g <pid>` selects its whole process tree).
+    Returns 0.0 where that can't be measured; callers treat 0 growth as silence."""
+    try:
+        out = subprocess.run(["ps", "-o", "time=", "-g", str(sid_pid)],
+                             capture_output=True, text=True, timeout=10).stdout
+    except Exception:
+        return 0.0
+    total = 0.0
+    for tok in out.split():
+        days, rest = (tok.split("-", 1) if "-" in tok else ("0", tok))
+        try:
+            parts = [int(p) for p in rest.split(":")]
+        except ValueError:
+            continue
+        while len(parts) < 3:
+            parts.insert(0, 0)
+        total += int(days) * 86400 + parts[0] * 3600 + parts[1] * 60 + parts[2]
+    return total
+
+
 def cmd_watch_run(args) -> None:
     """The watcher process itself (internal; launched detached by `watch start`)."""
     path = _watch_path(args.id)
@@ -1299,16 +1374,33 @@ def cmd_watch_run(args) -> None:
                 pass
         return (time.time() - newest) if newest else 0.0
 
+    # File mtimes are a *progress* signal, not a *liveness* signal: a stage that
+    # makes dozens of sequential model calls between checkpoints writes nothing
+    # while being perfectly healthy (RUN_PROBLEMS #3, two trials killed wrongly).
+    # CPU time in the child's process tree is the liveness signal the watcher can
+    # read without the experiment's cooperation, so a stall kill now requires
+    # BOTH: no new output AND no CPU activity for stall_min.
+    cpu_seen = 0.0
+    cpu_last_tick = time.time()
+
     while True:
         rc = child.poll()
         if rc is not None:
             break
+        if stall_sec:
+            cpu_now = _session_cpu_seconds(child.pid)
+            if cpu_now > cpu_seen:
+                cpu_seen = cpu_now
+                cpu_last_tick = time.time()
+            entry["cpu_seconds"] = cpu_seen
         if kill_file.exists():
             kill_reason = kill_file.read_text().strip() or "killed by session request"
         elif time.time() > deadline:
             kill_reason = f"wall-clock budget {entry['budget_min']} min exceeded"
-        elif stall_sec and freshest_output_age() > stall_sec:
-            kill_reason = f"stalled: no new output in {entry['stall_min']} min"
+        elif (stall_sec and freshest_output_age() > stall_sec
+              and time.time() - cpu_last_tick > stall_sec):
+            kill_reason = (f"stalled: no new output and no CPU activity "
+                           f"in {entry['stall_min']} min")
         elif pattern:
             try:
                 with open(log_path, "rb") as f:
@@ -1816,8 +1908,15 @@ def main(argv: list[str] | None = None) -> None:
     t.add_argument("--verdict", help="|".join(VERDICTS))
     t.add_argument("--killed", action="store_true")
     t.add_argument("--reason", help="why it was killed")
-    t.add_argument("--note", help="one-line ledger note / event message")
+    t.add_argument("--note", help="one-line ledger note / event message "
+                                  "(omitted = keep the existing ledger note)")
     t.set_defaults(func=cmd_trial_done)
+    t = tsub.add_parser("verdict", help="judge a closed trial — fills the LEDGER "
+                                        "verdict column, never touches its clock")
+    t.add_argument("dir")
+    t.add_argument("--verdict", required=True, help="|".join(VERDICTS))
+    t.add_argument("--note", help="ledger note (omitted = keep the existing note)")
+    t.set_defaults(func=cmd_trial_verdict)
 
     sp = sub.add_parser("watch", help="detached watchdog for long-running work")
     wsub = sp.add_subparsers(dest="watch_cmd", required=True)
@@ -1827,7 +1926,8 @@ def main(argv: list[str] | None = None) -> None:
     w.add_argument("--budget-min", type=int,
                    help="wall-clock kill budget (trials default to config kill.max_wall_clock_hours)")
     w.add_argument("--stall-min", type=int, default=0,
-                   help="kill if no new output (log/results.jsonl) for this many minutes")
+                   help="kill if no new output (log/results.jsonl) AND no CPU "
+                        "activity in the child's process tree for this many minutes")
     w.add_argument("--kill-regex", help="kill when this pattern appears in new log output")
     w.add_argument("command", nargs=argparse.REMAINDER,
                    help="-- <command...> to run and supervise")
