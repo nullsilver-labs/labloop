@@ -565,5 +565,9 @@ do
   guard "$cmd" && ok "guard allows: $cmd" || bad "guard allows: $cmd"
 done
 
+# --------------------------------------------------------------------------
+# shellcheck source=scripts/acceptance_campaign.sh
+. "$SRC/scripts/acceptance_campaign.sh"
+
 printf '\n\033[1m%d passed, %d failed\033[0m\n' "$PASSED" "$FAILED"
 [ "$FAILED" -eq 0 ] || exit 1

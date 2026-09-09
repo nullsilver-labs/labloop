@@ -194,6 +194,7 @@ event type, a new optional key.
 | 1.1 | additive: model provenance — requested vs served (transcript-read) models on `session.start`/`session.end` `data`, trial `config.json` `agent`, `state.json` `models`, `run.done` `data.models`, and the `provenance` block that maps them |
 | 1.2 | additive: `note` event type (feed class `activity`) — one-line operational notes, e.g. a logged support-model substitution or a watch lifecycle fact |
 | 1.3 | additive: `trial.verdict` event type (feed class `activity`) — judging a closed trial is its own write, separate from `trial.done` |
+| 1.4 | additive: the campaign loop's events — `campaign.start`/`campaign.stop` (`news`), `candidate.launch`/`candidate.done`/`candidate.failed`/`campaign.paused` (`activity`). See NEXT.md; the phase vocabulary is unchanged until 2.0 |
 
 ## The event feed
 

@@ -1,0 +1,57 @@
+# campaign.toml — the human writes this once; `lab run` reads it and refuses to
+# continue a campaign whose file changed (a changed campaign is a new campaign).
+# See NEXT.md. Validate with `tools/lab campaign check`.
+
+[campaign]
+id   = "ns-REPLACE-ME"          # lowercase [a-z0-9-]
+task = "task.md"                # the task statement workers receive verbatim
+kind = "research"
+
+[data]
+train     = "data/train"                          # workers may read
+evaluator = "eval/score.py"                       # `score.py <predictions> <labels>` prints {"score": x, "n": k}
+baseline  = "bash eval/baseline.sh"               # the trivial solution; always candidate c0000
+
+[data.search]                                     # drives selection; labels hidden from workers
+inputs = "data/search"
+labels = "$LAB_PRIVATE/ns-REPLACE-ME/search"
+
+[data.final]                                      # read exactly once, at the end
+inputs = "data/final"
+labels = "$LAB_PRIVATE/ns-REPLACE-ME/final"
+
+[eval]
+# user = "labeval"               # run the evaluator as this Unix user (one sudoers line;
+                                 # see docs/labeval.md). Without it labels are hidden by
+                                 # convention only and REPORT.md says so.
+timeout = "10m"
+
+[resources]
+gpus             = [0]           # one job per GPU; [] means CPU-only, one slot
+max_parallel_jobs = 1
+gpu_hours_total  = 20
+job_wall_clock   = "3h"          # per job, enforced by `lab watch`
+stall_min        = 30            # kill a job with no output and no CPU for this long
+worker_model     = "claude-sonnet-5"
+worker_max_turns = 40
+
+[worker]
+# M0: any command. M1: the Claude Code wrapper. It receives LAB_CANDIDATE_DIR, LAB_JOB,
+# LAB_OPERATOR, LAB_TASK, LAB_TRAIN, LAB_SPLIT_INPUTS, LAB_PREDICTIONS_OUT,
+# CUDA_VISIBLE_DEVICES and must write code/run.sh + summary.md and run code/run.sh once.
+command = "tools/lab-worker"
+
+[selection]                      # AIRA₂ temperature-scaled rank selection
+temperature = 0.3                # over normalised rank in [0,1]; lower = greedier
+crossover_p = 0.15
+max_debug_retries = 1
+# seed = 12345                   # default: derived from campaign.id
+
+[stop]                           # any one of these ends the search
+max_candidates     = 60
+no_improvement_for = 12
+wall_clock         = "48h"
+
+[report]
+success_threshold = 0.85         # fixed now, reported against at the end; never a blocker
+higher_is_better  = true

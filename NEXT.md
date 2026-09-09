@@ -13,6 +13,13 @@ outside Meta; we do not build a hybrid we cannot validate against anything.
 Written 2026-09-09. Supersedes the first draft of this file, which still carried
 gates, phases, protocol ceremony and a forum. See §7 for what was dropped and why.
 
+**Status (2026-09-09): M0 done** on branch `aira2-loop` — `tools/lab_campaign.py`
+registers `lab campaign|candidate|eval|job|run`; `scripts/acceptance_campaign.sh`
+drives it with a scripted worker (50 checks, all passing, no LLM). The phase machine is
+untouched until M5. Known gap: two free slots in one tick may dispatch the same
+(operator, parent) pair; harmless with seeded real workers, wasteful with a
+deterministic one. Next: M1, a Claude Code worker wrapper (`tools/lab-worker`).
+
 ---
 
 ## 1. The loop
@@ -196,7 +203,7 @@ population, spend context like compute, never touch another candidate's dir.
 Smallest thing that can kill the idea first. Each has a kill criterion; if it trips,
 stop and write it down.
 
-**M0 — Loop with a scripted worker, no LLM (≈ 2 days).**
+**M0 — Loop with a scripted worker, no LLM (≈ 2 days). DONE.**
 `campaign.toml` parsing, `population.json`, `lab candidate`, `lab eval` with the
 `labeval` user and `$LAB_PRIVATE`, rank selection, stop conditions, restart from disk,
 `REPORT.md`. A toy task (fit `y = x²` on an integer grid is fine) with a shell

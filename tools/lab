@@ -61,7 +61,7 @@ from typing import Any
 # rules applied to a given line. A missing `format` means pre-1.0.
 #
 # Version history lives in README.md under "Format versioning".
-FORMAT_VERSION = "1.3"
+FORMAT_VERSION = "1.4"
 
 PHASES = ["init", "build", "pilot", "execute", "analyze", "decide", "conclude"]
 
@@ -103,6 +103,13 @@ EVENT_FEED: dict[str, str] = {
     "gate.resolved": "activity",
     "gate.overridden": "activity",
     "project.concluded": "news",
+    # 1.4 — the campaign loop (tools/lab_campaign.py, NEXT.md)
+    "campaign.start": "news",
+    "campaign.stop": "news",
+    "candidate.launch": "activity",
+    "candidate.done": "activity",
+    "candidate.failed": "activity",
+    "campaign.paused": "activity",
 }
 
 MSG_MAX = 140
@@ -1197,7 +1204,7 @@ def cmd_trial_verdict(args) -> None:
 
 WATCH_DIR = LAB_DIR / "watch"
 WATCH_ARCHIVE = WATCH_DIR / "done"
-WATCH_POLL_SEC = 15
+WATCH_POLL_SEC = float(os.environ.get("LAB_WATCH_POLL_SEC") or 15)  # tests shorten it
 WATCH_TERM_GRACE_SEC = 30
 WATCH_HEARTBEAT_STALE_SEC = 120   # 8 missed polls => the watcher itself is presumed dead
 
@@ -2173,6 +2180,15 @@ def main(argv: list[str] | None = None) -> None:
     sp.add_argument("key", nargs="?")
     sp.set_defaults(func=cmd_conf)
 
+    # The phaseless search loop (NEXT.md). Registered from its own module; a failure
+    # to import it must not take the rest of the CLI down with it.
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import lab_campaign
+        lab_campaign.register(sub, sys.modules[__name__])
+    except Exception as e:  # pragma: no cover
+        warn(f"campaign commands unavailable: {e}")
+
     args = p.parse_args(argv)
 
     # state.json / events.jsonl / LEDGER.md are read-modify-write; with detached
@@ -2180,7 +2196,7 @@ def main(argv: list[str] | None = None) -> None:
     # One blocking flock serializes them. The watcher's long-lived `_run` loop never
     # takes it (it mutates only its own registry file and shells back into `lab
     # trial done`, which takes the lock in its own short-lived process).
-    mutating = args.cmd in ("init", "log", "state", "trial", "protocol", "gate") \
+    mutating = args.cmd in ("init", "log", "state", "trial", "protocol", "gate", "eval") \
         and not (args.cmd == "state" and getattr(args, "state_cmd", "") == "get")
     if mutating:
         LAB_DIR.mkdir(parents=True, exist_ok=True)
