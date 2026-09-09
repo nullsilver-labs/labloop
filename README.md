@@ -18,16 +18,6 @@ per-phase prompts. Target host: **Claude Code**.
 Human review remains part of the process by design — gates are how the loop asks —
 and using labloop is not a requirement for any Nullsilver project.
 
-## Experimental discovery work
-
-labloop includes an opt-in, **no-spend synthetic discovery demo**:
-scripted candidate rejection/continuation, durable resource waiting, crash recovery,
-and unconfirmed reporting. It does not yet launch a live researcher or replace the
-legacy loop. A [private resource foundation](docs/resources.md) adds strict
-subscription configuration, hash-bound local allocations, and a shared SQLite
-slice ledger; **live dispatch remains disabled**. See
-[implementation status and commands](docs/discovery.md).
-
 ## The loop
 
 ```
