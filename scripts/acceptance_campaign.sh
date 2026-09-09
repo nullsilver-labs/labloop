@@ -65,6 +65,19 @@ success_threshold = -1.0
 higher_is_better = true
 EOF
 
+INIT_DIR="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-init.XXXXXX")"
+cp -R "$SRC/tools" "$SRC/templates" "$INIT_DIR/"
+assert_ok   "campaign init scaffolds a new project"           env LAB_ROOT="$INIT_DIR" "$INIT_DIR/tools/lab" campaign init acc-init
+assert_file "scaffold: campaign.toml"                          "$INIT_DIR/campaign.toml"
+assert_file "scaffold: task.md"                                "$INIT_DIR/task.md"
+assert_file "scaffold: eval/score.py"                          "$INIT_DIR/eval/score.py"
+assert_file "scaffold: eval/baseline.sh"                       "$INIT_DIR/eval/baseline.sh"
+assert_grep "scaffold: id substituted"                         'id   = "acc-init"' "$INIT_DIR/campaign.toml"
+[ -d "$PRIV2/acc-init/final" ] && ok "scaffold: private label dirs created under LAB_PRIVATE" || bad "no $PRIV2/acc-init/final"
+assert_ok   "scaffold passes campaign check as-is"             env LAB_ROOT="$INIT_DIR" "$INIT_DIR/tools/lab" campaign check
+assert_fail "campaign init refuses to overwrite"               env LAB_ROOT="$INIT_DIR" "$INIT_DIR/tools/lab" campaign init acc-init
+rm -rf "$INIT_DIR"
+
 assert_ok   "campaign check accepts the toy campaign"          "$LAB2" campaign check campaign.toml
 sed '/success_threshold/d' campaign.toml > broken.toml
 assert_fail "campaign check refuses a campaign without a pre-fixed threshold" "$LAB2" campaign check broken.toml

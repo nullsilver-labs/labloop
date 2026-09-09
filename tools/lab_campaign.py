@@ -61,6 +61,10 @@ PAID_ROUTE_ENV = ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_U
                   "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX",
                   "ANTHROPIC_CUSTOM_HEADERS"]
 
+# Trained artifacts are never inherited by a child candidate.
+WEIGHT_PATTERNS = ["*.pt", "*.pth", "*.ckpt", "*.safetensors", "*.bin", "*.npz", "*.pkl",
+                   "*.joblib", "*.h5", "*.onnx", "__pycache__"]
+
 OPERATOR_TEXT = {
     "baseline": "Produce the trivial baseline exactly as the task describes it. No cleverness.",
     "draft": "Write a first complete solution from the task statement. Prefer simple and "
@@ -143,6 +147,8 @@ class ledger_lock:
 # ---------------------------------------------------------------------------
 
 def load_campaign(path: Path) -> dict:
+    if not path.is_absolute() and (L.ROOT / path).exists():
+        path = L.ROOT / path          # relative paths are project-relative, like everything in lab
     if not path.exists():
         L.die(f"{path} not found")
     try:
@@ -256,6 +262,104 @@ def load_campaign(path: Path) -> dict:
                 L.die(f"{path.name}: data.{split}.labels {cfg['data'][split]['labels']} does not "
                       "exist and no [eval] user is set to read it for you")
     return cfg
+
+
+SCORE_STUB = """#!/usr/bin/env python3
+\"\"\"score.py <predictions.json> <labels_dir> -> {"score": accuracy, "n": N}. Stdlib only:
+this runs under `lab`'s python, not the candidates' environment.\"\"\"
+import json, sys
+preds = json.load(open(sys.argv[1]))
+labels = json.load(open(sys.argv[2] + "/labels.json"))
+if not isinstance(preds, list) or len(preds) != len(labels):
+    print(f"expected a JSON list of {len(labels)} predictions", file=sys.stderr); sys.exit(2)
+correct = sum(1 for p, y in zip(preds, labels) if p == y)
+print(json.dumps({"score": correct / len(labels), "n": len(labels)}))
+"""
+
+BASELINE_STUB = """#!/usr/bin/env bash
+# The trivial baseline (always candidate c0000). Obeys the worker contract: writes
+# code/run.sh, runs it once for the search split, writes summary.md.
+set -euo pipefail
+cd "$LAB_CANDIDATE_DIR"
+cat > code/run.sh <<'RUN'
+#!/usr/bin/env bash
+set -euo pipefail
+python3 - "$LAB_TRAIN/labels.json" "$LAB_SPLIT_INPUTS" "$LAB_PREDICTIONS_OUT" <<'PY'
+import json, sys
+from collections import Counter
+labels = json.load(open(sys.argv[1]))
+major = Counter(labels).most_common(1)[0][0]
+n = len(json.load(open(sys.argv[2] + "/inputs.json")))     # EDIT: how many inputs the split has
+json.dump([major] * n, open(sys.argv[3], "w"))
+PY
+RUN
+bash code/run.sh
+printf '# baseline\\n\\nPredicts the most frequent training label for every input.\\n' > summary.md
+"""
+
+TASK_STUB = """# Task: REPLACE-ME
+
+One paragraph: what is being predicted, what the score is (and whether higher is
+better), what the trivial baseline scores, what a good solution scores.
+
+## Data (read-only)
+- `$LAB_TRAIN/...` -- describe files and shapes
+- `$LAB_SPLIT_INPUTS/...` -- the split to predict; labels are hidden, never look for them
+
+## Environment
+- Interpreter for `code/run.sh`: REPLACE-ME (absolute path; the system python3 has nothing)
+- One GPU via `CUDA_VISIBLE_DEVICES`. No network, no installs.
+
+## What `code/run.sh` must do
+1. Train if no weights exist (save them inside the candidate dir), else load them.
+2. Predict every input of `$LAB_SPLIT_INPUTS`, in order.
+3. Write `$LAB_PREDICTIONS_OUT` (JSON).
+4. Finish in under REPLACE-ME minutes.
+Seed with the job card's seed. Write `summary.md`: what you built/changed, what you observed.
+"""
+
+
+def cmd_campaign_init(args) -> None:
+    """Scaffold a campaign in the current repo: campaign.toml, task.md, eval/, data/."""
+    cid = args.id
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,63}", cid):
+        L.die("id must be lowercase [a-z0-9-]")
+    root = L.ROOT
+    if (root / "campaign.toml").exists() and not args.force:
+        L.die("campaign.toml exists (use --force to overwrite the scaffold files)")
+    tmpl = Path(L.__file__).resolve().parent.parent / "templates" / "campaign.toml"
+    (root / "campaign.toml").write_text(tmpl.read_text().replace("ns-REPLACE-ME", cid))
+    (root / "eval").mkdir(exist_ok=True)
+    for name, body, mode in (("eval/score.py", SCORE_STUB, 0o755),
+                             ("eval/baseline.sh", BASELINE_STUB, 0o755),
+                             ("task.md", TASK_STUB, 0o644)):
+        p = root / name
+        if not p.exists() or args.force:
+            p.write_text(body)
+            p.chmod(mode)
+    for d in ("data/train", "data/search", "data/final"):
+        (root / d).mkdir(parents=True, exist_ok=True)
+    priv = os.environ.get("LAB_PRIVATE")
+    if priv:
+        for split in ("search", "final"):
+            Path(os.path.expanduser(priv), cid, split).mkdir(parents=True, exist_ok=True)
+        os.chmod(os.path.expanduser(priv), 0o700)
+    gi = root / ".gitignore"
+    want = [".lab/", ".venv/", "*.pt", "*.pth", "*.npy", "__pycache__/"]
+    have = gi.read_text().splitlines() if gi.exists() else []
+    missing = [w for w in want if w not in have]
+    if missing:
+        gi.write_text("\n".join(have + missing) + "\n")
+    where = (f"{priv}/{cid}/{{search,final}}/" if priv
+             else f"$LAB_PRIVATE/{cid}/{{search,final}}/  (export LAB_PRIVATE first)")
+    print(f"""scaffolded campaign {cid}:
+  campaign.toml    edit [data], [resources], [stop], [report].success_threshold
+  task.md          the statement workers receive verbatim (REPLACE-ME markers)
+  eval/score.py    stdlib evaluator: <predictions> <labels_dir> -> {{"score","n"}}
+  eval/baseline.sh the trivial baseline, run as candidate c0000
+  data/train, data/search, data/final      inputs live here
+  {where}   labels live here, outside the repo
+then: tools/lab campaign check; see docs/campaign-setup.md (venv, trust, labeval).""")
 
 
 def cmd_campaign_check(args) -> None:
@@ -379,9 +483,13 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
     (cdir / "code").mkdir()
     (cdir / "out").mkdir()
     if parents:
+        # Inherit the parent's code, never its trained artifacts: a child that finds
+        # weights would load them and skip training, and "improve" would silently be
+        # the parent scored twice (seen on the first live run).
         src = cand_dir(parents[0]) / "code"
         if src.exists():
-            shutil.copytree(src, cdir / "code", dirs_exist_ok=True)
+            shutil.copytree(src, cdir / "code", dirs_exist_ok=True,
+                            ignore=shutil.ignore_patterns(*WEIGHT_PATTERNS))
     seed = rng.randrange(2**31)
     snapshot = {
         "format": L.FORMAT_VERSION,
@@ -431,6 +539,7 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
         "contract": {
             "write": "code/run.sh (reads $LAB_SPLIT_INPUTS, writes $LAB_PREDICTIONS_OUT) and summary.md",
             "run": "code/run.sh once for the search split before exiting",
+            "inherited": "the parent's code/ without its trained weights (*.pt etc.); you train afresh",
             "final": "lab re-runs code/run.sh later with LAB_SPLIT_INPUTS pointing at the final split; "
                      "it must reuse what you trained (persist weights inside the candidate dir and "
                      "load them when present), so the final score is of the same model",
@@ -980,6 +1089,7 @@ def cmd_job_card(args) -> None:
            f"- Write `{card['contract']['write']}`.",
            f"- Run `{card['contract']['run']}`; `{card['contract']['predictions']}` must exist when you exit.",
            f"- {card['contract']['final']}.",
+           f"- Inherited: {card['contract'].get('inherited', 'nothing')}.",
            f"- Seed everything with {card['seed']}.",
            f"- Turn budget: {card['contract']['max_turns']}. If you cannot finish, write summary.md "
            "saying what you learned and exit; the job is re-dispatched once with your summary.",
@@ -1011,6 +1121,10 @@ def register(sub, lab_module) -> None:
 
     sp = sub.add_parser("campaign", help="the search loop's campaign: check | status | stop")
     s2 = sp.add_subparsers(dest="campaign_cmd", required=True)
+    q = s2.add_parser("init", help="scaffold campaign.toml, task.md, eval/, data/ here")
+    q.add_argument("id")
+    q.add_argument("--force", action="store_true")
+    q.set_defaults(func=cmd_campaign_init)
     q = s2.add_parser("check", help="validate a campaign.toml")
     q.add_argument("file", nargs="?", default="campaign.toml")
     q.set_defaults(func=cmd_campaign_check)
