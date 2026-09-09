@@ -154,6 +154,8 @@ assert_fail "guard: nobody deletes a candidate dir"           hook_worker "rm -r
 assert_fail "guard: nobody writes fitness.json by hand"       hook_worker "echo 1 > candidates/c0004/fitness.json"
 assert_fail "guard: nobody writes population.json by hand"    hook_worker "echo {} > population.json"
 
+. "$SRC/scripts/acceptance_worker.sh"
+
 cd "$WORK" || return 1
 export LAB_ROOT="$_saved_root"
 unset LAB_PRIVATE LAB_WATCH_POLL_SEC FAIL_ON

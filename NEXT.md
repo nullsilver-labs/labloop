@@ -18,7 +18,9 @@ registers `lab campaign|candidate|eval|job|run`; `scripts/acceptance_campaign.sh
 drives it with a scripted worker (50 checks, all passing, no LLM). The phase machine is
 untouched until M5. Known gap: two free slots in one tick may dispatch the same
 (operator, parent) pair; harmless with seeded real workers, wasteful with a
-deterministic one. Next: M1, a Claude Code worker wrapper (`tools/lab-worker`).
+deterministic one. `tools/lab-worker` (M1's one-session-per-job wrapper) exists and is
+tested with a fake `claude`; what M1 still needs is a real task and one live run on the
+Max window, which is the human's call (§9).
 
 ---
 

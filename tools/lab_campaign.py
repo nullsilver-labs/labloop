@@ -22,6 +22,7 @@ Every job is a worker process under `lab watch`. The worker's contract:
   must write   code/run.sh   — reads $LAB_SPLIT_INPUTS, writes $LAB_PREDICTIONS_OUT
                summary.md    — one page: what changed, what happened
   must run     code/run.sh once, so predictions for the search split exist on exit
+  exit codes   0 contract met · 2 contract unmet (→ exec "invalid") · other → "failed"
 
 `lab eval` is the only reader of labels. Fitness is written by `lab`, never by a
 worker. The final split is read exactly once per campaign.
@@ -542,6 +543,9 @@ def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
         exec_status, reason = "invalid", "worker exited 0 but wrote no out/predictions-search.json"
     elif exec_status == "killed":
         reason = entry.get("kill_reason") or "killed by watcher"
+    elif entry.get("exit_code") == 2:
+        # the worker's own verdict: the session ran but left no runnable candidate
+        exec_status, reason = "invalid", "worker reported the contract unmet (exit 2)"
     else:
         reason = f"worker exited {entry.get('exit_code')}"
     c["exec"] = exec_status

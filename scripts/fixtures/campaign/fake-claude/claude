@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# A stand-in for the `claude` CLI so tools/lab-worker can be tested without a session.
+# Parses the flags lab-worker passes, "acts" on the job card by behaving like the
+# scripted worker for the operator named in the card, and prints one JSON result the
+# way `claude -p --output-format json` does. FAKE_CLAUDE_MODE=lazy makes it do nothing
+# (contract unmet); FAKE_CLAUDE_MODE=crash makes it exit 1 with no output.
+set -euo pipefail
+prompt=""; model=""; turns=""; fmt="text"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -p) prompt="$2"; shift 2;;
+    --model) model="$2"; shift 2;;
+    --max-turns) turns="$2"; shift 2;;
+    --permission-mode) shift 2;;
+    --output-format) fmt="$2"; shift 2;;
+    *) shift;;
+  esac
+done
+case "${FAKE_CLAUDE_MODE:-work}" in
+  crash) echo "fake claude: simulated launch failure" >&2; exit 1;;
+  lazy) result="I looked at the task and did nothing.";;
+  *)
+    # The card names the operator in its title: "# Job c0003 — operator `improve`"
+    op="$(printf '%s' "$prompt" | sed -n 's/.*operator `\([a-z]*\)`.*/\1/p' | head -1)"
+    LAB_OPERATOR="$op" bash "$(dirname "$0")/../worker.sh"
+    result="Wrote code/run.sh for operator $op and ran it. Model: $(cat "$LAB_CANDIDATE_DIR/code/model.json")";;
+esac
+python3 - "$result" "$model" "$turns" <<'PY'
+import json, sys, uuid
+print(json.dumps({"type": "result", "subtype": "success", "is_error": False,
+                  "duration_ms": 1234, "num_turns": 3, "result": sys.argv[1],
+                  "session_id": str(uuid.uuid4()), "total_cost_usd": 0.0,
+                  "usage": {"input_tokens": 1000, "output_tokens": 200},
+                  "modelUsage": {sys.argv[2]: {"inputTokens": 1000, "outputTokens": 200}}}))
+PY
