@@ -431,6 +431,9 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
         "contract": {
             "write": "code/run.sh (reads $LAB_SPLIT_INPUTS, writes $LAB_PREDICTIONS_OUT) and summary.md",
             "run": "code/run.sh once for the search split before exiting",
+            "final": "lab re-runs code/run.sh later with LAB_SPLIT_INPUTS pointing at the final split; "
+                     "it must reuse what you trained (persist weights inside the candidate dir and "
+                     "load them when present), so the final score is of the same model",
             "predictions": "out/predictions-search.json",
             "may_write": rel(cdir), "may_read": [rel(cfg["data"]["train"]),
                                                   rel(cfg["data"]["search"]["inputs"]),
@@ -976,6 +979,7 @@ def cmd_job_card(args) -> None:
            f"- You may read: {', '.join('`' + p + '`' for p in card['contract']['may_read'])}.",
            f"- Write `{card['contract']['write']}`.",
            f"- Run `{card['contract']['run']}`; `{card['contract']['predictions']}` must exist when you exit.",
+           f"- {card['contract']['final']}.",
            f"- Seed everything with {card['seed']}.",
            f"- Turn budget: {card['contract']['max_turns']}. If you cannot finish, write summary.md "
            "saying what you learned and exit; the job is re-dispatched once with your summary.",

@@ -14,6 +14,30 @@ read -r sid transcript <<<"$(printf '%s' "$input" | python3 -c \
   'import json,sys;d=json.load(sys.stdin);print(d.get("session_id","unknown"),
    d.get("transcript_path",""))' 2>/dev/null || echo "unknown ")"
 
+# A campaign worker (launched by `lab run` via tools/lab-worker) is briefed by its job
+# card, not by the phase machine. Record the session for `lab usage` and stop here.
+if [ "${LAB_ROLE:-}" = "worker" ]; then
+  mkdir -p .lab/sessions
+  python3 - "$sid" "worker" "${transcript:-}" "${LAB_CANDIDATE_DIR:-}" <<'PY' 2>/dev/null
+import json, os, sys, time
+sid, role, transcript, cdir = sys.argv[1:5]
+json.dump({"session_id": sid, "start_epoch": time.time(), "phase": None, "run": None,
+           "role": role, "candidate_dir": cdir, "transcript_path": transcript},
+          open(os.path.join(".lab", "sessions", f"{sid}.json"), "w"))
+PY
+  cat <<EOF
+## Lab — you are a campaign WORKER (one job, one session)
+
+Your whole brief is the job card in your prompt: operator, task, contract, parents.
+You may write only inside \`${LAB_CANDIDATE_DIR:-your candidate dir}\`. Fitness comes from
+\`lab eval\`, never from you; you never look for labels. When code/run.sh has run and
+out/predictions-search.json and summary.md exist, stop. If you cannot finish within
+your turn budget, write summary.md saying what you learned and stop. The rest of
+CLAUDE.md (phases, HANDOFF.md, gates) does not apply to you.
+EOF
+  exit 0
+fi
+
 if [ ! -f state.json ]; then
   cat <<'EOF'
 ## nullsilver lab — not initialized

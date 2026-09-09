@@ -1,5 +1,10 @@
 # The lab
 
+> **Campaign workers** (`LAB_ROLE=worker`, launched by `lab run`): your job card is the
+> whole brief. You edit only your candidate dir, you never read labels, you stop when
+> `code/run.sh` has produced `out/predictions-search.json` and `summary.md` exists.
+> Everything below describes the phase machine and does not apply to you.
+
 One repo, one research project, rendered live on nullsilver.com. A fixed state machine
 of phases runs it, each phase a fresh session with its own prompt in
 `.claude/prompts/`. Procedure lives there and in the hooks — **this file is the
