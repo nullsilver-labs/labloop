@@ -18,6 +18,18 @@ per-phase prompts. Target host: **Claude Code**.
 Human review remains part of the process by design — gates are how the loop asks —
 and using labloop is not a requirement for any Nullsilver project.
 
+## The campaign loop (experimental, replaces the phases — see NEXT.md)
+
+`tools/lab run campaign.toml` runs an AIRA₂-style search instead of the phase machine
+below: a population of candidates in `candidates/`, a mechanical scheduler that
+rank-selects a parent and an operator (`draft`, `improve`, `crossover`, `debug`),
+one short headless Claude Code session per job (`tools/lab-worker`), fitness from a
+hidden search split that only `lab eval` can read, a final split read once at the end,
+and `REPORT.md` with a claim against a threshold fixed in `campaign.toml`. Every job
+runs under `lab watch`; the loop restarts from `population.json`. Setup:
+[docs/campaign-setup.md](docs/campaign-setup.md). Plan and status: [NEXT.md](NEXT.md).
+The phase machine remains until the loop has run on a real task (NEXT.md M5).
+
 ## The loop
 
 ```
