@@ -1,15 +1,32 @@
-# nullsilver lab
+# labloop
 
-A repo template for **agent-driven research that runs itself in public**. One repo is
-one research project. You write and critique `PROTOCOL.md`; from then on a fixed state
-machine of phases runs the project, each phase a fresh Claude Code session. Two
-machine-readable files — `state.json` and `events.jsonl` — are the contract with
-nullsilver.com, which renders the project live.
+Tooling for **agent-assisted research**: a repo template that organizes a protocol,
+agent-driven experiment phases, and trial records in one repository. One repo is one
+research project. You write and critique `PROTOCOL.md`; a fixed state machine of
+phases then works through the experiments it specifies, each phase a fresh Claude
+Code session, stopping at every decision that needs a person. Two machine-readable
+files — `state.json` and `events.jsonl` — describe the project's state in a
+published format, so a site such as nullsilver.com can render a project that opts in.
 
-It is the nullsilver variant of [labloop](https://github.com/nullsilver-labs/labloop),
-with the same values — pre-registration, numeric gates, honest verdicts, evidence is
-never deleted — but with the procedure moved out of prose and into hooks, a CLI, and
+It derives from [marcodsn/labloop](https://github.com/marcodsn/labloop), with the
+same values — pre-registration, numeric gates, honest verdicts, evidence is never
+deleted — but with the procedure moved out of prose and into hooks, a CLI, and
 per-phase prompts. Target host: **Claude Code**.
+
+**Status: experimental.** The state machine is exercised end to end by
+`scripts/acceptance.sh` without an LLM; everything past that is under development.
+Human review remains part of the process by design — gates are how the loop asks —
+and using labloop is not a requirement for any Nullsilver project.
+
+## Experimental discovery work
+
+The `aira-adj` branch includes an opt-in, **no-spend synthetic discovery demo**:
+scripted candidate rejection/continuation, durable resource waiting, crash recovery,
+and unconfirmed reporting. It does not yet launch a live researcher or replace the
+legacy loop. A [private resource foundation](docs/resources.md) adds strict
+subscription configuration, hash-bound local allocations, and a shared SQLite
+slice ledger; **live dispatch remains disabled**. See
+[implementation status and commands](docs/discovery.md).
 
 ## The loop
 
@@ -74,7 +91,7 @@ without an accurate `HANDOFF.md` (a Stop hook enforces this).
 PROTOCOL.md          # the project: frontmatter contract + prose        (YOU write)
 protocol/revNNN.md   # frozen revisions — the history of the question
 state.json           # machine state; the site polls it                 (lab writes)
-events.jsonl         # append-only public event feed; the site tails it (lab writes)
+events.jsonl         # append-only event feed, safe to publish; a site can tail it (lab writes)
 FORMAT.json          # the output-format contract, for machine consumers (generated)
 plan.json            # the current run's machine plan (init compiles it)
 HANDOFF.md           # phase → phase handoff, overwritten every session
@@ -188,19 +205,21 @@ event type, a new optional key.
 | 1.2 | additive: `note` event type (feed class `activity`) — one-line operational notes, e.g. a logged support-model substitution or a watch lifecycle fact |
 | 1.3 | additive: `trial.verdict` event type (feed class `activity`) — judging a closed trial is its own write, separate from `trial.done` |
 
-## The public feed
+## The event feed
 
-`events.jsonl` is public in realtime, so `lab log` enforces the contract mechanically:
+`events.jsonl` is written to be published as-is — a public repo, a site tailing it —
+so `lab log` enforces the contract mechanically:
 closed set of event types, `msg` collapsed to one line and truncated at 140 chars,
 events capped at 4 KB, `metric` events throttled to one per trial per minute (full
 resolution stays in `results.jsonl`), and **redaction always** — `sk-…`, `AKIA…`,
 `hf_…`, `ghp_…`, bearer tokens, plus the literal values of every env var named in
 `.lab-redact`.
 
-Each type has a fixed feed class: `news` (`project.created`, `protocol.revised`,
-`run.done`, `project.concluded`) reaches the homepage and RSS; `activity` (phases,
-sessions, predictions, trials, surprises, kills, gates) reaches only the project
-timeline; `metric` is chart data and never a feed item. Heartbeats are not events.
+Each type has a fixed feed class, for whatever consumes the feed: `news`
+(`project.created`, `protocol.revised`, `run.done`, `project.concluded`) is eligible
+for a homepage and RSS; `activity` (phases, sessions, predictions, trials, surprises,
+kills, gates) for a project timeline only; `metric` is chart data and never a feed
+item. Heartbeats are not events.
 The authoritative table is `FORMAT.json` → `events.types`; read it from there.
 
 Set `NULLSILVER_INGEST_URL` (+ `NULLSILVER_TOKEN`) for realtime push; it is

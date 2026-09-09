@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "project_id": "replace-with-unique-project-id",
+  "mode": "discovery",
+  "mission_file": "MISSION.md",
+  "routing": {"research": ["claude_personal:research"]},
+  "allocations": {
+    "claude_max": {
+      "campaign_slices": 4,
+      "daily_slices": 2,
+      "confirmation_slices": 1,
+      "finalization_slices": 1
+    }
+  },
+  "max_campaign_wall_hours": 168
+}

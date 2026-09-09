@@ -2035,6 +2035,14 @@ def main(argv: list[str] | None = None) -> None:
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
 
+    # Opt-in, private synthetic demo; legacy state and public format are untouched.
+    from labloop_discovery import add_parser as add_discovery_parser
+    add_discovery_parser(sub)
+    from labloop_preflight import add_parser as add_preflight_parser
+    from labloop_sandbox import add_parser as add_sandbox_parser
+    add_preflight_parser(sub)
+    add_sandbox_parser(sub)
+
     sp = sub.add_parser("init", help="bootstrap the repo from PROTOCOL.md")
     sp.add_argument("--force", action="store_true")
     sp.set_defaults(func=cmd_init)
