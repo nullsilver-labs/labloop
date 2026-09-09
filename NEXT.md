@@ -257,7 +257,43 @@ About three weeks, with the runs that decide whether to continue interleaved.
   is the restart-safe ledger. Only its `scripts/acceptance.sh` fixes are cherry-picked
   onto `main`; the branch is closed.
 
-## 8. Two decisions that are still yours
+## 8. Adopted from the 2026-09-06 "budget-aware autonomous discovery" proposal
+
+That proposal is the design behind `aira-adj`. Most of it is spending governance for
+providers this setup does not have (see the assessment in the session log); these
+parts are right and are folded in here:
+
+- **Four separate statuses, never one GO/NO-GO.** Trial execution
+  (`completed|failed|killed|invalid`), candidate (`queued|running|evaluated|failed|
+  frozen`), claim (`untested|supported|not_supported|inconclusive`, written only by
+  `lab run` from the final split against `success_threshold`), campaign
+  (`running|waiting_usage|finished`). `population.json` carries the first two,
+  `REPORT.md` the last two.
+- **Auth preflight before the first session.** An API key or other credential source
+  overrides subscription login in Claude Code, and `--bare` bypasses it. `lab run`
+  refuses to start if `ANTHROPIC_API_KEY` or an endpoint override is set, and never
+  passes `--bare`. Checked once at campaign start and recorded in `REPORT.md`.
+- **Waiting is a state, not an error.** `waiting_usage` carries a reason and the next
+  eligible time; no worker is asked to poll.
+- **Measure the loop against a baseline of its own.** M1/M2 report, per task: human
+  interventions and minutes, verified final score, GPU-hours, Max window usage,
+  invalid-candidate rate. Compare against (a) the phase machine on `main` and (b) one
+  plain interactive Claude Code session given the same task and evaluator. Adoption
+  criterion: fewer human interventions with no worse verified outcome at equal
+  authorized resources. Small samples prove engineering usefulness, not superiority.
+- **Tests from its §12** that apply without a paid provider: subscription exhausted
+  mid-session → deferred, no polling; turn ceiling → summary and re-dispatch, not a
+  gate; worker alters evidence or `$LAB_PRIVATE` → denied by the OS, not a prompt;
+  secret planted in a log → not in `events.jsonl`; restart mid-settle → no duplicate.
+- **aira-dojo is CC BY-NC 4.0; labloop is MIT.** Implement AIRA₂'s ideas, vendor
+  nothing.
+
+Not adopted: multi-pool/multi-provider ledger, prepaid-credit route, hash-bound
+approvals, discovery/verification modes, "keep legacy operation available",
+per-campaign caps of three candidates, one checkpointed researcher. Reasons in §7
+and in the assessment.
+
+## 9. Two decisions that are still yours
 
 1. **First task for M1.** Sub-hour on a 3090, known answer, natural held-out split.
    Pick it before M0 so the fixture matches.
