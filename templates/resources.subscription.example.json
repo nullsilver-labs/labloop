@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "ledger_path": "~/.local/share/labloop/resources.sqlite3",
+  "new_cash_spending": {
+    "enabled": false,
+    "currency": "EUR",
+    "monthly_limit": "0.00"
+  },
+  "providers": {
+    "claude_personal": {
+      "enabled": true,
+      "adapter": "claude_code_cli",
+      "authentication": "native_subscription",
+      "pool": "claude_max",
+      "models": {"research": "sonnet"},
+      "allow_subagents": false,
+      "allow_paid_features": false
+    }
+  },
+  "pools": {
+    "claude_max": {
+      "kind": "subscription",
+      "max_parallel_sessions": 1,
+      "max_worker_slices_per_day": 4,
+      "max_turns_per_slice": 20,
+      "max_slice_wall_seconds": 900,
+      "allow_paid_overage": false
+    }
+  }
+}

@@ -566,5 +566,14 @@ do
 done
 
 # --------------------------------------------------------------------------
+section "Synthetic discovery (no provider calls or legacy state changes)"
+assert_ok "discovery recovery, reservations, waits and reports" python3 "$SRC/scripts/test_discovery.py"
+assert_ok "private resource config and cross-project atomic admission" python3 "$SRC/scripts/test_resources.py"
+assert_ok "offline multidimensional confirmation packet accounting" python3 "$SRC/scripts/test_resource_packets.py"
+assert_ok "offline supervisor lease fencing and reconciliation" python3 "$SRC/scripts/test_resource_leases.py"
+assert_ok "canonical v2 synthetic discovery integration and external kill recovery" python3 "$SRC/scripts/test_integration.py"
+assert_ok "offline authentication and billing preflight fixtures" python3 "$SRC/scripts/test_preflight.py"
+assert_ok "offline Linux sandbox argument and adversarial fixtures" python3 "$SRC/scripts/test_sandbox.py"
+
 printf '\n\033[1m%d passed, %d failed\033[0m\n' "$PASSED" "$FAILED"
 [ "$FAILED" -eq 0 ] || exit 1
