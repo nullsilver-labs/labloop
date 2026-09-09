@@ -45,7 +45,8 @@ cp -R "$SRC/tools" "$SRC/templates" "$SRC/.claude" "$WORK/"
 cp "$SRC/.lab-redact" "$SRC/.gitignore" "$SRC/CLAUDE.md" "$WORK/"
 cd "$WORK" || exit 1
 export LAB_ROOT="$WORK"
-unset CLAUDE_PROJECT_DIR
+# Do not inherit the invoking driver's role or model into synthetic sessions.
+unset CLAUDE_PROJECT_DIR LAB_ROLE LAB_MODEL
 export NULLSILVER_TOKEN="tok_supersecret_value_0987"   # must never reach the feed
 unset NULLSILVER_INGEST_URL
 LAB="$WORK/tools/lab"
@@ -278,8 +279,23 @@ cat > "$TRANSCRIPT" <<'EOF'
 {"type":"assistant","message":{"role":"assistant","model":"claude-sonnet-5","content":[]}}
 EOF
 
+# Non-phase sessions may record usage metadata, but must not publish events,
+# mutate state, or claim the live phase's transcript pointer.
+for role in adhoc orchestrator; do
+  before=$(sha256sum events.jsonl state.json)
+  assert_ok "$role SessionStart hook succeeds" bash -c '
+    printf '\''{"session_id":"%s","transcript_path":"%s"}'\'' "$1" "$2" |
+      LAB_ROLE="$1" LAB_MODEL=claude-opus-5 CLAUDE_PROJECT_DIR="$3" \
+      bash .claude/hooks/session_start.sh
+  ' _ "$role" "$TRANSCRIPT" "$WORK"
+  assert_file "$role session records usage metadata" ".lab/sessions/$role.json"
+  assert_eq "$role session leaves events and state untouched" \
+    "$(sha256sum events.jsonl state.json)" "$before"
+  assert_ok "$role session does not claim the live pointer" test ! -e .lab/session-current
+done
+
 printf '{"session_id":"prov","transcript_path":"%s"}' "$TRANSCRIPT" | \
-  LAB_MODEL=claude-opus-5 CLAUDE_PROJECT_DIR="$WORK" \
+  LAB_ROLE=phase LAB_MODEL=claude-opus-5 CLAUDE_PROJECT_DIR="$WORK" \
   bash .claude/hooks/session_start.sh >/dev/null 2>&1
 assert_grep "the SessionStart hook records the transcript path" \
             "transcript-test.jsonl" .lab/sessions/prov.json
@@ -301,6 +317,9 @@ assert a['served']==['claude-fable-5','claude-sonnet-5'], a
 "
 echo "# provenance smoke" > "$MDIR/summary.md"; "$LAB" trial done "$MDIR" >/dev/null 2>&1
 
+# Pin this fixture rather than depending on the production model selection.
+cp .claude/loop.conf .claude/loop.conf.provenance-bak
+sed 's/^execute=.*/execute=claude-fable-5/' .claude/loop.conf.provenance-bak > .claude/loop.conf
 GDIR=$(env -u LAB_MODEL "$LAB" trial new exp01 --seed 3 \
         --command "python code/exp01.py" 2>/dev/null)
 assert_grep "without LAB_MODEL, requested falls back to loop.conf" \
@@ -308,6 +327,7 @@ assert_grep "without LAB_MODEL, requested falls back to loop.conf" \
 assert_grep "and the fallback is the conf value" \
             '"requested": "claude-fable-5"' "$GDIR/config.json"
 echo "# provenance smoke" > "$GDIR/summary.md"; "$LAB" trial done "$GDIR" >/dev/null 2>&1
+mv .claude/loop.conf.provenance-bak .claude/loop.conf
 
 assert_eq "lab model --json reports both facts in the recorded shape" \
   "$(LAB_MODEL=claude-opus-5 "$LAB" model --json)" \
@@ -545,6 +565,5 @@ do
   guard "$cmd" && ok "guard allows: $cmd" || bad "guard allows: $cmd"
 done
 
-# --------------------------------------------------------------------------
 printf '\n\033[1m%d passed, %d failed\033[0m\n' "$PASSED" "$FAILED"
 [ "$FAILED" -eq 0 ] || exit 1
