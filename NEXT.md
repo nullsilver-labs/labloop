@@ -18,9 +18,21 @@ registers `lab campaign|candidate|eval|job|run`; `scripts/acceptance_campaign.sh
 drives it with a scripted worker (50 checks, all passing, no LLM). The phase machine is
 untouched until M5. Known gap: two free slots in one tick may dispatch the same
 (operator, parent) pair; harmless with seeded real workers, wasteful with a
-deterministic one. `tools/lab-worker` (M1's one-session-per-job wrapper) exists and is
-tested with a fake `claude`; what M1 still needs is a real task and one live run on the
-Max window, which is the human's call (§9).
+deterministic one.
+
+**M1 done (2026-09-09, live).** Project `/mnt/data/projects/nullsilver/labloop-m1`:
+MNIST, one RTX 3090, Sonnet workers, greedy draft/improve, 5 candidates. Baseline 0.1172;
+draft 0.9864 on the hidden search split at the first attempt; three improves 0.9863 /
+0.9862 / 0.9870; frozen c0004 scored **0.9875 on the final split, claim supported**
+against the pre-fixed 0.985. Sessions: 12–17 turns, 83–134 s, median list-price
+equivalent $0.29 on subscription; GPU 0.13 h; wall clock 8.5 min. Both kill criteria
+cleared: a Sonnet worker produces a runnable candidate well inside 40 turns, and a
+candidate costs a small fraction of a phase session. Caveats: five candidates is a probe,
+not a search; MNIST improvements sit at the noise floor after 5 epochs; privilege
+separation was off. Two bugs found and fixed by the run: children inherited parent
+weights, and headless sessions in an untrusted directory ignore the project allow-list
+(docs/campaign-setup.md). Next: M2 (crossover, temperature > 0, 24 h on a task with
+headroom) and M3 (usage governor) before any unattended run.
 
 ---
 
@@ -215,7 +227,7 @@ kill `lab run` mid-settle → restart settles once, no double count; `final` rea
 *Kill if:* the privilege separation cannot be made to work on stock Ubuntu without
 root at run time.
 
-**M1 — Real worker, one GPU (≈ 3 days).**
+**M1 — Real worker, one GPU (≈ 3 days). DONE, see status above.**
 `draft` and `improve` only, greedy selection, one slot, a sub-hour task with a known
 answer and a natural held-out split. Run for one Max window.
 *Kill if:* a Sonnet worker cannot reliably produce a runnable candidate from the task
