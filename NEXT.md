@@ -34,6 +34,23 @@ weights, and headless sessions in an untrusted directory ignore the project allo
 (docs/campaign-setup.md). Next: M2 (crossover, temperature > 0, 24 h on a task with
 headroom) and M3 (usage governor) before any unattended run.
 
+**M2 prepared (2026-09-10), not yet run.** Task with headroom: CIFAR-10, projects
+`/mnt/data/projects/nullsilver/labloop-m2` (search: temperature 0.3, crossover 0.15) and
+`labloop-m2-greedy` (control: temperature 0.01, crossover 0; same data, budgets and
+threshold, only `[selection]` and the id differ). Splits: train 45k, search 5k (from the
+official train set, seed 20260910), final = official 10k test; labels under
+`$LAB_PRIVATE/m2-cifar10`. Reference run (not a candidate, scratch script, GPU 0): a
+small ResNet-style CNN with flip/crop augmentation trains at 3 s/epoch on the 3090;
+10 epochs → 0.7726 on the search split, 60 epochs (173 s) → 0.9392. So the pre-fixed
+`success_threshold = 0.90` is reachable well inside the 15-minute training budget, and
+the majority baseline (≈ 0.10) leaves room for `improve`/`crossover` to show progress.
+M2's kill criterion reads the search campaign's best search fitness against the greedy
+control's at equal GPU-hours. Launch: `export LAB_PRIVATE=~/.local/share/labloop-private;
+tools/lab watch start --op campaign --budget-min 1500 -- tools/lab run campaign.toml`
+in each project (sequentially on GPU 0 for a like-for-like comparison; the second GPU is
+an RTX PRO 4000, not a 3090). Both projects need the Claude Code trust flag first
+(docs/campaign-setup.md step 5).
+
 **M3 built (2026-09-10), not yet run unattended.** `[usage]` in `campaign.toml`; the
 governor lives in `tools/lab_campaign.py` (`usage_state`, `govern`, `defer_job`).
 Rolling-window estimate from each session's `total_cost_usd` plus a reservation per
