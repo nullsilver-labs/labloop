@@ -1645,6 +1645,8 @@ def cmd_job_card(args) -> None:
 def register(sub, lab_module) -> None:
     global L
     L = lab_module
+    import lab_serve
+    lab_serve.register(sub, lab_module)
 
     sp = sub.add_parser("campaign", help="the search loop's campaign: check | status | stop")
     s2 = sp.add_subparsers(dest="campaign_cmd", required=True)

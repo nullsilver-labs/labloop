@@ -63,6 +63,7 @@ the pre-fixed threshold, and exits. Kill it and start it again: it resumes from
    tools/lab watch start --op campaign --budget-min 1500 -- tools/lab run campaign.toml
    tools/lab campaign status          # any time, from another shell
    tools/lab campaign usage           # the usage governor's view
+   tools/lab serve                    # the same, as a page on http://<this host>:8791/
    tools/lab campaign stop [--now]    # stop dispatching (and kill running jobs)
    ```
 5. **Read `REPORT.md`** when it finishes: baseline, best by search, the one final
@@ -133,6 +134,7 @@ lab eval <candidate dir> [--split search]       the only reader of labels; final
 lab job card <candidate dir>                     the job card a worker receives
 lab watch start --op NAME --budget-min N [--stall-min N --kill-regex RE] -- <cmd>
 lab watch list | check | kill <id> --reason … | close <id>
+lab serve [--bind 0.0.0.0] [--port 8791]        read-only page for the LAN: population, timeline, report
 lab log <type> --msg "…" [--data '{…}'] [--candidate <id>]
 lab events tail -n 20 [--class news|activity]
 lab usage [--since YYYY-MM-DD] [--json]

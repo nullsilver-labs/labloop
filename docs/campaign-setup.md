@@ -41,6 +41,7 @@ export LAB_PRIVATE=~/.local/share/labloop-private
 tools/lab campaign check
 tools/lab run campaign.toml --poll-sec 10        # or under: lab watch start --op campaign --budget-min N -- tools/lab run …
 tools/lab campaign status                        # any time, from another shell
+tools/lab serve                                  # read-only page for a phone on the LAN (port 8791)
 tools/lab campaign stop [--now]                  # stop dispatching (and kill running jobs)
 ```
 
@@ -80,3 +81,17 @@ formally documented; the default `usage.rate_limit_regex` matches the interactiv
 wording and a 429. After the first unattended run, open the deferred candidate's
 `session.json` and `session.stderr`, confirm they matched, and tighten the regex in
 `campaign.toml` if the wording differs.
+
+## The read-only page
+
+`tools/lab serve` renders the campaign on `http://<host>:8791/`: header and usage
+line, the population newest first, the timeline, one page per candidate with its
+summary, and REPORT.md once written. It re-reads the files on every request, writes
+nothing, answers only GET, and redacts displayed text with the feed's rules. There is
+no stop button by design; stopping stays `tools/lab campaign stop`. It has no
+authentication, so bind it to a LAN interface, never a public one. To keep it up
+across sessions, run it under a watcher with a long budget:
+
+```sh
+tools/lab watch start --op serve --budget-min 100000 -- tools/lab serve
+```
