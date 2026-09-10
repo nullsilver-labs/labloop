@@ -16,8 +16,8 @@ cache/
 *.npz
 *.arrow
 
-# lab runtime state: session records, phase session logs, metric throttle.
-# Not evidence — state.json, events.jsonl and the trial dirs are.
+# lab runtime state: session records, watch registry, metric throttle.
+# Not evidence — population.json, events.jsonl and the candidate dirs are.
 .lab/
 
 # secrets

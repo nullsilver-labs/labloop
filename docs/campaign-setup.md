@@ -1,4 +1,4 @@
-# Starting a campaign (the phaseless loop)
+# Starting a campaign
 
 What a new project needs before `lab run` works. Learned on the first live run
 (M1, MNIST, 2026-09-09); see NEXT.md for the design.

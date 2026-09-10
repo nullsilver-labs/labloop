@@ -283,9 +283,16 @@ slots, settled candidates per GPU-hour in REPORT.md); the two-GPU run is pending
 Slot leasing, VRAM check, concurrent dispatch.
 *Kill if:* settled candidates per GPU-hour fall below M2's single-GPU figure.
 
-**M5 — Delete the phase machine and republish the format (≈ 2 days).**
+**M5 — Delete the phase machine and republish the format (≈ 2 days). DONE 2026-09-10
+in labloop (format 2.0); site renderer in the nullsilver.com repo, same day.**
 Remove everything in §5's "removed" list, bump `FORMAT.json` to 2.0, update the
-site's renderer to draw a population instead of a phase strip.
+site's renderer to draw a population instead of a phase strip. `tools/lab` is the
+plumbing only (feed, watch, usage, validate, format) plus the loop; events carry
+`campaign`/`candidate` instead of `phase`/`run`/`revision`; `population.json` is the
+live state; the hooks brief workers and operators and no Stop hook demands a handoff.
+The acceptance suite is sections A–F (204 checks). The four sibling projects that
+carry their own 1.3 copies (pastiche, ductus, flint, gloss) are untouched: they are
+not consumers of this repo's feed, and their 1.x history stays readable per line.
 
 Then the first real campaign and its `REPORT.md`: baseline, best-by-search, final
 score, the pre-fixed `success_threshold`, GPU-hours, Max usage.

@@ -1,132 +1,131 @@
 {
-  "format": "1.4",
+  "format": "2.0",
   "generator": "nullsilver-lab",
   "generated_by": "tools/lab format sync",
   "note": "Generated file \u2014 do not edit. Regenerate with `tools/lab format sync`; `tools/lab validate` fails if it has drifted from the code.",
   "files": {
-    "state": "state.json",
+    "campaign": "campaign.toml",
+    "population": "population.json",
     "events": "events.jsonl",
-    "protocol": "PROTOCOL.md",
-    "protocol_revisions": "protocol/rev<NNN>.md",
-    "plan": "plan.json",
     "ledger": "LEDGER.md",
-    "notes": "NOTES.md",
-    "handoff": "HANDOFF.md",
-    "run_summary": "runs/r<NNN>/summary.md",
-    "experiment_spec": "runs/r<NNN>/specs/exp<NN>_<slug>.md",
-    "trial_dir": "runs/r<NNN>/trials/<trial_id>/",
     "report": "REPORT.md",
-    "claims": "CLAIMS.md"
+    "candidate_dir": "candidates/c<NNNN>/",
+    "candidate_config": "candidates/c<NNNN>/config.json",
+    "candidate_job": "candidates/c<NNNN>/job.json",
+    "candidate_summary": "candidates/c<NNNN>/summary.md",
+    "candidate_fitness": "candidates/c<NNNN>/fitness.json",
+    "candidate_session": "candidates/c<NNNN>/session.json",
+    "candidate_predictions": "candidates/c<NNNN>/out/predictions-<split>.json"
   },
-  "state": {
+  "campaign": {
+    "note": "population.json is the live state of a campaign, written only by `lab run`: one entry per candidate plus the campaign's status, best candidate, budgets spent, usage-governor state, final score and claim.",
     "keys": [
       "format",
-      "project",
-      "kind",
-      "phase",
-      "run",
-      "revision",
+      "campaign",
+      "campaign_file",
+      "campaign_sha256",
       "status",
-      "models",
-      "active_trials",
-      "awaiting",
+      "started",
+      "finished",
+      "tick",
+      "seed",
+      "auth_preflight",
+      "candidates",
+      "best",
+      "settled",
+      "settled_at_best",
+      "gpu_seconds",
+      "stop_reason",
+      "final",
+      "claim",
+      "usage",
       "updated_at"
-    ],
-    "models_keys": [
-      "started_with",
-      "by_phase",
-      "sources"
     ],
     "statuses": [
       "running",
-      "awaiting_gate",
-      "idle",
-      "concluded"
+      "waiting_usage",
+      "stopping",
+      "finished"
     ],
     "status_badges": {
-      "running": "Running",
-      "awaiting_gate": "Waiting for review",
-      "idle": "Idle",
-      "concluded": "Concluded"
+      "running": "Searching",
+      "waiting_usage": "Waiting for the usage window",
+      "stopping": "Finishing",
+      "finished": "Finished"
     },
-    "awaiting_keys": [
-      "type",
-      "question",
-      "since"
-    ]
-  },
-  "phases": {
-    "names": [
-      "init",
-      "build",
-      "pilot",
-      "execute",
-      "analyze",
-      "decide",
-      "conclude"
+    "claims": [
+      "untested",
+      "supported",
+      "not_supported",
+      "inconclusive"
     ],
-    "transitions": {
-      "init": [
-        "build"
-      ],
-      "build": [
-        "pilot"
-      ],
-      "pilot": [
-        "execute",
-        "build"
-      ],
-      "execute": [
-        "analyze"
-      ],
-      "analyze": [
-        "decide"
-      ],
-      "decide": [
-        "init",
-        "conclude"
-      ],
-      "conclude": []
-    }
+    "claim_note": "Written once by `lab run` from the final split against the success_threshold fixed in campaign.toml before the run. `untested` while the search runs."
+  },
+  "candidates": {
+    "operators": [
+      "baseline",
+      "draft",
+      "improve",
+      "crossover",
+      "debug"
+    ],
+    "statuses": [
+      "queued",
+      "running",
+      "evaluated",
+      "failed",
+      "deferred",
+      "frozen"
+    ],
+    "exec_statuses": [
+      "completed",
+      "failed",
+      "killed",
+      "invalid",
+      "deferred"
+    ],
+    "keys": [
+      "id",
+      "operator",
+      "parents",
+      "status",
+      "exec",
+      "gpu",
+      "watch",
+      "launched",
+      "ended",
+      "exit_code",
+      "fitness",
+      "n",
+      "fail_reason",
+      "debugged",
+      "path",
+      "session",
+      "redispatch_of",
+      "defers"
+    ],
+    "fitness_note": "`fitness` is the search-split score, read by `lab eval` only; higher or lower is better per campaign.toml [report].higher_is_better. It is optimistic by construction; the final score in population.json `final` is one read of the untouched final split."
   },
   "events": {
     "keys": [
       "format",
       "ts",
       "type",
-      "phase",
-      "run",
-      "revision",
+      "campaign",
+      "candidate",
       "msg",
       "data"
     ],
     "types": {
-      "project.created": "news",
-      "session.start": "activity",
-      "session.end": "activity",
-      "phase.enter": "activity",
-      "phase.exit": "activity",
-      "protocol.revised": "news",
-      "prediction": "activity",
-      "trial.launch": "activity",
-      "trial.done": "activity",
-      "trial.verdict": "activity",
-      "metric": "none",
-      "run.done": "news",
-      "surprise": "activity",
-      "kill": "activity",
-      "error": "activity",
-      "note": "activity",
-      "gate.requested": "activity",
-      "gate.resolved": "activity",
-      "gate.overridden": "activity",
-      "project.concluded": "news",
       "campaign.start": "news",
       "campaign.stop": "news",
+      "campaign.paused": "activity",
       "candidate.launch": "activity",
       "candidate.done": "activity",
       "candidate.failed": "activity",
-      "campaign.paused": "activity"
+      "metric": "none",
+      "note": "activity",
+      "error": "activity"
     },
     "feed_classes": {
       "news": "homepage news column; eligible for RSS",
@@ -135,70 +134,35 @@
     },
     "ts_format": "%Y-%m-%dT%H:%M:%SZ (UTC)"
   },
-  "verdicts": [
-    "GO",
-    "NO-GO",
-    "INCONCLUSIVE"
-  ],
   "provenance": {
-    "note": "Which model produced a piece of work \u2014 two facts, kept apart: `requested` is what the launcher asked for (LAB_MODEL, else .claude/loop.conf as it reads today), `served` is what actually answered, read from the Claude Code session transcript. loop.conf is current config, edited over a project's life \u2014 never the answer by itself.",
-    "session_start": "session.start event -> data {requested, requested_source}",
-    "session_end": "session.end event -> data {requested, requested_source, served, served_source}",
-    "trial": "<trial_dir>/config.json -> agent {requested, requested_source, served, served_source} (served as of trial launch)",
-    "run_live": "state.json -> models (the run in progress)",
-    "run_final": "run.done event -> data.models (frozen with the verdict)",
+    "note": "Which model produced a candidate \u2014 two facts, kept apart: `requested` is the worker model named in campaign.toml, `served` is what actually answered, read from the session result the worker stores (session.json, modelUsage).",
+    "candidate": "candidates/c<NNNN>/config.json -> agent {requested, requested_source, served, served_source}",
     "sources": {
-      "transcript": "served: read from the session transcript \u2014 the record of what answered, fallbacks and switches included",
-      "env": "requested: recorded by the session that ran (LAB_MODEL)",
-      "conf": "requested: reconstructed from .claude/loop.conf as it reads today \u2014 a guess",
-      "none": "unknown; requested is the string 'unknown', served is []"
+      "campaign.toml": "requested: [resources] worker_model",
+      "session.json modelUsage": "served: the models that answered the session",
+      "none": "no session ran (the baseline) or no result was stored"
     },
-    "display": "models is {started_with, by_phase, sources}. by_phase values are ordered lists \u2014 more than one entry means a fallback or mid-session switch; show them all. started_with may be null: render it as unknown, never as a default model. sources within {transcript, env} is a record; any conf or none means partly reconstructed, and a consumer should say so."
+    "cost_note": "session.json total_cost_usd is the list-price equivalent `claude -p` reports; on a subscription it is a measure of usage, not a bill."
   },
-  "trial": {
-    "id_format": "<UTC %Y%m%dT%H%M>-<4 hex chars>",
-    "required_files": [
-      "config.json",
-      "results.jsonl",
-      "summary.md"
-    ],
-    "optional_files": [
-      "console.log"
-    ],
-    "note": "summary.md is written when the trial ends, including when killed."
-  },
-  "protocol": {
-    "frontmatter_keys": [
-      "id",
-      "title",
-      "kind",
-      "revision",
+  "ledger": {
+    "columns": [
+      "campaign",
+      "operator",
+      "candidate",
       "status",
-      "autonomy",
-      "budgets",
-      "created",
-      "updated"
+      "claim",
+      "path",
+      "note"
     ],
-    "sections": [
-      "Idea",
-      "Questions",
-      "Hypotheses",
-      "Success criteria",
-      "Prior & related work",
-      "Experiment sketch",
-      "Guardrails",
-      "Out of scope",
-      "Changelog"
+    "statuses": [
+      "running",
+      "done",
+      "failed",
+      "killed",
+      "invalid",
+      "deferred"
     ],
-    "kinds": [
-      "research",
-      "artifact",
-      "writing"
-    ],
-    "autonomy": [
-      "gated",
-      "auto"
-    ]
+    "note": "One row per candidate, written only by `lab run`; never deleted."
   },
   "limits": {
     "msg_max_chars": 140,

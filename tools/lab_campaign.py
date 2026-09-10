@@ -370,6 +370,7 @@ def cmd_campaign_init(args) -> None:
         L.die("campaign.toml exists (use --force to overwrite the scaffold files)")
     tmpl = Path(L.__file__).resolve().parent.parent / "templates" / "campaign.toml"
     (root / "campaign.toml").write_text(tmpl.read_text().replace("ns-REPLACE-ME", cid))
+    L.write_json_atomic(L.FORMAT_PATH, L.format_manifest())   # the contract, for consumers
     (root / "eval").mkdir(exist_ok=True)
     for name, body, mode in (("eval/score.py", SCORE_STUB, 0o755),
                              ("eval/baseline.sh", BASELINE_STUB, 0o755),

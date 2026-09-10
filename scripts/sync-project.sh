@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # sync-project.sh <project-dir> — refresh a campaign project's copy of the labloop
-# tooling (tools/, .claude/, templates/, CLAUDE.md, .lab-redact) from this repo.
+# tooling (tools/, .claude/, templates/, CLAUDE.md, .lab-redact, FORMAT.json) from this repo.
 # Evidence (candidates/, population.json, LEDGER.md, events.jsonl, REPORT.md), data and
 # campaign.toml are never touched. Run it before a campaign, never during one: a
 # running `lab run` must keep the tools it started with.

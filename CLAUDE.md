@@ -3,104 +3,82 @@
 > **Campaign workers** (`LAB_ROLE=worker`, launched by `lab run`): your job card is the
 > whole brief. You edit only your candidate dir, you never read labels, you stop when
 > `code/run.sh` has produced `out/predictions-search.json` and `summary.md` exists.
-> Everything below describes the phase machine and does not apply to you.
+> The rest of this file is for operator sessions and for the humans who read them.
 
-One repo, one research project, rendered live on nullsilver.com. A fixed state machine
-of phases runs it, each phase a fresh session with its own prompt in
-`.claude/prompts/`. Procedure lives there and in the hooks — **this file is the
-judgment**, and it applies in every phase.
+One repo, one research campaign, rendered live on nullsilver.com. `lab run` runs the
+search: a population of candidates, a mechanical scheduler, one short headless session
+per job, fitness from a hidden split, a final split read once. Procedure lives in
+`tools/lab`, `tools/lab_campaign.py` and the hooks — **this file is the judgment**.
 
 ## What you are for
 
-- **Honesty over optimism.** Report what happened, including bugs that invalidated a
-  trial. An invalidated trial gets a summary saying so and a rerun — never silence.
-  A tie is a tie. A NO-GO is a result, not a setback.
-- **Baselines are mandatory.** No headline number without its trivial baseline (copy /
-  majority / random / zero-shot, per the spec). If a result looks too good, the first
-  hypothesis is a bug or leakage — check, and write down what you checked.
-- **Verdicts read against pre-registered gates only** — the number frozen in the spec
-  before the trial ran, not the one that now seems fairer. A gate may change only in a
-  decide-phase revision, with `lab log gate.overridden`, and every summary afterwards
-  reports against **both** the old and new gate.
-- **Spend compute like money.** The smallest experiment that can kill an idea, first;
-  downscale, then scale only what survived. Seed everything and log the seed;
-  fingerprint caches with what produced them so a stale one can't be reused silently.
-- **Spend context like compute.** Every turn re-reads the whole conversation, so a
-  session's cost grows with the square of its length: 200 turns at 150k context reads
-  ~30M tokens. Delegate bulk reading — logs, results.jsonl, corpora, long diffs — to
-  a subagent that returns conclusions; `grep`/`tail` into your context, never `cat` a
-  big file; make scripts print one-line summaries and write detail to files. When the
-  remaining work is separable and your context has grown long, checkpoint: update
-  HANDOFF.md, commit, end with the phase untouched. The driver relaunches you fresh
-  at a fraction of the cost — it counts your commit as progress, not a stall.
+- **Honesty over optimism.** A candidate's `summary.md` says what changed, what the
+  hypothesis was, and what happened — including a bug that invalidated it. An invalid
+  candidate stays in the population with its reason; it is never silently replaced.
+  A tie is a tie. A claim that reads `not_supported` is a result, not a setback.
+- **Baselines are mandatory.** Candidate `c0000` is always the trivial baseline named
+  in `campaign.toml`; no headline number is read without it. If a result looks too
+  good, the first hypothesis is a bug or leakage: a child that loaded its parent's
+  weights, a split that overlaps, a worker that found the labels. Check, and write
+  down what you checked.
+- **Claims read against pre-fixed thresholds only.** `success_threshold` is fixed in
+  `campaign.toml` before the run and cannot change under a running campaign: a changed
+  campaign file is a new campaign. Search fitness is optimistic by construction; only
+  the one read of the final split supports a claim.
+- **Spend compute like money.** The smallest campaign that can kill an idea, first:
+  a handful of candidates on a sub-hour task before a 24-hour search. Seed everything
+  and record the seed; a child never inherits trained weights, so it cannot score its
+  parent twice.
+- **Spend the usage window like a GPU.** The Claude Max window is the second scarce
+  resource. `[usage]` in `campaign.toml` budgets it; a job pushed out by the window is
+  deferred and re-dispatched, never failed. Sessions are short by construction: one
+  job, one turn budget, no handoff document.
+- **Spend context like compute.** A worker reads its job card, the parent's summary and
+  the lineage, not the whole population's code. An operator reading results delegates
+  bulk reading — logs, session transcripts, candidate code — and keeps conclusions.
 
 ## The machine
 
-`init → build → pilot → execute → analyze → decide → (init | conclude)`. `lab`
-validates every transition; illegal jumps are rejected, so if you are stuck the answer
-is a gate, not a workaround.
+`campaign.toml → lab run → [select parent → worker → evaluate → add to population] →
+REPORT.md`. There are no phases, gates, approvals or handoffs inside the loop. The
+human writes `campaign.toml`, starts `lab run` under `lab watch`, and can stop it with
+`lab campaign stop`. Waiting on the usage window is a campaign status, not an error.
 
-- **`state.json` and `events.jsonl` have exactly one writer: `tools/lab`.** Never edit
-  them by hand — a hook blocks it. `lab log`, `lab state set`, `lab trial`, `lab gate`.
-  `FORMAT.json` is generated too: `lab format sync`, never by hand.
+- **`population.json`, `LEDGER.md` and `events.jsonl` have exactly one writer:
+  `tools/lab`.** Never edit them by hand — a hook blocks it. `FORMAT.json` is
+  generated: `lab format sync`, never by hand.
 - **The event feed is public in realtime.** `msg` is one line, ≤ 140 chars, and reads
   like a person wrote it. Secrets are redacted mechanically, but don't test that.
   Heartbeats and "still running" are not events.
-- **Evidence is immutable.** Never delete or overwrite a trial dir, a frozen
-  `protocol/rev*.md`, or a LEDGER row — failed and killed trials are data. If a trial
-  is misleading, say so in its `summary.md` and in the LEDGER.
-- Every trial dir holds `config.json` (config + seed + git commit + command + start
-  time + hardware + versions + agent models), append-only `results.jsonl`, and a
-  `summary.md` written when it ends — **including when killed**, saying so and why.
-- **`PROTOCOL.md` prose is the human's.** It changes only in the decide phase, only
-  through freeze → edit → `lab protocol activate`, and under `autonomy: gated` only
-  after an approved gate.
+- **Evidence is immutable.** Never delete or overwrite a candidate dir, a LEDGER row
+  or `REPORT.md` — failed, killed, invalid and deferred candidates are data. If a
+  candidate is misleading, say so in the next candidate's summary and in the report.
+- Every candidate dir holds `config.json` (operator, parents, seed, git commit,
+  command, hardware, versions, requested and served models), `job.json`, the
+  candidate's own `code/`, `summary.md` written when it ends — **including when
+  killed**, saying so and why — and `fitness.json` written only by `lab eval`.
+- **Labels are hidden.** `lab eval` is the only reader of the search and final
+  splits; with the `labeval` user they are hidden by the OS, otherwise by convention,
+  and `REPORT.md` says which.
 
-## When to stop and ask
+## Operator sessions
 
-`tools/lab gate request --type <t> --question "..."` — and then actually stop — for:
-a budget in `PROTOCOL.md` that would be exceeded, a direction the protocol doesn't
-cover, anything irreversible outside the repo, anything that spends money, and any
-command denied by permissions (work around it and the lab is lying about what it did).
-Batch everything else into HANDOFF.md's "For the human". Every **phase** session ends
-by overwriting `HANDOFF.md` — the Stop hook will not let a phase session leave without
-it. Operator and ad-hoc sessions (anything not launched by a driver with
-`LAB_ROLE=phase`) owe no handoff and must not move the state machine.
+Anything not launched by `lab run` is an operator session: a human working in the
+repo, or an agent the human is driving. It records its usage under `.lab/sessions/`,
+emits no events, and never touches a running campaign's files. Reading results,
+working on the tooling, preparing the next campaign and answering questions are all
+fine. To end a campaign by hand: `tools/lab campaign stop [--now]`.
 
 ## Long runs
 
-Phase sessions are **headless one-shots** (`claude -p`): the process exits the moment
-your turn ends, and everything it spawned dies with it — except work detached under
-`lab watch`. `ScheduleWakeup` will never fire for you; do not call it. The rule:
-**never leave running work without an enforcer.** There are exactly two:
+**Never leave running work without an enforcer.** `lab watch start --op NAME
+--budget-min N [--stall-min N] [--kill-regex RE] -- <command>` detaches work under a
+mechanical supervisor that heartbeats and kills on wall-clock, stall or pattern.
+`lab run` launches every job this way and settles a killed job mechanically, so the
+LEDGER never waits for a session to come back. Run the campaign itself under a watcher
+too (`--op campaign`), so it has a budget of its own. A bare `nohup`/`setsid` is
+forbidden — an orphan without a watcher has no one enforcing its budget.
 
-- **You, in the foreground** — for work that finishes within this session (minutes,
-  not hours). Launch with Bash `run_in_background` so the console tees to a log, then
-  wait with bounded blocking checks, each within the Bash timeout, e.g.
-  `timeout 540 tail -f <console log> | grep -m1 -E '(done|error|Traceback|OOM)'`,
-  repeated until the process exits, enforcing budgets and kill criteria at every
-  check. Never end a turn while unwatched work runs — "I'll check when I'm woken" is
-  how one project's pilot lost the same 9 GB download twice. If you background a
-  completion check, it must be a command that exits on its own: `run_in_background`
-  on the work itself, never on a `tail -f | grep` wrapper — without a `timeout`, that
-  pipeline structurally never completes once the log goes quiet, and no notification
-  can fire.
-- **A `lab watch` watcher** — for work that outlives the session: a training run, a
-  model download. `lab watch start (--trial DIR | --op NAME) [--budget-min N]
-  [--stall-min N] [--kill-regex RE] -- <command>` detaches it under a mechanical
-  supervisor that heartbeats and kills on wall-clock, stall, or pattern; a killed
-  trial gets a facts-only summary stub and `lab trial done --killed` on the spot,
-  so the LEDGER never waits for a session to come back. With every live process
-  under a watcher you may end your turn: the driver (loop.sh or the orchestrator)
-  waits in bash for free and launches a session when a watch needs judgment or
-  paperwork — in execute, the `supervise.md` visit; elsewhere, the phase's own
-  prompt resumed.
-
-A bare `nohup`/`setsid` remains forbidden — an orphan without a watcher has no one
-enforcing its budget. Kills end with a summary and `lab trial done --killed`, however
-they happen; watchers write the mechanical half, sessions the judgment half.
-
-(The attended orchestrator session is the exception: it is persistent, so for *it*
-`run_in_background` + `ScheduleWakeup` is correct — see
-`.claude/commands/orchestrate.md`. That pattern is the orchestrator's, never a
-phase's.)
+Work that finishes within an operator session (a data prep, a reference run) runs in
+the foreground with a timeout, or under a watcher; it is never backgrounded and
+forgotten.
