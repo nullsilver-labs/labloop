@@ -47,6 +47,18 @@ crossover_p = 0.15
 max_debug_retries = 1
 # seed = 12345                   # default: derived from campaign.id
 
+[usage]                          # the Claude Max window is the second scarce resource
+# window_budget = 12.0           # list-price USD per window the plan tolerates (as `claude -p`
+                                 # reports total_cost_usd). Calibrate from `lab campaign usage`
+                                 # of a short run; without it the loop only reacts to
+                                 # rate-limit messages and cannot pace itself.
+window       = "5h"              # the rolling window
+soft         = 0.70              # fraction of window_budget: dispatch nothing new
+hard         = 0.90              # fraction: also kill running sessions; their jobs are deferred
+session_cost = 0.50              # reservation per running session until 3 have finished
+retry        = "30m"             # wait after a rate-limit message that states no reset time
+max_defers   = 3                 # a job deferred more often than this is dropped, with a note
+
 [stop]                           # any one of these ends the search
 max_candidates     = 60
 no_improvement_for = 12

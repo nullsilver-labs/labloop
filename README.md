@@ -26,7 +26,9 @@ rank-selects a parent and an operator (`draft`, `improve`, `crossover`, `debug`)
 one short headless Claude Code session per job (`tools/lab-worker`), fitness from a
 hidden search split that only `lab eval` can read, a final split read once at the end,
 and `REPORT.md` with a claim against a threshold fixed in `campaign.toml`. Every job
-runs under `lab watch`; the loop restarts from `population.json`. Setup:
+runs under `lab watch`; the loop restarts from `population.json`; the Claude Max window
+is budgeted like a GPU (`[usage]`: pause at a soft threshold, defer and re-dispatch
+after a rate-limit message, never fail a job for it). Setup:
 [docs/campaign-setup.md](docs/campaign-setup.md). Plan and status: [NEXT.md](NEXT.md).
 The phase machine remains until the loop has run on a real task (NEXT.md M5).
 

@@ -4,9 +4,11 @@ See NEXT.md. This module is registered into `tools/lab` and shares its helpers
 (events, redaction, provenance, LEDGER, watchers), so `lab` stays the single writer
 of population.json, LEDGER.md and events.jsonl.
 
-The loop (`lab run`): reap finished jobs → enforce budgets → dispatch while a GPU slot
-is free (rank-selected parent + operator) → stop on a stop condition → freeze the
-best candidate by search fitness → evaluate it once on the final split → REPORT.md.
+The loop (`lab run`): reap finished jobs → enforce budgets (GPU-hours, and the Claude
+Max window through the usage governor) → dispatch while a GPU slot is free
+(rank-selected parent + operator; a job the window pushed out first) → stop on a stop
+condition → freeze the best candidate by search fitness → evaluate it once on the
+final split → REPORT.md. Campaign status: running | waiting_usage | stopping | finished.
 
 Every job is a worker process under `lab watch`. The worker's contract:
 
@@ -42,6 +44,7 @@ import subprocess
 import sys
 import time
 import tomllib
+from contextlib import redirect_stderr as _redirect_stderr
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -52,8 +55,17 @@ POP_FILE = "population.json"
 CAND_DIR = "candidates"
 REPORT_FILE = "REPORT.md"
 OPERATORS = ["baseline", "draft", "improve", "crossover", "debug"]
-CAND_STATUS = ["queued", "running", "evaluated", "failed", "frozen"]
-EXEC_STATUS = ["completed", "failed", "killed", "invalid"]
+CAND_STATUS = ["queued", "running", "evaluated", "failed", "deferred", "frozen"]
+EXEC_STATUS = ["completed", "failed", "killed", "invalid", "deferred"]
+CAMPAIGN_STATUS = ["running", "waiting_usage", "stopping", "finished"]
+# What a headless `claude -p` says when the subscription's rolling window is spent.
+# Matched case-insensitively against the session result text, api_error_status and
+# stderr — and only when the session did not end in success, so a worker that merely
+# writes the words "rate limit" in its report is never mistaken for one.
+RATE_LIMIT_RE_DEFAULT = (r"(hit your (usage |session |weekly )?limit|usage limit|rate[ _-]?limit"
+                         r"|limit (has been )?reached|out of (extra )?usage|\b429\b|too many requests"
+                         r"|resets? (at|in) )")
+USAGE_DEFAULTS = {"soft": 0.70, "hard": 0.90, "session_cost": 0.50, "max_defers": 3}
 CLAIMS = ["untested", "supported", "not_supported", "inconclusive"]
 # Environment that would route a Claude Code session away from subscription login
 # or to a paid path. `lab run` refuses to start while any of these is set.
@@ -211,11 +223,11 @@ def load_campaign(path: Path) -> dict:
         "stall_min": int(r.get("stall_min", 0)),
         "worker_max_turns": int(r.get("worker_max_turns", 40)),
         "worker_model": r.get("worker_model", "claude-sonnet-5"),
-        "usage_soft": float(r.get("usage_soft", 0.7)),
-        "usage_hard": float(r.get("usage_hard", 0.9)),
     }
     if cfg["resources"]["max_parallel_jobs"] < 1:
         L.die(f"{path.name}: resources.max_parallel_jobs must be >= 1")
+
+    cfg["usage"] = parse_usage(raw, path.name)
 
     w = raw.get("worker", {})
     cmd = w.get("command")
@@ -319,6 +331,34 @@ Seed with the job card's seed. Write `summary.md`: what you built/changed, what 
 """
 
 
+def parse_usage(raw: dict, name: str = "campaign.toml") -> dict:
+    """[usage] — the Claude Max window is the second scarce resource (NEXT.md §4). The
+    estimate governor needs a calibrated budget; without one only rate-limit detection
+    runs. Legacy resources.usage_soft/usage_hard are honoured as defaults."""
+    u, r = raw.get("usage", {}), raw.get("resources", {})
+    cfg = {
+        "window_sec": parse_duration(u.get("window", "5h"), "usage.window"),
+        "window_budget": float(u["window_budget"]) if "window_budget" in u else None,
+        "soft": float(u.get("soft", r.get("usage_soft", USAGE_DEFAULTS["soft"]))),
+        "hard": float(u.get("hard", r.get("usage_hard", USAGE_DEFAULTS["hard"]))),
+        "session_cost": float(u.get("session_cost", USAGE_DEFAULTS["session_cost"])),
+        "retry_sec": parse_duration(u.get("retry", "30m"), "usage.retry"),
+        "max_defers": int(u.get("max_defers", USAGE_DEFAULTS["max_defers"])),
+        "rate_limit_regex": str(u.get("rate_limit_regex", RATE_LIMIT_RE_DEFAULT)),
+    }
+    if not (0 < cfg["soft"] <= cfg["hard"] <= 1.0):
+        L.die(f"{name}: usage.soft and usage.hard must satisfy 0 < soft <= hard <= 1")
+    if cfg["window_budget"] is not None and cfg["window_budget"] <= 0:
+        L.die(f"{name}: usage.window_budget must be > 0 (list-price USD per window)")
+    if cfg["session_cost"] < 0 or cfg["max_defers"] < 0:
+        L.die(f"{name}: usage.session_cost and usage.max_defers must be >= 0")
+    try:
+        re.compile(cfg["rate_limit_regex"], re.I)
+    except re.error as e:
+        L.die(f"{name}: usage.rate_limit_regex: {e}")
+    return cfg
+
+
 def cmd_campaign_init(args) -> None:
     """Scaffold a campaign in the current repo: campaign.toml, task.md, eval/, data/."""
     cid = args.id
@@ -370,7 +410,14 @@ def cmd_campaign_check(args) -> None:
         "stop": cfg["stop"], "gpu_hours_total": cfg["resources"]["gpu_hours_total"],
         "privilege_separation": bool(cfg["eval"]["user"]),
         "success_threshold": cfg["report"]["success_threshold"],
+        "usage_governor": ("estimate + rate-limit detection" if cfg["usage"]["window_budget"]
+                           else "rate-limit detection only (no usage.window_budget)"),
+        "usage": {k: v for k, v in cfg["usage"].items() if k != "rate_limit_regex"},
     }, indent=2))
+    if not cfg["usage"]["window_budget"]:
+        L.warn("no usage.window_budget: the loop cannot pace itself inside the Max window; "
+               "it will only defer jobs after a rate-limit message. Calibrate one from "
+               "`lab campaign usage` of a previous run before an unattended campaign.")
 
 
 # ---------------------------------------------------------------------------
@@ -428,6 +475,7 @@ def init_pop(cfg: dict) -> dict:
         "stop_reason": None,
         "final": None,
         "claim": "untested",
+        "usage": usage_defaults(),
     }
     save_pop(pop)
     L.emit("campaign.start", f"campaign {cfg['campaign']['id']} started: "
@@ -436,6 +484,13 @@ def init_pop(cfg: dict) -> dict:
             "slots": cfg["resources"]["slots"], "stop": cfg["stop"],
             "success_threshold": cfg["report"]["success_threshold"]})
     return pop
+
+
+def usage_defaults() -> dict:
+    return {"waiting_seconds": 0.0, "waiting_since": None, "waiting_reason": None,
+            "next_eligible": None, "pauses": 0, "rate_limits": 0, "deferred": 0,
+            "hard_kills": 0, "peak_fraction": 0.0, "blocked_until": None,
+            "blocked_reason": None, "deferred_jobs": []}
 
 
 def better(cfg: dict, a: float | None, b: float | None) -> bool:
@@ -476,7 +531,8 @@ def lineage(pop: dict, cid: str, depth: int = 5) -> list[str]:
 
 
 def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
-                  gpu: int | None, rng: random.Random) -> str:
+                  gpu: int | None, rng: random.Random, origin: dict | None = None) -> str:
+    """origin: the deferred job this candidate re-dispatches ({from, defers}), if any."""
     cid = f"c{len(pop['candidates']):04d}"
     cdir = cand_dir(cid)
     cdir.mkdir(parents=True, exist_ok=False)
@@ -511,6 +567,8 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
         "packages": L.package_versions([]),
         "agent": {"requested": cfg["resources"]["worker_model"] if operator != "baseline" else None,
                   "requested_source": "campaign.toml", "served": [], "served_source": "none"},
+        "redispatch_of": origin["from"] if origin else None,
+        "defers": origin["defers"] if origin else 0,
     }
     L.write_json_atomic(cdir / "config.json", snapshot)
 
@@ -557,7 +615,9 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
         "id": cid, "operator": operator, "parents": parents, "status": "queued",
         "exec": None, "gpu": gpu, "watch": None, "launched": None, "ended": None,
         "fitness": None, "n": None, "fail_reason": None, "debugged": False,
-        "path": rel(cdir),
+        "path": rel(cdir), "session": None,
+        "redispatch_of": origin["from"] if origin else None,
+        "defers": origin["defers"] if origin else 0,
     }
     return cid
 
@@ -601,9 +661,11 @@ def launch(cfg: dict, pop: dict, cid: str) -> None:
                               "verdict": "", "path": c["path"], "note": ""})
     L.emit("candidate.launch",
            f"{cid} {c['operator']}" + (f" from {','.join(c['parents'])}" if c["parents"] else "") +
-           (f" on gpu {c['gpu']}" if c["gpu"] is not None else " on cpu"),
+           (f" on gpu {c['gpu']}" if c["gpu"] is not None else " on cpu") +
+           (f" (re-dispatch of {c['redispatch_of']})" if c.get("redispatch_of") else ""),
            {"candidate": cid, "operator": c["operator"], "parents": c["parents"],
-            "gpu": c["gpu"], "watch": wid, "campaign": pop["campaign"]})
+            "gpu": c["gpu"], "watch": wid, "campaign": pop["campaign"],
+            "redispatch_of": c.get("redispatch_of")})
 
 
 def watch_entry(wid: str) -> dict | None:
@@ -633,6 +695,112 @@ def stub_summary(cdir: Path, title: str, facts: list[str]) -> None:
                  "\nFacts-only stub written mechanically by `lab run`; the worker left no summary.\n")
 
 
+def _iso_epoch(s: str | None) -> float | None:
+    if not s:
+        return None
+    try:
+        return datetime.fromisoformat(s.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+def _epoch_iso(t: float) -> str:
+    return datetime.fromtimestamp(t, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def parse_reset_time(text: str, now: float) -> float | None:
+    """'resets 3pm', 'resets at 14:30', 'resets in 2h 15m', an ISO timestamp → epoch.
+    Clock times are read in the local timezone, as Claude Code prints them; a time
+    already past today means tomorrow. None when nothing parses."""
+    m = re.search(r"resets?\s+(?:at\s+)?(\d{4}-\d{2}-\d{2}T[\d:.]+(?:Z|[+-]\d{2}:?\d{2})?)", text, re.I)
+    if m:
+        t = _iso_epoch(m.group(1))
+        if t:
+            return t
+    m = re.search(r"resets?\s+in\s+((?:\d+\s*(?:h|hr|hours?|m|min|minutes?|s|sec)\s*)+)", text, re.I)
+    if m:
+        secs = 0
+        for n, unit in re.findall(r"(\d+)\s*(h|hr|hours?|m|min|minutes?|s|sec)", m.group(1), re.I):
+            secs += int(n) * (3600 if unit.lower().startswith("h") else 60 if unit.lower().startswith("m") else 1)
+        return now + secs if secs else None
+    m = re.search(r"resets?\s+(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?", text, re.I)
+    if m:
+        hour, minute, ampm = int(m.group(1)), int(m.group(2) or 0), (m.group(3) or "").lower()
+        if ampm == "pm" and hour < 12:
+            hour += 12
+        if ampm == "am" and hour == 12:
+            hour = 0
+        if not (0 <= hour < 24 and 0 <= minute < 60):
+            return None
+        local = datetime.fromtimestamp(now).astimezone()
+        cand = local.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        if cand.timestamp() <= now:
+            cand = datetime.fromtimestamp(cand.timestamp() + 86400).astimezone()
+        return cand.timestamp()
+    return None
+
+
+def read_session(cfg: dict, cdir: Path) -> dict | None:
+    """What the worker's one Claude Code session cost and how it ended, from the
+    session.json that lab-worker stores (and session.stderr when the CLI died before
+    writing one). None for candidates that ran no session (the baseline)."""
+    sj, se = cdir / "session.json", cdir / "session.stderr"
+    if not sj.exists() and not se.exists():
+        return None
+    r: dict = {}
+    if sj.exists():
+        try:
+            r = json.loads(sj.read_text()) or {}
+        except (json.JSONDecodeError, OSError):
+            r = {}
+    stderr = ""
+    if se.exists():
+        try:
+            stderr = se.read_text(errors="replace")[-4000:]
+        except OSError:
+            stderr = ""
+    usage = r.get("usage") or {}
+    rec = {
+        "id": r.get("session_id"),
+        "turns": r.get("num_turns"),
+        "duration_ms": r.get("duration_ms"),
+        "cost_usd": r.get("total_cost_usd"),
+        "subtype": r.get("subtype"),
+        "is_error": bool(r.get("is_error")) if r else None,
+        "api_error_status": r.get("api_error_status"),
+        "models": sorted((r.get("modelUsage") or {}).keys()),
+        "output_tokens": usage.get("output_tokens"),
+        "cache_read_input_tokens": usage.get("cache_read_input_tokens"),
+        "rate_limited": False, "message": None, "reset_at": None,
+    }
+    succeeded = bool(r) and r.get("subtype") == "success" and not r.get("is_error") \
+        and not r.get("api_error_status")
+    haystack = " ".join(str(r.get(k) or "") for k in ("result", "subtype", "api_error_status",
+                                                      "terminal_reason", "error")) + "\n" + stderr
+    m = re.search(cfg["usage"]["rate_limit_regex"], haystack, re.I)
+    if m and not succeeded:
+        rec["rate_limited"] = True
+        line = next((ln for ln in haystack.splitlines() if re.search(cfg["usage"]["rate_limit_regex"], ln, re.I)), "")
+        rec["message"] = re.sub(r"\s+", " ", line).strip()[:100] or m.group(0)
+        t = parse_reset_time(haystack, time.time())
+        rec["reset_at"] = _epoch_iso(t) if t else None
+    return rec
+
+
+def _record_served(cdir: Path, sess: dict | None) -> None:
+    """Fill config.json's agent.served from the session's modelUsage (provenance)."""
+    if not sess or not sess.get("models"):
+        return
+    try:
+        cfgp = cdir / "config.json"
+        snap = json.loads(cfgp.read_text())
+        snap.setdefault("agent", {})["served"] = sess["models"]
+        snap["agent"]["served_source"] = "session.json modelUsage"
+        L.write_json_atomic(cfgp, snap)
+    except (OSError, json.JSONDecodeError):
+        pass
+
+
 def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
     c = pop["candidates"][cid]
     cdir = cand_dir(cid)
@@ -642,19 +810,28 @@ def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
     c["exit_code"] = entry.get("exit_code")
     if c.get("gpu") is not None:
         pop["gpu_seconds"] += _duration_sec(entry.get("started"), entry.get("ended"))
+    sess = read_session(cfg, cdir) if c["operator"] != "baseline" else None
+    c["session"] = sess
+    _record_served(cdir, sess)
 
     preds = cdir / "out" / "predictions-search.json"
     reason = None
+    kill_reason = entry.get("kill_reason") or ""
     if exec_status == "completed" and preds.exists():
         fit = evaluate(cfg, cdir, "search")
         if fit.get("score") is None:
             exec_status, reason = "invalid", f"evaluator: {fit.get('error', 'no score')}"
         else:
             c["fitness"], c["n"] = fit["score"], fit.get("n")
+    elif sess and sess["rate_limited"]:
+        # the window is spent: not the candidate's fault, never `failed` (NEXT.md §4)
+        exec_status, reason = "deferred", f"usage limit: {sess['message']}"
+    elif exec_status == "killed" and kill_reason.startswith("usage_hard"):
+        exec_status, reason = "deferred", kill_reason
     elif exec_status == "completed":
         exec_status, reason = "invalid", "worker exited 0 but wrote no out/predictions-search.json"
     elif exec_status == "killed":
-        reason = entry.get("kill_reason") or "killed by watcher"
+        reason = kill_reason or "killed by watcher"
     elif entry.get("exit_code") == 2:
         # the worker's own verdict: the session ran but left no runnable candidate
         exec_status, reason = "invalid", "worker reported the contract unmet (exit 2)"
@@ -662,18 +839,23 @@ def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
         reason = f"worker exited {entry.get('exit_code')}"
     c["exec"] = exec_status
     c["fail_reason"] = reason
-    c["status"] = "evaluated" if exec_status == "completed" else "failed"
+    c["status"] = {"completed": "evaluated", "deferred": "deferred"}.get(exec_status, "failed")
 
     stub_summary(cdir, f"{cid} ({c['operator']}, {exec_status})",
                  [f"operator: {c['operator']}, parents: {', '.join(c['parents']) or 'none'}",
                   f"exec: {exec_status}" + (f" — {reason}" if reason else ""),
                   f"started {entry.get('started')}, ended {c['ended']}, exit code {c['exit_code']}",
-                  f"search fitness: {c['fitness']}"])
+                  f"search fitness: {c['fitness']}"]
+                 + ([f"session: {sess['id']}, {sess['turns']} turns, list-price ${sess['cost_usd']}"]
+                    if sess and sess.get("id") else []))
 
-    pop["settled"] += 1
-    if c["status"] == "evaluated" and better(cfg, c["fitness"], pop["candidates"].get(pop["best"], {}).get("fitness") if pop["best"] else None):
-        pop["best"] = cid
-        pop["settled_at_best"] = pop["settled"]
+    if c["status"] == "deferred":
+        defer_job(cfg, pop, c, reason or "deferred")
+    else:
+        pop["settled"] += 1
+        if c["status"] == "evaluated" and better(cfg, c["fitness"], pop["candidates"].get(pop["best"], {}).get("fitness") if pop["best"] else None):
+            pop["best"] = cid
+            pop["settled_at_best"] = pop["settled"]
 
     save_pop(pop)   # measurement is durable before the ledger/feed/archive side effects
     with ledger_lock():
@@ -687,6 +869,17 @@ def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
                {"candidate": cid, "operator": c["operator"], "parents": c["parents"],
                 "fitness": c["fitness"], "n": c["n"], "best": pop["best"] == cid,
                 "campaign": pop["campaign"]})
+    elif c["status"] == "deferred":
+        job = pop["usage"]["deferred_jobs"][-1] if pop["usage"]["deferred_jobs"] else None
+        again = job is not None and job.get("from") == cid
+        short = (f"usage limit message, resets {sess['reset_at'] or 'unstated'}" if sess and sess["rate_limited"]
+                 else "killed at usage_hard")
+        L.emit("note", f"{cid} {c['operator']} deferred, not failed: {short}"
+               + ("; re-dispatched when the window has room" if again
+                  else f"; dropped after {c['defers'] + 1} deferrals"),
+               {"candidate": cid, "operator": c["operator"], "parents": c["parents"],
+                "exec": exec_status, "reason": reason, "redispatch": again,
+                "next_eligible": pop["usage"].get("blocked_until"), "campaign": pop["campaign"]})
     else:
         L.emit("candidate.failed", f"{cid} {c['operator']} {exec_status}: {reason}",
                {"candidate": cid, "operator": c["operator"], "parents": c["parents"],
@@ -774,6 +967,151 @@ def cmd_eval(args) -> None:
 
 
 # ---------------------------------------------------------------------------
+# the usage governor — the Claude Max window as a resource (NEXT.md §4, M3)
+# ---------------------------------------------------------------------------
+#
+# Two signals, one policy. The *estimate*: list-price cost of every worker session
+# that ended inside the rolling window (from session.json, as `claude -p` reports it),
+# plus a reservation per running session, against `usage.window_budget`; at `soft`
+# nothing new is dispatched, at `hard` running sessions are killed (a session cannot
+# be paused) and their jobs deferred. The *fact*: a rate-limit message in a session's
+# result defers that job and blocks dispatch until the stated reset time, or
+# `usage.retry` later. Waiting is a campaign status, `waiting_usage`, with a reason
+# and a next-eligible time; nobody polls the API for it.
+
+def defer_job(cfg: dict, pop: dict, c: dict, reason: str) -> None:
+    u = pop["usage"]
+    u["deferred"] += 1
+    sess = c.get("session") or {}
+    now = time.time()
+    if sess.get("rate_limited"):
+        u["rate_limits"] += 1
+        until = _iso_epoch(sess.get("reset_at")) or (now + cfg["usage"]["retry_sec"])
+        until = max(until, _iso_epoch(u.get("blocked_until")) or 0)
+        u["blocked_until"] = _epoch_iso(until)
+        u["blocked_reason"] = (f"usage limit message in {c['id']}'s session"
+                               + (f" (resets {sess['reset_at']})" if sess.get("reset_at")
+                                  else f" (no reset time stated; retry in {cfg['usage']['retry_sec'] // 60} min)"))
+    if c.get("defers", 0) < cfg["usage"]["max_defers"]:
+        u["deferred_jobs"].append({"operator": c["operator"], "parents": list(c["parents"]),
+                                   "from": c["id"], "defers": c.get("defers", 0) + 1,
+                                   "reason": reason})
+
+
+def usage_state(cfg: dict, pop: dict, now: float | None = None) -> dict:
+    """The governor's view of the window: what was spent, what is reserved, how full
+    the window is, and when dispatch becomes eligible again. Pure; no side effects."""
+    now = now or time.time()
+    u, ucfg = pop["usage"], cfg["usage"]
+    win, budget = ucfg["window_sec"], ucfg["window_budget"]
+    in_window: list[tuple[float, float]] = []
+    all_costs: list[float] = []
+    running = 0
+    for c in pop["candidates"].values():
+        if c["operator"] == "baseline":
+            continue
+        if c["status"] in ("queued", "running"):
+            running += 1
+            continue
+        s = c.get("session") or {}
+        cost = s.get("cost_usd")
+        if cost is None:
+            continue
+        all_costs.append(float(cost))
+        end = _iso_epoch(c.get("ended")) or _iso_epoch(c.get("launched"))
+        if end is not None and now - end < win:
+            in_window.append((end, float(cost)))
+    if len(all_costs) >= 3:
+        srt = sorted(all_costs)
+        reserve_each = srt[len(srt) // 2] if len(srt) % 2 else (srt[len(srt) // 2 - 1] + srt[len(srt) // 2]) / 2
+    else:
+        reserve_each = ucfg["session_cost"]
+    spend = sum(cost for _, cost in in_window)
+    reserved = reserve_each * running
+    st = {"window_sec": win, "budget": budget, "spend": round(spend, 4), "reserved": round(reserved, 4),
+          "reserve_each": round(reserve_each, 4), "sessions_in_window": len(in_window),
+          "running": running, "fraction": None, "level": "ok", "reason": None,
+          "next_eligible": None, "now": _epoch_iso(now)}
+    blocked_until = _iso_epoch(u.get("blocked_until"))
+    if blocked_until and blocked_until > now:
+        st["level"], st["reason"], st["next_eligible"] = "blocked", u.get("blocked_reason"), u["blocked_until"]
+    if budget:
+        frac = (spend + reserved) / budget
+        st["fraction"] = round(frac, 4)
+        level = "hard" if frac >= ucfg["hard"] else "soft" if frac >= ucfg["soft"] else "ok"
+        if level != "ok":
+            remaining = spend + reserved
+            t = None
+            for end, cost in sorted(in_window):
+                remaining -= cost
+                if remaining < ucfg["soft"] * budget:
+                    t = end + win
+                    break
+            t = t or (now + win)
+            reason = (f"window estimate {frac:.0%} of budget ${budget:g} "
+                      f"(${spend:.2f} spent in the last {win // 3600}h{(win % 3600) // 60:02d}m"
+                      + (f" + ${reserved:.2f} reserved for {running} running" if running else "")
+                      + f") ≥ {level} {ucfg[level]:.0%}")
+            if st["level"] != "blocked" or (st["next_eligible"] and _iso_epoch(st["next_eligible"]) < t):
+                st["level"], st["reason"], st["next_eligible"] = level, reason, _epoch_iso(t)
+            elif st["level"] == "blocked":
+                st["level"] = level   # a hard level still kills; keep the later next_eligible
+                st["reason"] = f"{u.get('blocked_reason')}; also {reason}"
+    return st
+
+
+def _close_wait(pop: dict, now: float) -> None:
+    u = pop["usage"]
+    since = _iso_epoch(u.get("waiting_since"))
+    if since is not None:
+        u["waiting_seconds"] += max(0.0, now - since)
+    u["waiting_since"] = None
+
+
+def govern(cfg: dict, pop: dict) -> dict:
+    """Move the campaign between running and waiting_usage; kill at hard. Returns the state."""
+    now = time.time()
+    st = usage_state(cfg, pop, now)
+    u = pop["usage"]
+    if st["fraction"] is not None:
+        u["peak_fraction"] = max(u.get("peak_fraction", 0.0), st["fraction"])
+    if st["level"] == "hard":
+        for c in pop["candidates"].values():
+            if c["status"] == "running" and c["operator"] != "baseline" and c.get("watch") \
+                    and not c.get("usage_kill"):
+                c["usage_kill"] = True
+                u["hard_kills"] += 1
+                _lab("watch", "kill", c["watch"], "--reason",
+                     f"usage_hard: {st['reason']}", check=False)
+    blocked = st["level"] != "ok"
+    if blocked and pop["status"] == "running":
+        pop["status"] = "waiting_usage"
+        u["waiting_since"] = _epoch_iso(now)
+        u["pauses"] += 1
+        u["waiting_reason"], u["next_eligible"] = st["reason"], st["next_eligible"]
+        L.emit("campaign.paused",
+               f"campaign {pop['campaign']} waiting on usage ({st['level']}): next eligible "
+               f"{st['next_eligible']}",
+               {"campaign": pop["campaign"], "level": st["level"], "reason": st["reason"],
+                "next_eligible": st["next_eligible"], "spend": st["spend"], "reserved": st["reserved"],
+                "budget": st["budget"], "fraction": st["fraction"],
+                "kills": u["hard_kills"] if st["level"] == "hard" else 0})
+    elif blocked and pop["status"] == "waiting_usage":
+        u["waiting_reason"], u["next_eligible"] = st["reason"], st["next_eligible"]
+    elif not blocked and pop["status"] == "waiting_usage":
+        since = _iso_epoch(u.get("waiting_since")) or now
+        _close_wait(pop, now)
+        pop["status"] = "running"
+        u["waiting_reason"], u["next_eligible"] = None, None
+        L.emit("note", f"campaign {pop['campaign']} resumed after {(now - since) / 60:.1f} min "
+                       f"waiting on usage; {len(u['deferred_jobs'])} deferred job(s) queued",
+               {"campaign": pop["campaign"], "waited_sec": round(now - since),
+                "waiting_total_sec": round(u["waiting_seconds"]),
+                "deferred_jobs": len(u["deferred_jobs"])})
+    return st
+
+
+# ---------------------------------------------------------------------------
 # selection — AIRA₂ temperature-scaled rank selection
 # ---------------------------------------------------------------------------
 
@@ -792,11 +1130,17 @@ def rank_select(cfg: dict, pool: list[dict], rng: random.Random, k: int = 1) -> 
     return chosen
 
 
-def choose_job(cfg: dict, pop: dict, rng: random.Random) -> tuple[str, list[str]] | None:
+def choose_job(cfg: dict, pop: dict, rng: random.Random) -> tuple[str, list[str], dict | None] | None:
+    """(operator, parents, origin) — origin names the deferred job being re-dispatched."""
     cands = pop["candidates"]
     running = [c for c in cands.values() if c["status"] in ("queued", "running")]
     if not any(c["operator"] == "baseline" for c in cands.values()):
-        return ("baseline", [])
+        return ("baseline", [], None)
+    # a job the window pushed out comes back before anything new is chosen
+    while pop["usage"]["deferred_jobs"]:
+        job = pop["usage"]["deferred_jobs"].pop(0)
+        if all(p in cands for p in job["parents"]):
+            return (job["operator"], list(job["parents"]), {"from": job["from"], "defers": job["defers"]})
     evaluated = [c for c in cands.values() if c["status"] == "evaluated" and c["fitness"] is not None]
     # a failed candidate under its retry cap gets one debug child before anything else
     for c in sorted(cands.values(), key=lambda c: c["id"]):
@@ -808,19 +1152,19 @@ def choose_job(cfg: dict, pop: dict, rng: random.Random) -> tuple[str, list[str]
                 cur = cands.get(cur["parents"][0])
             if depth < cfg["selection"]["max_debug_retries"]:
                 c["debugged"] = True
-                return ("debug", [c["id"]])
+                return ("debug", [c["id"]], None)
             c["debugged"] = True
     non_baseline = [c for c in evaluated if c["operator"] != "baseline"]
     if not non_baseline:
         # nothing to improve on yet: draft, but don't stack more drafts than slots
         if len([c for c in running if c["operator"] == "draft"]) < cfg["resources"]["max_parallel_jobs"]:
-            return ("draft", [])
+            return ("draft", [], None)
         return None
     if len(evaluated) >= 2 and rng.random() < cfg["selection"]["crossover_p"]:
         a, b = rank_select(cfg, evaluated, rng, k=2)
-        return ("crossover", [a["id"], b["id"]])
+        return ("crossover", [a["id"], b["id"]], None)
     (a,) = rank_select(cfg, evaluated, rng, k=1)
-    return ("improve", [a["id"]])
+    return ("improve", [a["id"]], None)
 
 
 # ---------------------------------------------------------------------------
@@ -944,11 +1288,51 @@ def write_report(cfg: dict, pop: dict) -> None:
         lines.append(f"| {cid} | {c['operator']} | {','.join(c['parents']) or '—'} | "
                      f"{c['exec'] or c['status']} | {fmt(c['fitness'])} | "
                      f"{(c.get('fail_reason') or ('frozen' if c['status'] == 'frozen' else '')).replace('|', '/')} |")
+    lines += ["", "## Usage (the Claude Max window)", ""] + usage_report_lines(cfg, pop, wall)
     lines += ["", "## Best candidate summary", "", read_summary(best["id"], 4000) if best else "_none_", ""]
     (L.ROOT / REPORT_FILE).write_text("\n".join(lines))
 
 
+def usage_report_lines(cfg: dict, pop: dict, wall_hours: float) -> list[str]:
+    u = pop.get("usage") or usage_defaults()
+    ucfg = cfg["usage"]
+    sessions = [c["session"] for c in pop["candidates"].values() if c.get("session")]
+    costs = sorted(float(s["cost_usd"]) for s in sessions if s.get("cost_usd") is not None)
+    turns = [s["turns"] for s in sessions if s.get("turns") is not None]
+    total = sum(costs)
+    median = (costs[len(costs) // 2] if len(costs) % 2 else
+              (costs[len(costs) // 2 - 1] + costs[len(costs) // 2]) / 2) if costs else None
+    waited_h = u["waiting_seconds"] / 3600
+    idle_pct = (waited_h / wall_hours * 100) if wall_hours > 0 else 0.0
+    win = ucfg["window_sec"]
+    gov = (f"estimate against ${ucfg['window_budget']:g} per {win / 3600:g} h window, "
+           f"soft {ucfg['soft']:.0%} / hard {ucfg['hard']:.0%}, plus rate-limit detection"
+           if ucfg["window_budget"] else
+           "OFF — no usage.window_budget; rate-limit detection only")
+    return [
+        "| | |", "|---|---|",
+        f"| governor | {gov} |",
+        f"| worker sessions | {len(sessions)} (turns: median {sorted(turns)[len(turns) // 2] if turns else '—'}, "
+        f"max {max(turns) if turns else '—'}) |",
+        f"| list-price equivalent, all sessions | ${total:.2f} (median ${median:.2f} per session) |" if costs
+        else "| list-price equivalent, all sessions | — (no session.json costs) |",
+        f"| peak window estimate | {u['peak_fraction']:.0%} of budget |" if ucfg["window_budget"]
+        else "| peak window estimate | — |",
+        f"| pauses on usage | {u['pauses']} ({u['rate_limits']} after a rate-limit message, "
+        f"{u['hard_kills']} session(s) killed at hard) |",
+        f"| time waiting on usage | {waited_h:.2f} h = {idle_pct:.1f}% of wall clock |",
+        f"| jobs deferred | {u['deferred']} (re-dispatched: "
+        f"{sum(1 for c in pop['candidates'].values() if c.get('redispatch_of'))}) |",
+        "",
+        "All costs are the list-price equivalents `claude -p` reports for a subscription session; "
+        "the subscription itself is prepaid. Sessions ran on subscription login only "
+        f"(auth preflight {'ok' if pop['auth_preflight']['ok'] else 'FAILED'}).",
+    ]
+
+
 def finish(cfg: dict, pop: dict, poll_sec: float) -> None:
+    pop.setdefault("usage", usage_defaults())
+    _close_wait(pop, time.time())
     run_final(cfg, pop, poll_sec)
     pop["status"] = "finished"
     pop["finished"] = pop.get("finished") or L.now_iso()
@@ -982,20 +1366,24 @@ def free_slots(cfg: dict, pop: dict) -> list[int | None]:
 def tick(cfg: dict, pop: dict) -> None:
     pop["tick"] += 1
     rng = random.Random(f"{pop['campaign']}:{pop['seed']}:{pop['tick']}")
+    pop.setdefault("usage", usage_defaults())
     reap(cfg, pop)
-    if pop["status"] == "running":
+    if pop["status"] in ("running", "waiting_usage"):
         reason = stop_reason(cfg, pop)
         if reason:
+            _close_wait(pop, time.time())
             pop["status"], pop["stop_reason"] = "stopping", reason
             L.emit("note", f"campaign {pop['campaign']} stopping: {reason}",
                    {"campaign": pop["campaign"], "reason": reason})
+    if pop["status"] in ("running", "waiting_usage"):
+        govern(cfg, pop)
     if pop["status"] == "running":
         for gpu in free_slots(cfg, pop):
             job = choose_job(cfg, pop, rng)
             if job is None:
                 break
-            op, parents = job
-            cid = new_candidate(cfg, pop, op, parents, gpu, rng)
+            op, parents, origin = job
+            cid = new_candidate(cfg, pop, op, parents, gpu, rng, origin)
             save_pop(pop)
             launch(cfg, pop, cid)
             save_pop(pop)
@@ -1022,6 +1410,7 @@ def cmd_run(args) -> None:
     if pop["status"] == "finished":
         print(f"campaign {pop['campaign']} is finished; see {REPORT_FILE}")
         return
+    pop.setdefault("usage", usage_defaults())
 
     ticks = 0
     while True:
@@ -1037,20 +1426,92 @@ def cmd_run(args) -> None:
         time.sleep(args.poll_sec)
     print(json.dumps({"status": pop["status"], "tick": pop["tick"], "settled": pop["settled"],
                       "running": len([c for c in pop["candidates"].values() if c["status"] == "running"]),
-                      "best": pop["best"]}))
+                      "best": pop["best"], "next_eligible": pop["usage"].get("next_eligible")}))
+
+
+def _campaign_cfg(pop: dict) -> dict | None:
+    """The campaign config for read-only views. A full load needs LAB_PRIVATE and the
+    data dirs; when that fails (another shell, a finished campaign moved elsewhere) fall
+    back to the [usage] table alone, which is all the governor's view needs."""
+    p = L.ROOT / pop.get("campaign_file", "campaign.toml")
+    if not p.exists():
+        return None
+    try:
+        with open(os.devnull, "w") as sink, _redirect_stderr(sink):
+            return load_campaign(p)
+    except SystemExit:
+        try:
+            raw = tomllib.loads(p.read_text())
+            return {"usage": parse_usage(raw, p.name), "partial": True}
+        except (SystemExit, tomllib.TOMLDecodeError, OSError):
+            return None
 
 
 def cmd_campaign_status(args) -> None:
     pop = load_pop()
     if pop is None:
         L.die(f"no {POP_FILE}: no campaign has started here")
+    pop.setdefault("usage", usage_defaults())
     rows = [(k, v["operator"], ",".join(v["parents"]) or "-", v["exec"] or v["status"],
              "-" if v["fitness"] is None else f"{v['fitness']:.6g}") for k, v in pop["candidates"].items()]
     print(f"campaign {pop['campaign']}  status {pop['status']}  tick {pop['tick']}  "
           f"settled {pop['settled']}  best {pop['best']}  claim {pop['claim']}  "
           f"gpu-h {pop['gpu_seconds']/3600:.2f}")
+    cfg = _campaign_cfg(pop)
+    if cfg is not None:
+        st = usage_state(cfg, pop)
+        print("  usage: " + _usage_line(cfg, pop, st))
     for r in rows:
         print("  " + "  ".join(f"{x:<12}" if i < 4 else x for i, x in enumerate(r)))
+
+
+def _usage_line(cfg: dict, pop: dict, st: dict) -> str:
+    u = pop["usage"]
+    if st["budget"]:
+        head = (f"${st['spend']:.2f} spent + ${st['reserved']:.2f} reserved of ${st['budget']:g} "
+                f"({st['fraction']:.0%}) in the last {st['window_sec'] / 3600:g} h, "
+                f"{st['sessions_in_window']} session(s)")
+    else:
+        head = (f"${st['spend']:.2f} spent in the last {st['window_sec'] / 3600:g} h, "
+                f"{st['sessions_in_window']} session(s); no window_budget (rate-limit detection only)")
+    tail = f"; level {st['level']}"
+    if st["level"] != "ok":
+        tail += f", next eligible {st['next_eligible']}"
+    tail += (f"; waited {u['waiting_seconds'] / 60:.0f} min over {u['pauses']} pause(s)"
+             f", {u['deferred']} deferred, {u['rate_limits']} rate-limit message(s)")
+    return head + tail
+
+
+def cmd_campaign_usage(args) -> None:
+    """The governor's view: what the window holds and when dispatch is eligible.
+    The number to calibrate `usage.window_budget` from: run a short campaign, read the
+    spend per session here, and set the budget to what the plan tolerated."""
+    pop = load_pop()
+    if pop is None:
+        L.die(f"no {POP_FILE}: no campaign has started here")
+    pop.setdefault("usage", usage_defaults())
+    cfg = _campaign_cfg(pop)
+    if cfg is None:
+        L.die(f"{pop.get('campaign_file')} not found; the governor needs the campaign file")
+    st = usage_state(cfg, pop)
+    sessions = [{"candidate": k, "ended": v.get("ended"), **{kk: v["session"].get(kk) for kk in
+                 ("id", "turns", "cost_usd", "rate_limited", "reset_at")}}
+                for k, v in pop["candidates"].items() if v.get("session")]
+    if args.json:
+        print(json.dumps({"state": st, "governor": pop["usage"], "sessions": sessions,
+                          "config": {k: v for k, v in cfg["usage"].items() if k != "rate_limit_regex"}},
+                         indent=2))
+        return
+    print(f"campaign {pop['campaign']}  status {pop['status']}")
+    print("usage: " + _usage_line(cfg, pop, st))
+    if pop["usage"]["deferred_jobs"]:
+        print("deferred jobs queued: " + ", ".join(
+            f"{j['operator']}({','.join(j['parents']) or '-'}) from {j['from']}" for j in pop["usage"]["deferred_jobs"]))
+    print(f"{'candidate':10} {'ended (UTC)':20} {'turns':>5} {'cost $':>8}  note")
+    for s in sessions:
+        note = "RATE LIMITED" + (f", resets {s['reset_at']}" if s.get("reset_at") else "") if s.get("rate_limited") else ""
+        cost = "—" if s.get("cost_usd") is None else f"{float(s['cost_usd']):.2f}"
+        print(f"{s['candidate']:10} {(s.get('ended') or '?'):20} {str(s.get('turns') or '—'):>5} {cost:>8}  {note}")
 
 
 def cmd_campaign_stop(args) -> None:
@@ -1130,6 +1591,10 @@ def register(sub, lab_module) -> None:
     q.set_defaults(func=cmd_campaign_check)
     q = s2.add_parser("status", help="population at a glance")
     q.set_defaults(func=cmd_campaign_status)
+    q = s2.add_parser("usage", help="the usage governor's view of the Max window; calibrate "
+                                    "usage.window_budget from it")
+    q.add_argument("--json", action="store_true")
+    q.set_defaults(func=cmd_campaign_usage)
     q = s2.add_parser("stop", help="stop dispatching; finish when running jobs end")
     q.add_argument("--now", action="store_true", help="also kill running jobs")
     q.set_defaults(func=cmd_campaign_stop)

@@ -68,5 +68,8 @@ assert_eq   "launch failures are failed candidates with exit code 3" \
 assert_eq   "each failed draft got exactly one debug attempt, then the loop moved on" \
   "$(python3 -c "import json;p=json.load(open('population.json'));print(len([c for c in p['candidates'].values() if c['operator']=='debug']))")" "1"
 
+# shellcheck source=scripts/acceptance_usage.sh
+. "$SRC/scripts/acceptance_usage.sh"
+
 export PATH="$_saved_path"
 [ "${KEEP:-0}" = "1" ] || rm -rf "$WORK3" "$WORK4" "$WORK5"

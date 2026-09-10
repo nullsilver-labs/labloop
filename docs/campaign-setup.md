@@ -36,3 +36,40 @@ tools/lab run campaign.toml --poll-sec 10        # or under: lab watch start --o
 tools/lab campaign status                        # any time, from another shell
 tools/lab campaign stop [--now]                  # stop dispatching (and kill running jobs)
 ```
+
+## The usage governor (the Claude Max window)
+
+Max is a rolling 5-hour allowance, not money, and `lab run` treats it like a GPU:
+a resource with a budget, enforced by not dispatching. Configure it in `[usage]`:
+
+```toml
+[usage]
+window_budget = 12.0   # list-price USD per 5 h window the plan tolerates; see below
+soft = 0.70            # of window_budget: dispatch nothing new, status waiting_usage
+hard = 0.90            # also kill running sessions (a session cannot be paused);
+                       # their jobs are deferred and come back when the window has room
+```
+
+Two signals feed it. The **estimate** sums `total_cost_usd` of every worker session that
+ended inside the window (the list-price figure `claude -p` reports for a subscription
+session; the subscription itself is prepaid) plus one reservation per running session,
+and compares it with `window_budget`. The **fact** is a usage-limit message in a
+session's result ("You've hit your limit · resets 3pm"): that job is marked
+`deferred`, never `failed`, dispatch is blocked until the stated reset (or
+`usage.retry` later), and the job is re-dispatched as a new candidate whose
+`config.json` says `redispatch_of`. `lab campaign status` and `lab campaign usage`
+show the governor's view; `REPORT.md` reports the peak window estimate, pauses, time
+waiting as a share of wall clock (M3's kill criterion is 20 %), and deferrals.
+
+**Calibrating `window_budget`.** Anthropic publishes no token figure for the window,
+and headless Claude Code has no non-interactive `/usage`. So the budget is empirical:
+run a short campaign, read `lab campaign usage` (spend per session, sessions per
+window) next to `/usage` in an interactive session, and set `window_budget` to the
+list-price spend at which the plan sat near 100 %. Without a `window_budget` the loop
+only reacts to rate-limit messages and cannot pace itself; `lab campaign check` warns.
+
+**The first real rate limit.** The headless CLI's output on a spent window is not
+formally documented; the default `usage.rate_limit_regex` matches the interactive
+wording and a 429. After the first unattended run, open the deferred candidate's
+`session.json` and `session.stderr`, confirm they matched, and tighten the regex in
+`campaign.toml` if the wording differs.

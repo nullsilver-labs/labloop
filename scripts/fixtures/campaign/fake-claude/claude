@@ -2,8 +2,17 @@
 # A stand-in for the `claude` CLI so tools/lab-worker can be tested without a session.
 # Parses the flags lab-worker passes, "acts" on the job card by behaving like the
 # scripted worker for the operator named in the card, and prints one JSON result the
-# way `claude -p --output-format json` does. FAKE_CLAUDE_MODE=lazy makes it do nothing
-# (contract unmet); FAKE_CLAUDE_MODE=crash makes it exit 1 with no output.
+# way `claude -p --output-format json` does.
+#
+#   FAKE_CLAUDE_MODE=lazy          do nothing (contract unmet)
+#   FAKE_CLAUDE_MODE=crash         exit 1 with no output (launch failure)
+#   FAKE_CLAUDE_COST=0.30          total_cost_usd reported (default 0.0)
+#   FAKE_CLAUDE_COST_c0002=0.9     … for one candidate
+#   FAKE_CLAUDE_SLEEP_c0002=30     sleep this long before finishing (a slow session)
+#   FAKE_CLAUDE_RESET="in 5s"     the reset the limit message states (default: a clock time 2 h ahead)
+#   FAKE_CLAUDE_RATELIMIT=c0001    that candidate's session ends the way a spent Max
+#                                  window ends it: "You've hit your limit · resets …",
+#                                  is_error, exit 1, no work done
 set -euo pipefail
 prompt=""; model=""; turns=""; fmt="text"
 while [ $# -gt 0 ]; do
@@ -16,6 +25,26 @@ while [ $# -gt 0 ]; do
     *) shift;;
   esac
 done
+cid="$(basename "${LAB_CANDIDATE_DIR:-none}")"
+cost_var="FAKE_CLAUDE_COST_$cid"; cost="${!cost_var:-${FAKE_CLAUDE_COST:-0.0}}"
+sleep_var="FAKE_CLAUDE_SLEEP_$cid"; nap="${!sleep_var:-0}"
+[ "$nap" != "0" ] && sleep "$nap"
+
+if [ "${FAKE_CLAUDE_RATELIMIT:-}" = "$cid" ]; then
+  reset="${FAKE_CLAUDE_RESET:-$(date -d '+2 hours' '+%-I%p' 2>/dev/null | tr 'APM' 'apm' || echo 3pm)}"
+  python3 - "$model" "$cost" "$reset" <<'PY'
+import json, sys, uuid
+print(json.dumps({"type": "result", "subtype": "error_during_execution", "is_error": True,
+                  "duration_ms": 800, "num_turns": 1,
+                  "result": f"You've hit your limit · resets {sys.argv[3]}",
+                  "session_id": str(uuid.uuid4()), "total_cost_usd": float(sys.argv[2]),
+                  "usage": {"input_tokens": 10, "output_tokens": 0},
+                  "modelUsage": {sys.argv[1]: {"inputTokens": 10, "outputTokens": 0}}}))
+PY
+  echo "You've hit your limit · resets $reset" >&2
+  exit 1
+fi
+
 case "${FAKE_CLAUDE_MODE:-work}" in
   crash) echo "fake claude: simulated launch failure" >&2; exit 1;;
   lazy) result="I looked at the task and did nothing.";;
@@ -25,11 +54,11 @@ case "${FAKE_CLAUDE_MODE:-work}" in
     LAB_OPERATOR="$op" bash "$(dirname "$0")/../worker.sh"
     result="Wrote code/run.sh for operator $op and ran it. Model: $(cat "$LAB_CANDIDATE_DIR/code/model.json")";;
 esac
-python3 - "$result" "$model" "$turns" <<'PY'
+python3 - "$result" "$model" "$turns" "$cost" <<'PY'
 import json, sys, uuid
 print(json.dumps({"type": "result", "subtype": "success", "is_error": False,
                   "duration_ms": 1234, "num_turns": 3, "result": sys.argv[1],
-                  "session_id": str(uuid.uuid4()), "total_cost_usd": 0.0,
+                  "session_id": str(uuid.uuid4()), "total_cost_usd": float(sys.argv[4]),
                   "usage": {"input_tokens": 1000, "output_tokens": 200},
                   "modelUsage": {sys.argv[2]: {"inputTokens": 1000, "outputTokens": 200}}}))
 PY

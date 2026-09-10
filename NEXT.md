@@ -34,6 +34,20 @@ weights, and headless sessions in an untrusted directory ignore the project allo
 (docs/campaign-setup.md). Next: M2 (crossover, temperature > 0, 24 h on a task with
 headroom) and M3 (usage governor) before any unattended run.
 
+**M3 built (2026-09-10), not yet run unattended.** `[usage]` in `campaign.toml`; the
+governor lives in `tools/lab_campaign.py` (`usage_state`, `govern`, `defer_job`).
+Rolling-window estimate from each session's `total_cost_usd` plus a reservation per
+running session; `soft` stops dispatch (campaign status `waiting_usage`, with reason
+and next-eligible time), `hard` kills running sessions and defers their jobs; a
+rate-limit message in a session result defers the job, blocks until the stated reset,
+and re-dispatches it (`redispatch_of` in provenance). `lab campaign usage` is the
+calibration view; `REPORT.md` gains a usage section with the idle share of wall clock
+that M3's kill criterion reads. Acceptance section E covers soft pause/resume with
+restart, rate-limit deferral and re-dispatch, hard kill (288 checks). Open before the
+weekend run: `usage.window_budget` must be calibrated against `/usage` by hand (no
+non-interactive read exists), and the headless CLI's exact wording on a spent window
+is undocumented, so the first deferred candidate's `session.json` is to be checked.
+
 ---
 
 ## 1. The loop
@@ -240,7 +254,7 @@ statement in ≤ 40 turns, or median cost per candidate exceeds a phase session'
 *Kill if:* best search fitness after 24 h is not better than M1's greedy run at equal
 GPU-hours. A tie is a tie; report it.
 
-**M3 — Usage governor, unattended (≈ 2 days).**
+**M3 — Usage governor, unattended (≈ 2 days). BUILT 2026-09-10, weekend run pending.**
 Rolling-window estimate, soft/hard thresholds, `deferred`, rate-limit detection.
 Run over a weekend.
 *Kill if:* the loop idles more than 20 % of wall clock on usage, or a worker ever
