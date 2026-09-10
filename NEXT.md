@@ -260,7 +260,9 @@ Run over a weekend.
 *Kill if:* the loop idles more than 20 % of wall clock on usage, or a worker ever
 continues past a rate-limit message.
 
-**M4 — Two GPUs (≈ 2 days).**
+**M4 — Two GPUs (≈ 2 days). Plumbing built 2026-09-10 (VRAM check via
+`resources.min_free_vram_mb`, no duplicate (operator, parents) dispatch across free
+slots, settled candidates per GPU-hour in REPORT.md); the two-GPU run is pending.**
 Slot leasing, VRAM check, concurrent dispatch.
 *Kill if:* settled candidates per GPU-hour fall below M2's single-GPU figure.
 

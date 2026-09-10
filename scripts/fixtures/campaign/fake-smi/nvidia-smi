@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Stand-in for nvidia-smi: prints $FAKE_SMI (index, used, total lines) for the
+# --query-gpu form lab_campaign.py uses; anything else fails like a missing driver.
+case "$*" in
+  *--query-gpu=index,memory.used,memory.total*) printf '%b\n' "${FAKE_SMI:-0, 0, 24576}";;
+  *) echo "fake nvidia-smi: unsupported query: $*" >&2; exit 1;;
+esac

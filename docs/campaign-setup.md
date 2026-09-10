@@ -27,6 +27,13 @@ What a new project needs before `lab run` works. Learned on the first live run
 7. Optional but recommended: the **`labeval` user** (`docs/labeval.md`) so hidden
    labels are hidden by the OS, not by convention. REPORT.md states which.
 
+8. **Refreshing tooling** in an existing project: `scripts/sync-project.sh <project>`
+   copies `tools/`, `.claude/`, `templates/`, `CLAUDE.md` and `.lab-redact` from this
+   repo and touches nothing else. Never during a run.
+9. **Two GPUs**: list both in `resources.gpus` and set `max_parallel_jobs = 2`.
+   `min_free_vram_mb` skips a GPU that something else is using (checked with
+   `nvidia-smi` before every lease, noted in the feed once per episode).
+
 Then:
 
 ```sh

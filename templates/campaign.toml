@@ -29,6 +29,7 @@ timeout = "10m"
 [resources]
 gpus             = [0]           # one job per GPU; [] means CPU-only, one slot
 max_parallel_jobs = 1
+min_free_vram_mb = 0             # >0: skip a GPU whose free VRAM (nvidia-smi) is below this
 gpu_hours_total  = 20
 job_wall_clock   = "3h"          # per job, enforced by `lab watch`
 stall_min        = 30            # kill a job with no output and no CPU for this long

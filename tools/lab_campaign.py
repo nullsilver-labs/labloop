@@ -223,6 +223,7 @@ def load_campaign(path: Path) -> dict:
         "stall_min": int(r.get("stall_min", 0)),
         "worker_max_turns": int(r.get("worker_max_turns", 40)),
         "worker_model": r.get("worker_model", "claude-sonnet-5"),
+        "min_free_vram_mb": int(r.get("min_free_vram_mb", 0)),
     }
     if cfg["resources"]["max_parallel_jobs"] < 1:
         L.die(f"{path.name}: resources.max_parallel_jobs must be >= 1")
@@ -1273,6 +1274,11 @@ def write_report(cfg: dict, pop: dict) -> None:
         f"| baseline search fitness | {fmt(base['fitness']) if base else '—'} |",
         f"| candidates settled | {pop['settled']} ({', '.join(f'{k} {v}' for k, v in sorted(counts.items()))}) |",
         f"| GPU-hours | {hours:.2f} of {cfg['resources']['gpu_hours_total'] or '∞'} |",
+        f"| settled candidates per GPU-hour | {(pop['settled'] / hours):.2f} |" if hours > 0
+        else "| settled candidates per GPU-hour | — (no GPU time recorded) |",
+        f"| GPUs | {', '.join(str(g) for g in cfg['resources']['gpus']) or 'none (CPU)'}; "
+        f"max parallel {cfg['resources']['max_parallel_jobs']}"
+        + (f"; min free VRAM {cfg['resources']['min_free_vram_mb']} MiB" if cfg['resources']['min_free_vram_mb'] else "") + " |",
         f"| wall clock | {wall:.2f} h |",
         f"| stop reason | {pop.get('stop_reason') or '—'} |",
         f"| privilege separation for labels | {'on (' + cfg['eval']['user'] + ')' if cfg['eval']['user'] else 'OFF — labels were readable to the evaluator user only by convention'} |",
@@ -1353,14 +1359,70 @@ def finish(cfg: dict, pop: dict, poll_sec: float) -> None:
 # the loop
 # ---------------------------------------------------------------------------
 
+def gpu_free_vram_mb() -> dict[int, int] | None:
+    """{gpu index: free MiB} from nvidia-smi, or None when it is unavailable."""
+    try:
+        cp = subprocess.run(["nvidia-smi", "--query-gpu=index,memory.used,memory.total",
+                             "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=20)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if cp.returncode != 0:
+        return None
+    out: dict[int, int] = {}
+    for line in cp.stdout.splitlines():
+        parts = [x.strip() for x in line.split(",")]
+        if len(parts) == 3 and all(x.lstrip("-").isdigit() for x in parts):
+            out[int(parts[0])] = int(parts[2]) - int(parts[1])
+    return out
+
+
 def free_slots(cfg: dict, pop: dict) -> list[int | None]:
+    """GPU slots (or CPU slots) that may take a job this tick. A GPU whose free VRAM is
+    under resources.min_free_vram_mb — something else is using it — is skipped, once
+    per tick, with a note the first time; it is leased again when the memory is back."""
     busy = [c["gpu"] for c in pop["candidates"].values() if c["status"] in ("queued", "running")]
     n_running = len(busy)
     if n_running >= cfg["resources"]["max_parallel_jobs"]:
         return []
-    if cfg["resources"]["gpus"]:
-        return [g for g in cfg["resources"]["gpus"] if g not in busy][: cfg["resources"]["max_parallel_jobs"] - n_running]
-    return [None] * (cfg["resources"]["max_parallel_jobs"] - n_running)
+    room = cfg["resources"]["max_parallel_jobs"] - n_running
+    if not cfg["resources"]["gpus"]:
+        return [None] * room
+    idle = [g for g in cfg["resources"]["gpus"] if g not in busy]
+    need = cfg["resources"]["min_free_vram_mb"]
+    if idle and need > 0:
+        free = gpu_free_vram_mb()
+        if free is not None:
+            held = pop.setdefault("vram_held", {})
+            ok = []
+            for g in idle:
+                have = free.get(g)
+                if have is not None and have < need:
+                    if not held.get(str(g)):
+                        held[str(g)] = L.now_iso()
+                        L.emit("note", f"gpu {g} has {have} MiB free, below {need}; not leasing it "
+                                       "until the memory is back", {"gpu": g, "free_mb": have,
+                                                                    "min_free_vram_mb": need})
+                    continue
+                if held.get(str(g)):
+                    held.pop(str(g), None)
+                    L.emit("note", f"gpu {g} has {have} MiB free again; leasing it",
+                           {"gpu": g, "free_mb": have})
+                ok.append(g)
+            idle = ok
+    return idle[:room]
+
+
+def pick_job(cfg: dict, pop: dict, rng: random.Random, in_flight: set) -> tuple | None:
+    """choose_job, but two free slots in one tick must not both improve (or cross) the
+    same parents: with a seeded worker that is the same job twice. Re-sample a few
+    times; a persistent duplicate (tiny population) is accepted rather than idling."""
+    job = choose_job(cfg, pop, rng)
+    for _ in range(8):
+        if job is None or job[2] is not None or job[0] in ("baseline", "draft", "debug") \
+                or (job[0], tuple(job[1])) not in in_flight:
+            break
+        job = choose_job(cfg, pop, rng)
+    return job
 
 
 def tick(cfg: dict, pop: dict) -> None:
@@ -1378,11 +1440,14 @@ def tick(cfg: dict, pop: dict) -> None:
     if pop["status"] in ("running", "waiting_usage"):
         govern(cfg, pop)
     if pop["status"] == "running":
+        in_flight = {(c["operator"], tuple(c["parents"])) for c in pop["candidates"].values()
+                     if c["status"] in ("queued", "running")}
         for gpu in free_slots(cfg, pop):
-            job = choose_job(cfg, pop, rng)
+            job = pick_job(cfg, pop, rng, in_flight)
             if job is None:
                 break
             op, parents, origin = job
+            in_flight.add((op, tuple(parents)))
             cid = new_candidate(cfg, pop, op, parents, gpu, rng, origin)
             save_pop(pop)
             launch(cfg, pop, cid)
