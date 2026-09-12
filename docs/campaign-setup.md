@@ -1,7 +1,7 @@
 # Starting a campaign
 
 What a new project needs before `lab run` works. Learned on the first live run
-(M1, MNIST, 2026-09-09); see NEXT.md for the design.
+(M1, MNIST, 2026-09-09); see docs/aira2-loop-design.md for the design and NEXT.md for status.
 
 1. **A project directory** with the template's `tools/`, `.claude/`, `templates/`,
    `CLAUDE.md`, `.lab-redact` copied in, and `git init` (candidate provenance records

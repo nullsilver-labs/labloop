@@ -1,6 +1,6 @@
 # campaign.toml — the human writes this once; `lab run` reads it and refuses to
 # continue a campaign whose file changed (a changed campaign is a new campaign).
-# See NEXT.md. Validate with `tools/lab campaign check`.
+# See docs/aira2-loop-design.md. Validate with `tools/lab campaign check`.
 
 [campaign]
 id   = "ns-REPLACE-ME"          # lowercase [a-z0-9-]

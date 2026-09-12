@@ -1,6 +1,6 @@
 """lab campaign | candidate | eval | job | run — the AIRA₂-style search loop.
 
-See NEXT.md. This module is registered into `tools/lab` and shares its helpers
+See docs/aira2-loop-design.md (design) and NEXT.md (status). This module is registered into `tools/lab` and shares its helpers
 (events, redaction, provenance, LEDGER, watchers), so `lab` stays the single writer
 of population.json, LEDGER.md and events.jsonl.
 
@@ -343,7 +343,7 @@ Seed with the job card's seed. Write `summary.md`: what you built/changed, what 
 
 
 def parse_usage(raw: dict, name: str = "campaign.toml") -> dict:
-    """[usage] — the Claude Max window is the second scarce resource (NEXT.md §4). The
+    """[usage] — the Claude Max window is the second scarce resource (docs/aira2-loop-design.md §4). The
     estimate governor needs a calibrated budget; without one only rate-limit detection
     runs. Legacy resources.usage_soft/usage_hard are honoured as defaults."""
     u, r = raw.get("usage", {}), raw.get("resources", {})
@@ -470,7 +470,7 @@ def init_pop(cfg: dict) -> dict:
     pre = auth_preflight()
     if not pre["ok"]:
         L.die("refusing to start: " + ", ".join(pre["paid_route_env_present"]) +
-              " is set. The loop runs on subscription login only (NEXT.md §4); unset it.")
+              " is set. The loop runs on subscription login only (docs/aira2-loop-design.md §4); unset it.")
     pop = {
         "format": L.FORMAT_VERSION,
         "campaign": cfg["campaign"]["id"],
@@ -948,7 +948,7 @@ def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
         reason = (f"usage limit: {sess['message']}; the session kept running past it and was "
                   "killed by the watcher")
     elif sess and sess["rate_limited"]:
-        # the window is spent: not the candidate's fault, never `failed` (NEXT.md §4)
+        # the window is spent: not the candidate's fault, never `failed` (docs/aira2-loop-design.md §4)
         exec_status, reason = "deferred", f"usage limit: {sess['message']}"
     elif exec_status == "killed" and kill_reason.startswith("usage_hard"):
         exec_status, reason = "deferred", kill_reason
@@ -1255,7 +1255,7 @@ def cmd_eval(args) -> None:
 
 
 # ---------------------------------------------------------------------------
-# the usage governor — the Claude Max window as a resource (NEXT.md §4, M3)
+# the usage governor — the Claude Max window as a resource (docs/aira2-loop-design.md §4, M3)
 # ---------------------------------------------------------------------------
 #
 # Two signals, one policy. The *estimate*: list-price cost of every worker session

@@ -1,8 +1,8 @@
 # acceptance_campaign.sh — sourced by acceptance.sh. No LLM involved.
 #
-# Drives the phaseless loop (`lab run`, NEXT.md M0) end to end on a toy task with a
+# Drives the phaseless loop (`lab run`, docs/aira2-loop-design.md M0) end to end on a toy task with a
 # scripted worker: baseline → draft → a simulated crash → debug → improve … → stop →
-# freeze → one final-split read → REPORT.md. Asserts the plumbing NEXT.md insists on:
+# freeze → one final-split read → REPORT.md. Asserts the plumbing docs/aira2-loop-design.md §4 insists on:
 # labels never reach a worker, fitness is written only by lab, measurements are
 # idempotent across restarts, failed candidates are kept, the final split is read once,
 # the auth preflight refuses a paid route, and evidence is immutable.

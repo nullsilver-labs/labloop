@@ -1215,7 +1215,7 @@ def main(argv: list[str] | None = None) -> None:
                          "version = print the format version alone")
     sp.set_defaults(func=cmd_format)
 
-    # The search loop (NEXT.md). Registered from its own module; a failure to
+    # The search loop (docs/aira2-loop-design.md). Registered from its own module; a failure to
     # import it must not take the plumbing down with it.
     try:
         sys.path.insert(0, str(Path(__file__).resolve().parent))

@@ -26,7 +26,7 @@ cid="$(basename "$LAB_CANDIDATE_DIR")"
 # Subscription login only: refuse a paid route rather than silently billing it.
 for v in ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN ANTHROPIC_BASE_URL CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX; do
   if [ -n "${!v:-}" ]; then
-    echo "lab-worker: $v is set; the loop runs on subscription login only (NEXT.md §4)" >&2
+    echo "lab-worker: $v is set; the loop runs on subscription login only (docs/aira2-loop-design.md §4)" >&2
     exit 3
   fi
 done

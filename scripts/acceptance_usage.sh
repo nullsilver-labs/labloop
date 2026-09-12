@@ -1,6 +1,6 @@
 # acceptance_usage.sh — sourced by acceptance_campaign.sh. No LLM involved.
 #
-# The usage governor (NEXT.md M3): the Claude Max window as a resource. With the fake
+# The usage governor (docs/aira2-loop-design.md M3): the Claude Max window as a resource. With the fake
 # `claude` reporting a list-price cost per session, asserts that the loop pauses at
 # the soft threshold and dispatches nothing while waiting, resumes when the window
 # turns, records the wait, defers (never fails) a job whose session hit a rate-limit
@@ -112,7 +112,7 @@ assert_grep "REPORT shows the deferred row"                    "| c0001 | draft 
 unset FAKE_CLAUDE_RATELIMIT FAKE_CLAUDE_RESET
 
 # --- E2b: a limit message from a session that KEEPS RUNNING is enforced by the watcher --
-# NEXT.md M3 kill criterion: a worker never continues past a rate-limit message. The
+# docs/aira2-loop-design.md M3 kill criterion: a worker never continues past a rate-limit message. The
 # fake CLI prints the message to stderr and then retries forever; lab-worker echoes the
 # CLI's stderr under a prefix and `lab run` launched the job with a kill pattern scoped
 # to that prefix, so the watcher ends the session within a poll, long before the job's

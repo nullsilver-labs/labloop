@@ -20,7 +20,7 @@ keeps its values — pre-registration, numeric thresholds, honest claims, eviden
 deleted. Target host: **Claude Code**, on subscription login only.
 
 **Status: experimental.** The loop is exercised end to end by `scripts/acceptance.sh`
-without an LLM, and has run live on MNIST and CIFAR-10 (NEXT.md). Format 2.0 removed
+without an LLM, and has run live on MNIST and CIFAR-10 (status in NEXT.md, design in docs/aira2-loop-design.md). Format 2.0 removed
 the earlier six-phase state machine; nothing of it remains in the repo.
 
 ## The loop
