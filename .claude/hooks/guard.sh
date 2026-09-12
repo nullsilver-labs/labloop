@@ -16,14 +16,41 @@ try:
 except Exception:
     sys.exit(0)
 
-if data.get("tool_name") != "Bash":
+EVIDENCE = r"(candidates/|events\.jsonl|LEDGER\.md|population\.json|REPORT\.md)"
+MACHINE = r"(events\.jsonl|population\.json|FORMAT\.json|fitness\.json|finding\.json|LEDGER\.md)"
+
+# The editing tools reach the same files without a shell: the machine files have one
+# writer whichever tool is used, and a worker edits only its own candidate dir.
+tool = data.get("tool_name")
+if tool in ("Write", "Edit", "MultiEdit", "NotebookEdit"):
+    inp = data.get("tool_input") or {}
+    fp = str(inp.get("file_path") or inp.get("notebook_path") or "")
+    fp = fp.strip()
+    if fp:
+        # resolve against the tool's cwd, then lexically: candidates/c0004/../c0001/x is
+        # c0001's, and ../c0001/x from inside c0004 is too
+        fp = os.path.normpath(os.path.join(data.get("cwd") or os.getcwd(), fp))
+    if re.search(rf"(?:^|/){MACHINE}$", fp):
+        print(f"Blocked: {tool} {fp} — the machine files (population.json, LEDGER.md, "
+              "fitness.json, finding.json, events.jsonl, FORMAT.json) have exactly one writer: "
+              "`tools/lab`.", file=sys.stderr)
+        sys.exit(2)
+    if os.environ.get("LAB_ROLE") == "worker" and fp:
+        own_dir = os.path.normpath(os.environ.get("LAB_CANDIDATE_DIR", "") or "")
+        own = os.path.basename(own_dir)
+        m = re.search(r"/candidates/(c\d{4})(?:/|$)", fp)
+        inside_own = own_dir and (fp == own_dir or fp.startswith(own_dir + os.sep))
+        if m and own and not inside_own:
+            print(f"Blocked: {tool} {fp} — that writes into another candidate's dir. A worker "
+                  f"writes only inside its own ({own}).", file=sys.stderr)
+            sys.exit(2)
+    sys.exit(0)
+if tool != "Bash":
     sys.exit(0)
 cmd = (data.get("tool_input") or {}).get("command", "")
 if not cmd:
     sys.exit(0)
 
-EVIDENCE = r"(candidates/|events\.jsonl|LEDGER\.md|population\.json|REPORT\.md)"
-MACHINE = r"(events\.jsonl|population\.json|FORMAT\.json|fitness\.json|LEDGER\.md)"
 START = r"(?:^|[;&|]\s*|\$\(\s*)"
 NOSEP = r"[^;&|]*"
 
@@ -44,9 +71,14 @@ RULES = [
     (rf"{START}(?:tee|truncate|dd)\b{NOSEP}{MACHINE}",
      "that rewrites a machine file. Use `tools/lab log` / `tools/lab format sync`; the "
      "loop's own files are written by `lab run`."),
-    (rf"{START}sed\b{NOSEP}-i{NOSEP}(events\.jsonl|population\.json|LEDGER\.md)",
-     "that edits history in place. Events and ledger rows are never edited; append a "
-     "correcting `lab log note` instead."),
+    (rf"{START}(?:sudo\s+)?(?:cp|install|mv|ln|rsync|touch)\b{NOSEP}{MACHINE}",
+     "that creates or replaces a machine file by copying. population.json, LEDGER.md, "
+     "fitness.json, finding.json, events.jsonl and FORMAT.json are written only by "
+     "`tools/lab`; a finding.json a worker writes is quarantined at settlement, not adopted."),
+    (rf"{START}(?:sudo\s+)?(?:sed|perl)\b{NOSEP}-[a-zA-Z]*i{NOSEP}{MACHINE}",
+     "that edits a machine file in place. Events and ledger rows are never edited (append "
+     "a correcting `lab log note` instead); fitness.json and finding.json are written only "
+     "by `lab`."),
     (rf"curl{NOSEP}\|\s*(?:ba|z|)sh",
      "that pipes a download straight into a shell."),
 ]

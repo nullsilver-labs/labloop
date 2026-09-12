@@ -49,9 +49,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import lab_findings as F
+
 L: Any = None          # the `lab` module, injected by register()
 
 POP_FILE = "population.json"
+CARD_FILE = "finding.json"
+MEMORY_POLICIES = ["legacy", "findings-v1"]
 CAND_DIR = "candidates"
 REPORT_FILE = "REPORT.md"
 OPERATORS = ["baseline", "draft", "improve", "crossover", "debug"]
@@ -266,6 +270,12 @@ def load_campaign(path: Path) -> dict:
     cfg["report"] = {"success_threshold": float(rp["success_threshold"]),
                      "higher_is_better": bool(rp.get("higher_is_better", True))}
 
+    mem = raw.get("memory", {})
+    mode = mem.get("mode", "legacy") if isinstance(mem, dict) else None
+    if mode not in MEMORY_POLICIES:
+        L.die(f"{path.name}: [memory] mode must be one of {', '.join(MEMORY_POLICIES)} (got {mode!r})")
+    cfg["memory"] = {"mode": mode}
+
     ev = raw.get("eval", {})
     cfg["eval"] = {"user": ev.get("user") or None,
                    "timeout_sec": parse_duration(ev.get("timeout", "10m"), "eval.timeout")}
@@ -412,6 +422,7 @@ def cmd_campaign_check(args) -> None:
         "stop": cfg["stop"], "gpu_hours_total": cfg["resources"]["gpu_hours_total"],
         "privilege_separation": bool(cfg["eval"]["user"]),
         "success_threshold": cfg["report"]["success_threshold"],
+        "memory": cfg["memory"]["mode"],
         "usage_governor": ("estimate + rate-limit detection" if cfg["usage"]["window_budget"]
                            else "rate-limit detection only (no usage.window_budget)"),
         "usage": {k: v for k, v in cfg["usage"].items() if k != "rate_limit_regex"},
@@ -478,6 +489,7 @@ def init_pop(cfg: dict) -> dict:
         "final": None,
         "claim": "untested",
         "usage": usage_defaults(),
+        "memory": memory_snapshot(cfg),
     }
     save_pop(pop)
     L.emit("campaign.start", f"campaign {cfg['campaign']['id']} started: "
@@ -486,6 +498,46 @@ def init_pop(cfg: dict) -> dict:
             "slots": cfg["resources"]["slots"], "stop": cfg["stop"],
             "success_threshold": cfg["report"]["success_threshold"]})
     return pop
+
+
+def memory_snapshot(cfg: dict) -> dict:
+    """The effective memory policy and its limits, frozen into population.json when the
+    campaign starts: a tooling update must not change a running campaign's memory."""
+    if cfg["memory"]["mode"] == "findings-v1":
+        return {"policy": F.POLICY, **findings_limits()}
+    return {"policy": "legacy"}
+
+
+def findings_limits() -> dict:
+    """Every constant that shapes a card or a snapshot, as this lab implements it."""
+    return {"schema": F.SCHEMA, "max_cards": F.MAX_CARDS, "max_bytes": F.MAX_BYTES,
+            "field_bytes": dict(F.FIELD_BYTES), "topics_max": F.TOPICS_MAX,
+            "topic_max_bytes": F.TOPIC_MAX_BYTES, "reason_max_bytes": F.REASON_MAX_BYTES,
+            "max_warnings": F.MAX_WARNINGS, "warning_max_bytes": F.WARNING_MAX_BYTES,
+            "provenance_max_bytes": F.PROVENANCE_MAX_BYTES}
+
+
+def memory_policy(pop: dict) -> dict:
+    """A campaign without a snapshot (started by an older lab) is legacy; an unknown
+    policy is a hard error, never a silent fallback."""
+    mem = pop.get("memory") or {"policy": "legacy"}
+    if mem.get("policy") not in MEMORY_POLICIES:
+        L.die(f"{POP_FILE} records memory policy {mem.get('policy')!r}, which this lab does not "
+              f"implement (known: {', '.join(MEMORY_POLICIES)}). Refusing to run under a policy "
+              "it cannot honour.")
+    if mem["policy"] == F.POLICY:
+        # The complete snapshot is required, and every value must be what this tool
+        # implements: a campaign frozen under other limits is run by the tool version
+        # that started it, never silently re-parsed under new constants.
+        for k, v in findings_limits().items():
+            if k not in mem:
+                L.die(f"{POP_FILE} memory snapshot lacks {k}; this lab cannot honour an incomplete "
+                      f"{F.POLICY} policy")
+            if mem[k] != v:
+                L.die(f"{POP_FILE} froze memory {k}={mem[k]!r} but this lab implements {v!r}; "
+                      "a tooling update must not change a running campaign's memory. Run it "
+                      "with the tool version that started it, or start a new campaign.")
+    return mem
 
 
 def usage_defaults() -> dict:
@@ -515,7 +567,7 @@ def cand_dir(cid: str) -> Path:
 def read_summary(cid: str, limit: int = 1200) -> str:
     p = cand_dir(cid) / "summary.md"
     try:
-        t = p.read_text().strip()
+        t = p.read_bytes().decode("utf-8", errors="replace").strip()   # a worker's bytes, whatever they are
     except OSError:
         return ""
     return t if len(t) <= limit else t[:limit].rstrip() + " …"
@@ -537,6 +589,18 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
     """origin: the deferred job this candidate re-dispatches ({from, defers}), if any."""
     cid = f"c{len(pop['candidates']):04d}"
     cdir = cand_dir(cid)
+    mem = memory_policy(pop)
+    findings = None
+    if mem["policy"] == F.POLICY:
+        # The versioned findings snapshot: selected deterministically now, from the
+        # cards as they are, and stored whole so the job card is reproducible byte for
+        # byte after later candidates end. Consumes no scheduler randomness. Selected
+        # before the dir exists, so a tooling error here leaves no orphan.
+        try:
+            findings = F.select_context(load_cards(pop), parents, max_cards=mem["max_cards"],
+                                        max_bytes=mem["max_bytes"])
+        except F.ToolingError as e:
+            L.die(f"cannot build the findings context for {cid}: {e}")
     cdir.mkdir(parents=True, exist_ok=False)
     (cdir / "code").mkdir()
     (cdir / "out").mkdir()
@@ -581,17 +645,22 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
         "task_file": rel(cfg["campaign"]["task"]),
         "candidate_dir": rel(cdir),
         "seed": seed,
+        "memory": mem["policy"],
         "parents": [{
             "id": p, "path": rel(cand_dir(p)),
             "fitness": pop["candidates"][p].get("fitness"),
             "exec": pop["candidates"][p].get("exec"),
-            "fail_reason": pop["candidates"][p].get("fail_reason"),
-            "summary": read_summary(p),
+            # evaluator stderr can name the labels dir: a worker sees a sanitized line
+            "fail_reason": F.sanitize_text(pop["candidates"][p].get("fail_reason"),
+                                           lambda s: L.redact(s), _private_paths(cfg)),
+            "summary": read_summary(p) if findings is None else None,
+            "summary_file": rel(cand_dir(p) / "summary.md"),
         } for p in parents],
         "lineage": [{"id": a, "operator": pop["candidates"][a]["operator"],
                      "fitness": pop["candidates"][a].get("fitness"),
                      "summary": read_summary(a, 400)}
-                    for a in (lineage(pop, parents[0])[1:] if parents else [])],
+                    for a in (lineage(pop, parents[0])[1:] if parents and findings is None else [])],
+        "findings": findings,
         "population": [{"id": k, "operator": v["operator"], "status": v["status"],
                         "fitness": v.get("fitness")}
                        for k, v in pop["candidates"].items()],
@@ -609,6 +678,7 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
                                                   rel(cfg["campaign"]["task"])] +
                                                  [rel(cand_dir(p)) for p in parents],
             "max_turns": cfg["resources"]["worker_max_turns"],
+            "summary_format": F.SUMMARY_FORMAT if findings is not None else None,
         },
     }
     L.write_json_atomic(cdir / "job.json", card)
@@ -691,7 +761,10 @@ def _duration_sec(a: str | None, b: str | None) -> float:
 
 def stub_summary(cdir: Path, title: str, facts: list[str]) -> None:
     p = cdir / "summary.md"
-    if p.exists() and p.read_text().strip():
+    try:
+        if p.exists() and p.read_bytes().strip():   # never decoded: invalid UTF-8 is still a summary
+            return
+    except OSError:
         return
     p.write_text(f"# summary — {title}\n\n" + "".join(f"- {f}\n" for f in facts) +
                  "\nFacts-only stub written mechanically by `lab run`; the worker left no summary.\n")
@@ -819,7 +892,12 @@ def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
     preds = cdir / "out" / "predictions-search.json"
     reason = None
     kill_reason = entry.get("kill_reason") or ""
-    if exec_status == "completed" and preds.exists():
+    forged = quarantine_worker_card(cid) if memory_policy(pop)["policy"] == F.POLICY else None
+    if forged:
+        # lab publishes a card only after settlement, so one that exists now was written
+        # by the worker: a forged account of its own attempt. Kept, never adopted.
+        exec_status, reason = "invalid", f"worker wrote {CARD_FILE}; quarantined as {forged}"
+    elif exec_status == "completed" and preds.exists():
         fit = evaluate(cfg, cdir, "search")
         if fit.get("score") is None:
             exec_status, reason = "invalid", f"evaluator: {fit.get('error', 'no score')}"
@@ -904,6 +982,170 @@ def reap(cfg: dict, pop: dict) -> None:
         if entry.get("status") == "running":
             continue
         settle(cfg, pop, cid, entry)
+
+
+# ---------------------------------------------------------------------------
+# finding cards — one immutable finding.json per settled attempt (opt-in memory)
+# ---------------------------------------------------------------------------
+#
+# docs/finding-cards-plan.md §2. Built by lab_findings from an allowlist of recorded
+# facts (population.json, config.json, fitness.json's search record, summary.md) after
+# settlement is durable; written once, atomically; never overwritten. Every tick checks
+# that each settled candidate has a card that agrees with its sources before anything
+# new is dispatched — a missing card is recovered from the artifacts, a corrupt or
+# conflicting one stops dispatch as a tooling error and is left in place.
+
+
+def card_path(cid: str) -> Path:
+    return cand_dir(cid) / CARD_FILE
+
+
+def quarantine_worker_card(cid: str) -> str | None:
+    """A finding.json present before lab has published one is the worker's: rename it
+    (bytes kept as evidence) so it can never be mistaken for a generated card, and
+    return the new name."""
+    p = card_path(cid)
+    if not p.exists() and not p.is_symlink():
+        # a crash between the rename and the saved settlement leaves the quarantined
+        # file as the durable verdict; only this function ever creates that name
+        prior = sorted(p.parent.glob("finding.worker*.json"))
+        return prior[-1].name if prior else None
+    for n in range(1, 100):
+        q = p.with_name(f"finding.worker{'' if n == 1 else n}.json")
+        if not q.exists() and not q.is_symlink():
+            os.rename(p, q)
+            return q.name
+    L.die(f"{rel(p)}: too many quarantined worker cards")
+
+
+def _private_paths(cfg: dict) -> tuple[str, ...]:
+    out = [str(cfg["data"][s]["labels"]) for s in ("search", "final")]
+    priv = os.environ.get("LAB_PRIVATE")
+    if priv:
+        out.append(os.path.expanduser(priv))
+    return tuple(p for p in out if p and p != "/")
+
+
+def _read_json(p: Path) -> dict | None:
+    try:
+        v = json.loads(p.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    return v if isinstance(v, dict) else None
+
+
+def _read_bytes(p: Path) -> bytes | None:
+    try:
+        return p.read_bytes()
+    except OSError:
+        return None
+
+
+def build_candidate_card(cfg: dict, pop: dict, cid: str) -> dict:
+    c = pop["candidates"][cid]
+    cdir = cand_dir(cid)
+    parents = []
+    for p in c["parents"]:
+        pc = pop["candidates"].get(p)
+        if pc is None:
+            raise F.ToolingError(f"{cid}: parent {p} is not in the population")
+        pcfg = _read_json(cand_dir(p) / "config.json") or {}
+        parents.append({"id": p, "score": pc.get("fitness"), "seed": pcfg.get("seed")})
+    return F.build_card(
+        campaign={"id": pop["campaign"], "sha256": pop["campaign_sha256"],
+                  "higher_is_better": cfg["report"]["higher_is_better"]},
+        candidate={"id": cid, "operator": c["operator"], "parents": list(c["parents"]),
+                   "exec": c.get("exec"), "fail_reason": c.get("fail_reason"),
+                   "redispatch_of": c.get("redispatch_of"), "defers": c.get("defers", 0)},
+        config=_read_json(cdir / "config.json"),
+        fitness=_read_json(cdir / "fitness.json"),
+        parents=parents,
+        summary=_read_bytes(cdir / "summary.md"),
+        # the recorded settlement time, not the clock: a card recovered after a loss is
+        # byte-identical to the one the job snapshots already cite
+        created_at=c.get("ended") or L.now_iso(),
+        redact=lambda s: L.redact(s),
+        private_paths=_private_paths(cfg),
+    )
+
+
+def write_json_once(path: Path, obj: dict) -> None:
+    """Atomic and write-once: a temp file linked into place fails if the path exists.
+    A crash mid-write leaves only a temp file, which the next pass removes."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    for stale in path.parent.glob(path.name + ".tmp*"):
+        stale.unlink(missing_ok=True)        # this process is the only publisher (campaign.lock)
+    tmp = path.with_suffix(path.suffix + f".tmp{os.getpid()}")
+    with open(tmp, "w") as f:
+        f.write(json.dumps(obj, indent=2, ensure_ascii=False) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+    try:
+        # link, never a fallback that could expose a half-written card: a filesystem
+        # without hard links is a tooling error to fix, not a place to publish evidence
+        os.link(tmp, path)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+def ensure_cards(cfg: dict, pop: dict) -> None:
+    """Every settled candidate has a valid card that agrees with its sources; publish the
+    missing ones. Dies — dispatch blocked, evidence untouched — on a corrupt or
+    conflicting card, naming the card and the failed check."""
+    if memory_policy(pop)["policy"] != F.POLICY:
+        return
+    for cid, c in pop["candidates"].items():
+        if c.get("exec") not in F.EXEC_STATUSES:
+            continue      # queued or running: not settled yet
+        p = card_path(cid)
+        try:
+            built = build_candidate_card(cfg, pop, cid)
+        except F.ToolingError as e:
+            L.die(f"cannot build the finding card for {cid}: {e}")
+        if not p.exists():
+            try:
+                write_json_once(p, built)
+            except FileExistsError:
+                pass      # appeared meanwhile; compared below like any other card
+            except OSError as e:
+                L.die(f"cannot publish finding card {rel(p)}: {e}")
+        # An existing card is never adopted on trust: it must be valid, agree with its
+        # sources, and equal what this lab builds from them now (build_card is
+        # deterministic, created_at included). Cheap, and a drift is a tooling error.
+        raw = _read_bytes(p)
+        try:
+            card = json.loads(raw.decode("utf-8")) if raw is not None else None
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            card = None
+        problems = F.validate_card(card) if card is not None else ["not valid JSON"]
+        if not problems:
+            cdir = cand_dir(cid)
+            problems = F.check_card_sources(
+                card, campaign_id=pop["campaign"], campaign_sha256=pop["campaign_sha256"],
+                candidate={"id": cid, "operator": c["operator"], "parents": list(c["parents"]),
+                           "exec": c.get("exec")},
+                summary=_read_bytes(cdir / "summary.md"), fitness=_read_json(cdir / "fitness.json"))
+        if not problems and not F.same_card(card, built, F.cleaner(lambda s: L.redact(s), _private_paths(cfg))):
+            diff = sorted(k for k in set(card) | set(built) if card.get(k) != built.get(k))
+            problems = [f"differs from the card rebuilt from its sources in {', '.join(diff)}"]
+        if problems:
+            L.die(f"finding card {rel(p)} fails its check: {'; '.join(problems)}. The card and "
+                  "the candidate are left as they are; no new job is dispatched until an "
+                  "operator decides (v1 has no automatic repair or supersession).")
+
+
+def load_cards(pop: dict) -> dict[str, dict]:
+    """The cards of every settled candidate, for context selection. ensure_cards has
+    run in this tick, so a missing or invalid card here is a tooling error."""
+    cards: dict[str, dict] = {}
+    for cid, c in pop["candidates"].items():
+        if c.get("exec") not in F.EXEC_STATUSES:
+            continue
+        card = _read_json(card_path(cid))
+        if card is None or F.validate_card(card):
+            L.die(f"finding card {rel(card_path(cid))} is missing or invalid at dispatch time")
+        cards[cid] = card
+    return cards
 
 
 # ---------------------------------------------------------------------------
@@ -1285,6 +1527,10 @@ def write_report(cfg: dict, pop: dict) -> None:
         f"| privilege separation for labels | {'on (' + cfg['eval']['user'] + ')' if cfg['eval']['user'] else 'OFF — labels were readable to the evaluator user only by convention'} |",
         f"| auth preflight | {'ok' if pop['auth_preflight']['ok'] else 'FAILED'} at {pop['auth_preflight']['checked_at']} |",
         f"| campaign.toml sha256 | `{pop['campaign_sha256'][:16]}` |",
+        f"| memory | {memory_policy(pop)['policy']}"
+        + (" — one finding card per settled candidate (candidates/cNNNN/finding.json); each job saw a "
+           "bounded snapshot of cards stored in its job.json" if memory_policy(pop)["policy"] == F.POLICY
+           else " — first-parent lineage of clipped summaries") + " |",
         "",
         "## Population",
         "",
@@ -1431,6 +1677,8 @@ def tick(cfg: dict, pop: dict) -> None:
     rng = random.Random(f"{pop['campaign']}:{pop['seed']}:{pop['tick']}")
     pop.setdefault("usage", usage_defaults())
     reap(cfg, pop)
+    save_pop(pop)          # settlement is durable before any card is published
+    ensure_cards(cfg, pop)
     if pop["status"] in ("running", "waiting_usage"):
         reason = stop_reason(cfg, pop)
         if reason:
@@ -1477,6 +1725,10 @@ def cmd_run(args) -> None:
         print(f"campaign {pop['campaign']} is finished; see {REPORT_FILE}")
         return
     pop.setdefault("usage", usage_defaults())
+    mem = memory_policy(pop)
+    if mem["policy"] == "legacy" and cfg["memory"]["mode"] != "legacy":
+        L.warn(f"{POP_FILE} has no memory policy snapshot: this campaign stays legacy "
+               f"(campaign.toml asks for {cfg['memory']['mode']}, which applies to new campaigns)")
 
     ticks = 0
     while True:
@@ -1621,12 +1873,24 @@ def cmd_job_card(args) -> None:
            f"- Turn budget: {card['contract']['max_turns']}. If you cannot finish, write summary.md "
            "saying what you learned and exit; the job is re-dispatched once with your summary.",
            ""]
+    findings = card.get("findings")
+    if card["contract"].get("summary_format"):
+        out += ["## summary.md format", "", card["contract"]["summary_format"], ""]
     if card["parents"]:
         out += ["## Parents", ""]
         for p in card["parents"]:
             out += [f"### {p['id']} — fitness {p['fitness']} — exec {p['exec']}"
                     + (f" — {p['fail_reason']}" if p.get("fail_reason") else ""),
-                    f"code: `{p['path']}/code`", "", p["summary"] or "_no summary_", ""]
+                    f"code: `{p['path']}/code`"]
+            if findings is None:
+                out += ["", p["summary"] or "_no summary_", ""]
+            else:
+                out += [f"full summary: `{p.get('summary_file', p['path'] + '/summary.md')}` "
+                        "(its finding card is below)", ""]
+    if findings is not None:
+        # Rendered at dispatch and stored in job.json; never re-selected here, so the
+        # card a worker saw is what this prints, whatever has ended since.
+        out += [findings["rendered"].rstrip("\n"), ""]
     if card["lineage"]:
         out += ["## Lineage (newest first)", ""]
         for a in card["lineage"]:

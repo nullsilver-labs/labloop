@@ -81,9 +81,10 @@ loop with scripted workers and a fake `claude`, no LLM involved.
 never edits them; it refuses to continue a campaign whose file changed.
 
 **The lab's**: the population. Candidate dirs, `population.json`, `LEDGER.md`,
-`events.jsonl` and `REPORT.md` are written only by `tools/lab` and never deleted: a
-failed, killed, invalid or deferred candidate is evidence. A worker writes only inside
-its own candidate dir, never reads labels, and never spawns a second session.
+`events.jsonl`, `finding.json` and `REPORT.md` are written only by `tools/lab` and
+never deleted: a failed, killed, invalid or deferred candidate is evidence. A worker
+writes only inside its own candidate dir, never reads labels, and never spawns a
+second session.
 
 ## Layout
 
@@ -94,7 +95,7 @@ eval/                # score.py and the trivial baseline                        
 data/                # train (readable) and the inputs of the hidden splits
 $LAB_PRIVATE/<id>/   # the hidden splits' labels, outside the repo
 population.json      # the live state of the campaign                            (lab writes)
-candidates/cNNNN/    # config.json, job.json, code/, summary.md, fitness.json, session.json
+candidates/cNNNN/    # config.json, job.json, code/, summary.md, fitness.json, finding.json, session.json
 LEDGER.md            # one row per candidate, ever                               (lab writes)
 events.jsonl         # append-only public feed                                   (lab writes)
 REPORT.md            # written once, at the end                                  (lab writes)
@@ -111,7 +112,10 @@ A candidate dir is the unit of evidence: `config.json` (operator, parents, seed,
 commit, command, hardware, package versions, the requested and served models),
 `job.json` (what the worker was told), its own `code/`, `summary.md` written when it
 ends — including when killed, saying so and why — `fitness.json` written by `lab eval`
-only, and `session.json`, the worker session's result (turns, list-price cost, model).
+only, `session.json`, the worker session's result (turns, list-price cost, model), and —
+when the campaign opts into finding cards — `finding.json`, written once by `lab run`
+after the candidate settles, which keeps the worker's report apart from the measured
+search score.
 
 ### Which model ran it
 
@@ -123,8 +127,10 @@ counts; `lab campaign usage` reads the list-price cost per candidate.
 
 ## `tools/lab`
 
-Zero dependencies beyond Python 3, and the only legal writer of the machine files
-(a `PreToolUse` hook blocks hand-edits).
+Zero dependencies beyond Python 3, and the only legal writer of the machine files —
+`population.json`, `LEDGER.md`, `events.jsonl`, `fitness.json`, `finding.json` and
+`FORMAT.json` (a `PreToolUse` hook blocks hand-edits, by a shell command or by the
+Write/Edit tools).
 
 ```
 lab campaign init <id> | check | status | usage [--json] | stop [--now]
@@ -132,6 +138,7 @@ lab run [campaign.toml] [--once --poll-sec N]
 lab candidate list
 lab eval <candidate dir> [--split search]       the only reader of labels; final is never on request
 lab job card <candidate dir>                     the job card a worker receives
+                                                 (under finding cards, the stored findings snapshot)
 lab watch start --op NAME --budget-min N [--stall-min N --kill-regex RE] -- <cmd>
 lab watch list | check | kill <id> --reason … | close <id>
 lab serve [--bind 0.0.0.0] [--port 8791]        read-only page for the LAN: population, timeline, report
@@ -174,6 +181,7 @@ a new optional key.
 | 1.3 | additive: `trial.verdict` event type |
 | 1.4 | additive: the campaign loop's events beside the phase vocabulary |
 | 2.0 | **the phase machine is gone.** `state.json`, phases, gates, protocol revisions, trials, sessions, predictions and their event types are removed. Events carry `campaign` and `candidate` instead of `phase`/`run`/`revision`. `population.json` is the live state; `FORMAT.json` publishes campaign/candidate statuses, operators and claims |
+| 2.1 | additive: opt-in finding cards — `candidates/cNNNN/finding.json`, `population.json` `memory`, `job.json` `findings`, `FORMAT.json` `memory` section |
 
 ## The event feed
 

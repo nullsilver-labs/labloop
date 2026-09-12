@@ -82,6 +82,58 @@ wording and a 429. After the first unattended run, open the deferred candidate's
 `session.json` and `session.stderr`, confirm they matched, and tighten the regex in
 `campaign.toml` if the wording differs.
 
+## Finding cards (opt-in memory)
+
+By default a worker sees the first-parent lineage of clipped summaries. `[memory]
+mode = "findings-v1"` in `campaign.toml`, set **before the first `lab run`**, replaces
+that with finding cards: the policy and its limits are frozen into `population.json`
+when the campaign starts, so a tooling update cannot change a running campaign's
+memory, and a campaign started without the key stays legacy for its whole life
+(`lab run` warns if the file asks for cards under a legacy population). The design is
+`docs/finding-cards-plan.md`.
+
+**What the worker is asked to write.** Its job card requests a `## Finding` section at
+the top of `summary.md`: `Change`, `Hypothesis`, `Local observation`, `Interpretation`,
+`Limitations` and `Topics`, each exactly one physical line, each exactly once, at most
+five topic slugs. A worker does not know the hidden search score and never states one;
+local numbers stay its own. The parser is mechanical — a missing, duplicated or
+malformed field costs the candidate nothing and produces a facts-only card with the
+reasons; nothing is inferred from prose and `summary.md` is never modified.
+
+**What the lab publishes.** `candidates/cNNNN/finding.json`, written once by `lab run`
+after the candidate settles (completed, failed, killed, invalid or deferred alike) and
+never overwritten. It is built only from `fitness.json`'s **search** record,
+`population.json`, `config.json` and the parsed Finding section: identity, execution
+outcome, the search score with n and evaluator fingerprint, the raw delta to each
+parent, seed and model provenance, the worker's six lines marked worker-reported, the
+caveats and source digests. A number in worker prose is never promoted into a measured
+field, and nothing from the final split ever enters a card.
+
+**What the next worker sees.** At dispatch, `lab run` selects up to 8 cards and 12 KiB
+of rendered context, deterministically and without touching the scheduler's RNG: the
+direct parents, up to two nearest ancestors traversed across both sides of a crossover,
+then other branches — a same-topic run that did not beat its strongest parent, other
+topic matches, the strongest off-lineage candidate, a recent execution problem, then
+recent findings. Selected ids, reasons, card digests and the rendered text are stored
+whole in `job.json`, so `lab job card` prints byte for byte what the worker saw, however
+many candidates have ended since.
+
+A `finding.json` that already exists when a candidate settles was written by the
+worker, not by `lab`: it is renamed `finding.worker.json` (kept as evidence), the
+attempt is recorded `invalid` with that reason, and the real card is published from
+the sources as usual. On every tick each existing card must be valid, agree with its
+sources and equal the card `lab` rebuilds from them; a restart from a shell whose
+`.lab-redact` secrets differ can therefore stop on a card whose redaction differs.
+
+**When `lab run` stops with a card error.** A card that fails validation or disagrees
+with its sources blocks dispatch as a tooling error, naming the card and the failed
+check. Nothing is repaired, overwritten or superseded automatically and the candidate
+is not marked failed: inspect the candidate dir and decide. v1 has no supersession
+mechanism.
+
+Passing the acceptance suite shows that the plumbing is correct, not that the memory
+is useful; the comparison that would show that is `docs/finding-cards-plan.md` §7.
+
 ## The read-only page
 
 `tools/lab serve` renders the campaign on `http://<host>:8791/`: header and usage

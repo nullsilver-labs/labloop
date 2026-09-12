@@ -57,9 +57,10 @@ from typing import Any
 # so a consumer never has to guess which rules applied to a given line.
 #
 # 2.0 removed the phase machine (phases, gates, protocol revisions, trials,
-# sessions, predictions) and its state.json. Version history: README.md,
-# "Format versioning".
-FORMAT_VERSION = "2.0"
+# sessions, predictions) and its state.json. 2.1 adds the optional finding cards
+# (candidates/cNNNN/finding.json, population.json `memory`, job.json `findings`).
+# Version history: README.md, "Format versioning".
+FORMAT_VERSION = "2.1"
 
 # Every event type carries a fixed feed class. `news` reaches the homepage and RSS,
 # `activity` only the project timeline, `none` is chart data.
@@ -291,6 +292,12 @@ def _campaign_module():
     return lab_campaign
 
 
+def _findings_module():
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import lab_findings
+    return lab_findings
+
+
 def format_manifest() -> dict:
     """The whole machine-readable contract, derived from the constants in this file
     and in tools/lab_campaign.py.
@@ -300,6 +307,7 @@ def format_manifest() -> dict:
     since that is what decides whether an event reaches RSS.
     """
     C = _campaign_module()
+    F = _findings_module()
     return {
         "format": FORMAT_VERSION,
         "generator": "nullsilver-lab",
@@ -317,6 +325,7 @@ def format_manifest() -> dict:
             "candidate_job": "candidates/c<NNNN>/job.json",
             "candidate_summary": "candidates/c<NNNN>/summary.md",
             "candidate_fitness": "candidates/c<NNNN>/fitness.json",
+            "candidate_finding": "candidates/c<NNNN>/finding.json",
             "candidate_session": "candidates/c<NNNN>/session.json",
             "candidate_predictions": "candidates/c<NNNN>/out/predictions-<split>.json",
         },
@@ -327,7 +336,7 @@ def format_manifest() -> dict:
             "keys": ["format", "campaign", "campaign_file", "campaign_sha256", "status",
                      "started", "finished", "tick", "seed", "auth_preflight", "candidates",
                      "best", "settled", "settled_at_best", "gpu_seconds", "stop_reason",
-                     "final", "claim", "usage", "updated_at"],
+                     "final", "claim", "usage", "memory", "updated_at"],
             "statuses": C.CAMPAIGN_STATUS,
             "status_badges": {"running": "Searching",
                               "waiting_usage": "Waiting for the usage window",
@@ -376,6 +385,30 @@ def format_manifest() -> dict:
             "cost_note": ("session.json total_cost_usd is the list-price equivalent "
                           "`claude -p` reports; on a subscription it is a measure of usage, "
                           "not a bill."),
+        },
+        "memory": {
+            "note": ("What a worker is told about earlier candidates. `legacy` (the default, and "
+                     "every campaign started before 2.1) is the first-parent lineage of clipped "
+                     "summaries. `findings-v1` (campaign.toml [memory] mode) publishes one "
+                     "immutable finding card per settled candidate and gives each job a "
+                     "deterministic, bounded snapshot of cards from every branch, stored whole "
+                     "in job.json `findings`. The effective policy and its limits are frozen in "
+                     "population.json `memory` when the campaign starts."),
+            "policies": C.MEMORY_POLICIES,
+            "card_schema": F.SCHEMA,
+            "card_keys": ["schema", "campaign", "campaign_sha256", "candidate", "sequence",
+                          "operator", "parents", "execution", "search", "metric", "comparisons",
+                          "comparison_note", "provenance", "report", "caveats", "evidence_limits",
+                          "integrity", "created_at"],
+            "card_note": ("Written once by `lab run` after settlement, never edited. `search` "
+                          "is the search-split measurement only; `report` is the worker's own "
+                          "Finding section (status ok | missing | malformed | undecodable), "
+                          "worker-reported and never a measurement. Nothing about the final "
+                          "split is ever in a card."),
+            "report_statuses": list(F.REPORT_STATUSES),
+            "limits": {"max_cards": F.MAX_CARDS, "max_bytes": F.MAX_BYTES,
+                       "field_bytes": dict(F.FIELD_BYTES), "topics_max": F.TOPICS_MAX,
+                       "topic_max_bytes": F.TOPIC_MAX_BYTES},
         },
         "ledger": {
             "columns": ["campaign", "operator", "candidate", "status", "claim", "path", "note"],
@@ -1042,6 +1075,7 @@ def cmd_validate(args) -> None:
     popp = ROOT / "population.json"
     if popp.exists():
         C = _campaign_module()
+        F = _findings_module()
         try:
             pop = json.loads(popp.read_text())
         except json.JSONDecodeError as e:
@@ -1068,6 +1102,28 @@ def cmd_validate(args) -> None:
                         err(f"{cdir.relative_to(ROOT)} settled without a summary.md")
                 if c.get("status") in ("evaluated", "frozen") and not (cdir / "fitness.json").exists():
                     err(f"{cdir.relative_to(ROOT)} is evaluated but has no fitness.json")
+            mem = pop.get("memory") or {"policy": "legacy"}
+            if mem.get("policy") not in C.MEMORY_POLICIES:
+                err(f"population.json memory policy '{mem.get('policy')}' is unknown")
+            elif mem["policy"] == F.POLICY:
+                # cards are required only for settled attempts of an opted-in campaign
+                for cid, c in (pop.get("candidates") or {}).items():
+                    if c.get("exec") not in F.EXEC_STATUSES:
+                        continue
+                    fp = ROOT / c.get("path", f"candidates/{cid}") / "finding.json"
+                    if not fp.exists():
+                        err(f"{fp.relative_to(ROOT)} is missing for a settled candidate (memory {F.POLICY})")
+                        continue
+                    try:
+                        card = json.loads(fp.read_text())
+                        problems = F.validate_card(card)
+                    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as e:
+                        card, problems = None, [f"unreadable: {e}"]
+                    for pr in problems:
+                        err(f"{fp.relative_to(ROOT)}: {pr}")
+                    if not problems and (card.get("candidate") != cid or
+                                         (card.get("execution") or {}).get("exec") != c.get("exec")):
+                        err(f"{fp.relative_to(ROOT)} does not match population.json")
     else:
         notes.append("no population.json (no campaign has run here)")
 

@@ -1,10 +1,12 @@
 # NEXT — replace the phase machine with AIRA₂'s loop
 
-labloop today is a six-phase state machine with human approval gates, protocol
-revisions, handoffs and per-phase prompts. This plan **replaces** that with the search
-loop published in AIRA₂ (Meta FAIR, arXiv 2603.26499), adding only what a local box
-with 1–2 RTX 3090s and a Claude Max subscription requires. Nothing from the phase
-machine is kept "alongside".
+labloop now runs the search loop inspired by AIRA₂ (Meta FAIR, arXiv 2603.26499),
+with filesystem bookkeeping, bounded jobs and subscription usage accounting. The
+six-phase state machine was removed in M5; nothing is kept "alongside".
+
+This document retains the original design and milestone criteria below as historical
+intent. The current status table is authoritative for progress; old examples are not
+current configuration guidance (use `templates/campaign.toml` and the setup docs).
 
 Reference design: **AIRA₂ only.** It is published, its predecessor is open source
 (aira-dojo), and its results are measured. AIRA₃'s forum is unreleased and unmeasured
@@ -12,6 +14,47 @@ outside Meta; we do not build a hybrid we cannot validate against anything.
 
 Written 2026-09-09. Supersedes the first draft of this file, which still carried
 gates, phases, protocol ceremony and a forum. See §7 for what was dropped and why.
+
+## Current status — reviewed 2026-09-12
+
+| Milestone | Implemented / tested | Live evidence | Remaining |
+|---|---|---|---|
+| M0 | Loop and synthetic acceptance implemented | No real OS-isolation proof in the reviewed evidence | Restricted evaluation boundary; fault-injection tests for settlement and final evaluation |
+| M1 | Worker contract implemented and tested | MNIST probe: 5 completed, final 0.9875 ≥ 0.985 | Probe demonstrates feasibility, not full-window reliability or superiority over interactive work |
+| M2 | Full operators and selection implemented | CIFAR-10: 40 settled, final 0.9472 ≥ 0.90 | Same-task greedy control and equal-resource comparison; original comparative criterion untested |
+| M3 | Governor and fake-CLI tests implemented | M2 had pacing OFF; no observed deferrals | Calibrate budget, enforce live rate-limit stopping, then unattended validation |
+| M4 | Slots, VRAM checks and fake-GPU tests implemented | Reviewed campaigns used one GPU | Real two-GPU throughput comparison |
+| M5 | Phase removal and format 2.0 complete locally | Site renderer completion recorded historically | External deployment not independently audited in this review |
+| Finding cards | Implemented and tested (opt-in `[memory]`, format 2.1, section G) | None | Prompt-size pilot, then the preregistered legacy-vs-findings comparison (plan §7) |
+
+Current no-LLM acceptance result: **373 passed, 0 failed** (2026-09-12, after finding cards).
+Counts in dated entries below describe historical suites, not today's coverage.
+Passing synthetic tests does not establish OS isolation, exact crash recovery or live
+subscription behavior. Both reviewed live reports disclose label separation OFF.
+
+M2's immutable report exists at `../labloop-m2/REPORT.md`, written
+2026-09-10T16:16:02Z. No report or population exists in `../labloop-m2-greedy` in the
+reviewed checkout. Do not rerun final evaluation or rewrite historical reports to
+complete this roadmap.
+
+### Next work, in priority order
+
+1. Harden the evaluation boundary (the documented unrestricted sudo Python rule is
+   not worker isolation), settlement recovery and interrupted-final handling. Add
+   fault injection; prefer an explicit inconclusive interrupted final over a silent
+   second read. Cover direct editing tools as well as Bash guardrails.
+2. Test rate-limit detection against a worker that emits a limit message and keeps
+   running; enforce termination rather than relying on CLI exit.
+3. Complete the greedy comparison and calibrated unattended governor evidence on
+   prospectively fixed configurations. Define comparable resource accounting before
+   launch; preserve the original milestone criteria and report deviations explicitly.
+4. Implement finding cards as a separate opt-in change, then compare memory policies
+   without changing scheduler/model/budgets. Run the real two-GPU comparison separately.
+
+The missing comparative and unattended evidence is **pending**, not a pass, tie or
+failed kill criterion. Subscription renewal alone does not validate the governor.
+
+## Historical implementation notes
 
 **Status (2026-09-09): M0 done** on branch `aira2-loop` — `tools/lab_campaign.py`
 registers `lab campaign|candidate|eval|job|run`; `scripts/acceptance_campaign.sh`
@@ -34,7 +77,15 @@ weights, and headless sessions in an untrusted directory ignore the project allo
 (docs/campaign-setup.md). Next: M2 (crossover, temperature > 0, 24 h on a task with
 headroom) and M3 (usage governor) before any unattended run.
 
-**M2 prepared (2026-09-10), not yet run.** Task with headroom: CIFAR-10, projects
+**M2 executed (2026-09-10); comparative validation pending.** The search campaign
+finished at `max_candidates 40`: 40 settled (3 invalid), best search 0.9498, final
+**0.9472**, claim supported against 0.90; 7.11 GPU-hours, 7.28 h wall clock
+(`../labloop-m2/REPORT.md`). Debug and crossover executed. This was not the prescribed
+24-hour comparison; the greedy control has no recorded run. A threshold pass is not
+proof that full search outperforms greedy. The governor was OFF (rate-limit detection
+only), so this run does not close M3.
+
+**Historical preparation (2026-09-10).** Task with headroom: CIFAR-10, projects
 `/mnt/data/projects/nullsilver/labloop-m2` (search: temperature 0.3, crossover 0.15) and
 `labloop-m2-greedy` (control: temperature 0.01, crossover 0; same data, budgets and
 threshold, only `[selection]` and the id differ). Splits: train 45k, search 5k (from the
@@ -60,7 +111,7 @@ rate-limit message in a session result defers the job, blocks until the stated r
 and re-dispatches it (`redispatch_of` in provenance). `lab campaign usage` is the
 calibration view; `REPORT.md` gains a usage section with the idle share of wall clock
 that M3's kill criterion reads. Acceptance section E covers soft pause/resume with
-restart, rate-limit deferral and re-dispatch, hard kill (288 checks). Open before the
+restart, rate-limit deferral and re-dispatch, hard kill (historical suite: 288 checks). Open before the
 weekend run: `usage.window_budget` must be calibrated against `/usage` by hand (no
 non-interactive read exists), and the headless CLI's exact wording on a spent window
 is undocumented, so the first deferred candidate's `session.json` is to be checked.
@@ -265,7 +316,8 @@ answer and a natural held-out split. Run for one Max window.
 statement in ≤ 40 turns, or median cost per candidate exceeds a phase session's today
 (`lab usage`).
 
-**M2 — Full AIRA₂ operators and selection (≈ 2 days).**
+**M2 — Full AIRA₂ operators and selection (≈ 2 days). IMPLEMENTED; CIFAR-10 run
+completed, greedy comparison pending (see current status).**
 `debug`, `crossover`, temperature-scaled rank, lineage summaries as memory. Same task,
 24 h.
 *Kill if:* best search fitness after 24 h is not better than M1's greedy run at equal
@@ -290,7 +342,7 @@ site's renderer to draw a population instead of a phase strip. `tools/lab` is th
 plumbing only (feed, watch, usage, validate, format) plus the loop; events carry
 `campaign`/`candidate` instead of `phase`/`run`/`revision`; `population.json` is the
 live state; the hooks brief workers and operators and no Stop hook demands a handoff.
-The acceptance suite is sections A–F (204 checks). The four sibling projects that
+At that milestone the acceptance suite was sections A–F (204 checks; historical). The four sibling projects that
 carry their own 1.3 copies (pastiche, ductus, flint, gloss) are untouched: they are
 not consumers of this repo's feed, and their 1.x history stays readable per line.
 
@@ -354,10 +406,17 @@ approvals, discovery/verification modes, "keep legacy operation available",
 per-campaign caps of three candidates, one checkpointed researcher. Reasons in §7
 and in the assessment.
 
-## 9. Two decisions that are still yours
+## 9. Resolved choices and outstanding experiment definitions
 
-1. **First task for M1.** Sub-hour on a 3090, known answer, natural held-out split.
-   Pick it before M0 so the fixture matches.
-2. **Public feed during search.** Publish every candidate live, or only the final
-   report? Same contract either way; the difference is how much half-finished work
-   is on nullsilver.com. Default: live, because that was the point of the site.
+- **M1 task resolved:** MNIST; the probe and report exist.
+- **Feed policy resolved:** live publication is the documented default.
+- **M2 comparison still needs execution:** use the prepared same-task CIFAR-10 greedy
+  control, not MNIST scores. Fix the common resource cutoff and handling of early
+  stopping before launch. The original 24-hour criterion remains recorded in §6;
+  any shorter comparison is reported as such, not retroactively called a pass.
+- **M3/M4 evidence still pending:** calibrate subscription pacing and define throughput
+  consistently (including whether baseline/invalid attempts count, GPU model and
+  allocated GPU time). Keep valid-candidate throughput visible alongside all-settled
+  throughput, particularly on heterogeneous GPUs.
+- **Finding-card usefulness:** follow the prospective pilot and comparison in
+  `docs/finding-cards-plan.md` §7. Do not bundle scheduler or model changes into it.

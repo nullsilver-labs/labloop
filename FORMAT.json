@@ -1,5 +1,5 @@
 {
-  "format": "2.0",
+  "format": "2.1",
   "generator": "nullsilver-lab",
   "generated_by": "tools/lab format sync",
   "note": "Generated file \u2014 do not edit. Regenerate with `tools/lab format sync`; `tools/lab validate` fails if it has drifted from the code.",
@@ -14,6 +14,7 @@
     "candidate_job": "candidates/c<NNNN>/job.json",
     "candidate_summary": "candidates/c<NNNN>/summary.md",
     "candidate_fitness": "candidates/c<NNNN>/fitness.json",
+    "candidate_finding": "candidates/c<NNNN>/finding.json",
     "candidate_session": "candidates/c<NNNN>/session.json",
     "candidate_predictions": "candidates/c<NNNN>/out/predictions-<split>.json"
   },
@@ -39,6 +40,7 @@
       "final",
       "claim",
       "usage",
+      "memory",
       "updated_at"
     ],
     "statuses": [
@@ -143,6 +145,54 @@
       "none": "no session ran (the baseline) or no result was stored"
     },
     "cost_note": "session.json total_cost_usd is the list-price equivalent `claude -p` reports; on a subscription it is a measure of usage, not a bill."
+  },
+  "memory": {
+    "note": "What a worker is told about earlier candidates. `legacy` (the default, and every campaign started before 2.1) is the first-parent lineage of clipped summaries. `findings-v1` (campaign.toml [memory] mode) publishes one immutable finding card per settled candidate and gives each job a deterministic, bounded snapshot of cards from every branch, stored whole in job.json `findings`. The effective policy and its limits are frozen in population.json `memory` when the campaign starts.",
+    "policies": [
+      "legacy",
+      "findings-v1"
+    ],
+    "card_schema": "finding-card/1",
+    "card_keys": [
+      "schema",
+      "campaign",
+      "campaign_sha256",
+      "candidate",
+      "sequence",
+      "operator",
+      "parents",
+      "execution",
+      "search",
+      "metric",
+      "comparisons",
+      "comparison_note",
+      "provenance",
+      "report",
+      "caveats",
+      "evidence_limits",
+      "integrity",
+      "created_at"
+    ],
+    "card_note": "Written once by `lab run` after settlement, never edited. `search` is the search-split measurement only; `report` is the worker's own Finding section (status ok | missing | malformed | undecodable), worker-reported and never a measurement. Nothing about the final split is ever in a card.",
+    "report_statuses": [
+      "ok",
+      "missing",
+      "malformed",
+      "undecodable"
+    ],
+    "limits": {
+      "max_cards": 8,
+      "max_bytes": 12288,
+      "field_bytes": {
+        "change": 512,
+        "hypothesis": 512,
+        "local_observation": 512,
+        "interpretation": 512,
+        "limitations": 768
+      },
+      "topics_max": 5,
+      "topic_max_bytes": 32
+    }
   },
   "ledger": {
     "columns": [

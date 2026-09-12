@@ -204,9 +204,13 @@ def view_candidate(cid: str) -> bytes | None:
     except OSError:
         summary = "(no summary.md yet)"
     try:
-        fitness = (cdir / "fitness.json").read_text()
+        fitness = (cdir / "fitness.json").read_text(errors="replace")
     except OSError:
         fitness = "(no fitness.json)"
+    try:
+        finding = (cdir / "finding.json").read_text(errors="replace")
+    except OSError:
+        finding = None
     s = c.get("session") or {}
     agent = conf.get("agent") or {}
     body = f"""
@@ -222,6 +226,7 @@ def view_candidate(cid: str) -> bytes | None:
 </div>
 <h2>summary.md</h2><pre>{shown(summary)}</pre>
 <h2>fitness.json</h2><pre>{shown(fitness)}</pre>
+{"<h2>finding.json</h2><pre>" + shown(finding) + "</pre>" if finding is not None else ""}
 """
     return page(f"{cid} · {pop['campaign']}", body, refresh=None)
 

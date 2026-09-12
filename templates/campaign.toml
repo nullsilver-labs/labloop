@@ -48,6 +48,13 @@ crossover_p = 0.15
 max_debug_retries = 1
 # seed = 12345                   # default: derived from campaign.id
 
+[memory]                         # what a worker is told about earlier candidates
+# mode = "findings-v1"           # one immutable finding.json per settled candidate and a
+                                 # bounded, deterministic snapshot of cards from every branch
+                                 # in each job card (docs/finding-cards-plan.md). Default
+                                 # "legacy": the first-parent lineage of clipped summaries.
+                                 # Frozen into population.json when the campaign starts.
+
 [usage]                          # the Claude Max window is the second scarce resource
 # window_budget = 12.0           # list-price USD per window the plan tolerates (as `claude -p`
                                  # reports total_cost_usd). Calibrate from `lab campaign usage`

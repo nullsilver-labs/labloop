@@ -44,9 +44,9 @@ REPORT.md`. There are no phases, gates, approvals or handoffs inside the loop. T
 human writes `campaign.toml`, starts `lab run` under `lab watch`, and can stop it with
 `lab campaign stop`. Waiting on the usage window is a campaign status, not an error.
 
-- **`population.json`, `LEDGER.md` and `events.jsonl` have exactly one writer:
-  `tools/lab`.** Never edit them by hand — a hook blocks it. `FORMAT.json` is
-  generated: `lab format sync`, never by hand.
+- **`population.json`, `LEDGER.md`, `events.jsonl` and `finding.json` have exactly one
+  writer: `tools/lab`.** Never edit them by hand — a hook blocks it, by shell or by the
+  editing tools. `FORMAT.json` is generated: `lab format sync`, never by hand.
 - **The event feed is public in realtime.** `msg` is one line, ≤ 140 chars, and reads
   like a person wrote it. Secrets are redacted mechanically, but don't test that.
   Heartbeats and "still running" are not events.
@@ -56,7 +56,9 @@ human writes `campaign.toml`, starts `lab run` under `lab watch`, and can stop i
 - Every candidate dir holds `config.json` (operator, parents, seed, git commit,
   command, hardware, versions, requested and served models), `job.json`, the
   candidate's own `code/`, `summary.md` written when it ends — **including when
-  killed**, saying so and why — and `fitness.json` written only by `lab eval`.
+  killed**, saying so and why — `fitness.json` written only by `lab eval`, and, when the
+  campaign opts into finding cards, `finding.json` written once by `lab run` after
+  settlement, never edited.
 - **Labels are hidden.** `lab eval` is the only reader of the search and final
   splits; with the `labeval` user they are hidden by the OS, otherwise by convention,
   and `REPORT.md` says which.
