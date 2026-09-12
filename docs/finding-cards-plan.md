@@ -301,7 +301,8 @@ cross-branch acknowledgment separately so silence cannot win on accuracy. Freeze
 rubric and use condition-blinded assessment where practical. Secondary measures are
 unacknowledged repeated ideas, valid candidates per budget, and search progress.
 
-Before a live comparison, run a synthetic prompt-size pilot: measure total rendered
+Before a live comparison, run a synthetic prompt-size pilot (run 2026-09-12:
+`docs/finding-cards-pilot.md`, `scripts/pilot_prompt_size.py`): measure total rendered
 job-prompt tokens (with a named tokenizer/version), including population tables, for
 legacy and findings contexts over matched fixture populations. Use that pilot to
 choose and record the acceptable prompt-overhead increase, primary-endpoint improvement

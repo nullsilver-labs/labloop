@@ -25,7 +25,7 @@ gates, phases, protocol ceremony and a forum. See §7 for what was dropped and w
 | M3 | Governor and fake-CLI tests implemented; live rate-limit enforcement by the watcher (2026-09-12, section E2b) | M2 had pacing OFF; no observed deferrals | Calibrate budget, then unattended validation |
 | M4 | Slots, VRAM checks and fake-GPU tests implemented | Reviewed campaigns used one GPU | Real two-GPU throughput comparison |
 | M5 | Phase removal and format 2.0 complete locally | Site renderer completion recorded historically | External deployment not independently audited in this review |
-| Finding cards | Implemented and tested (opt-in `[memory]`, format 2.1, section G) | None | Prompt-size pilot, then the preregistered legacy-vs-findings comparison (plan §7) |
+| Finding cards | Implemented and tested (opt-in `[memory]`, format 2.1, section G); prompt-size pilot run 2026-09-12 (`docs/finding-cards-pilot.md`) | None | Fix the preregistration values from the pilot, then the legacy-vs-findings comparison (plan §7) |
 
 Current no-LLM acceptance result: **373 passed, 0 failed** (2026-09-12, after finding cards).
 Counts in dated entries below describe historical suites, not today's coverage.
@@ -53,8 +53,11 @@ complete this roadmap.
 3. Complete the greedy comparison and calibrated unattended governor evidence on
    prospectively fixed configurations. Define comparable resource accounting before
    launch; preserve the original milestone criteria and report deviations explicitly.
-4. Implement finding cards as a separate opt-in change, then compare memory policies
-   without changing scheduler/model/budgets. Run the real two-GPU comparison separately.
+4. ~~Implement finding cards as a separate opt-in change~~ (done 2026-09-12), ~~run the
+   prompt-size pilot~~ (done 2026-09-12: facts-only cards +26 %, cards at their limits
+   +79 % over the legacy job card on M2's 39 jobs; `docs/finding-cards-pilot.md`), then
+   fix the preregistration values and compare memory policies without changing
+   scheduler/model/budgets. Run the real two-GPU comparison separately.
 
 The missing comparative and unattended evidence is **pending**, not a pass, tie or
 failed kill criterion. Subscription renewal alone does not validate the governor.
@@ -423,5 +426,6 @@ and in the assessment.
   consistently (including whether baseline/invalid attempts count, GPU model and
   allocated GPU time). Keep valid-candidate throughput visible alongside all-settled
   throughput, particularly on heterogeneous GPUs.
-- **Finding-card usefulness:** follow the prospective pilot and comparison in
-  `docs/finding-cards-plan.md` §7. Do not bundle scheduler or model changes into it.
+- **Finding-card usefulness:** the prompt-size pilot is done (`docs/finding-cards-pilot.md`,
+  with proposed preregistration values); the comparison of `docs/finding-cards-plan.md`
+  §7 follows once those values are fixed. Do not bundle scheduler or model changes into it.
