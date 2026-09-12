@@ -89,9 +89,14 @@ with a kill pattern that is the rate-limit regex scoped to that prefix. A CLI th
 prints the message and then waits or retries is killed by the watcher within one poll
 (the default poll is 15 s), the job is settled as `deferred` with the watcher named in
 its reason, and it is re-dispatched after the stated reset. Nothing a training run
-prints can match the pattern, because only the CLI's stderr carries the prefix. A
-transient message that the CLI would have retried through is deferred too: one
-re-dispatch, never a failed candidate.
+prints can match the pattern, because only the CLI's stderr carries the prefix (in
+`-p` mode a tool's output never passes through it). A message with no trailing newline
+is enforced just the same: the echo is unbuffered and the watcher searches the
+unterminated tail of its log on every poll. A transient message that the CLI would
+have retried through is deferred too: one re-dispatch, never a failed candidate. When
+you tighten `usage.rate_limit_regex`, remember it is embedded after that prefix: use
+scoped flags such as `(?i:…)`, not `^` or `$`; `lab campaign check` compiles the
+combination.
 
 ## Finding cards (opt-in memory)
 

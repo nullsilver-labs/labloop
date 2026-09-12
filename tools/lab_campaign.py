@@ -365,8 +365,10 @@ def parse_usage(raw: dict, name: str = "campaign.toml") -> dict:
         L.die(f"{name}: usage.session_cost and usage.max_defers must be >= 0")
     try:
         re.compile(cfg["rate_limit_regex"], re.I)
+        re.compile(session_kill_regex({"usage": cfg}))
     except re.error as e:
-        L.die(f"{name}: usage.rate_limit_regex: {e}")
+        L.die(f"{name}: usage.rate_limit_regex: {e} (it is also embedded in the watcher's kill "
+              "pattern after a line prefix: use scoped flags like (?i:...), not ^ or $)")
     return cfg
 
 
@@ -720,13 +722,22 @@ STDERR_PREFIX = "[claude stderr] "   # lab-worker echoes the CLI's stderr under 
 KILL_PATTERN_PREFIX = "kill pattern matched:"
 
 
+_GLOBAL_FLAGS = re.compile(r"^\(\?([aiLmsux]+)\)")
+
+
 def session_kill_regex(cfg: dict) -> str:
     """The watcher's kill pattern for a worker job: the usage rate-limit regex, but only
     on lines lab-worker echoes from the CLI's stderr. A rate-limit message that the CLI
     prints while it keeps running (waiting or retrying for the window) ends the session
     within a watcher poll; the job is then settled as deferred, never failed. Nothing
-    the candidate's own run prints can match."""
-    return rf"(?im)^{re.escape(STDERR_PREFIX)}.*(?:{cfg['usage']['rate_limit_regex']})"
+    the candidate's own run prints can match. A configured regex that starts with
+    global inline flags, `(?i)…`, is embedded as the scoped form `(?i:…)`, which Python
+    accepts anywhere; parse_usage compiles the result once so a bad combination is a
+    campaign.toml error, not a job that silently runs without its kill pattern."""
+    rx = cfg["usage"]["rate_limit_regex"]
+    m = _GLOBAL_FLAGS.match(rx)
+    inner = f"(?{m.group(1)}:{rx[m.end():]})" if m else f"(?:{rx})"
+    return rf"(?im)^{re.escape(STDERR_PREFIX)}.*{inner}"
 
 
 def launch(cfg: dict, pop: dict, cid: str) -> None:
@@ -830,6 +841,13 @@ def parse_reset_time(text: str, now: float) -> float | None:
     return None
 
 
+def _empty_session() -> dict:
+    """The session record's full shape with nothing known (no session.json, no stderr)."""
+    return {"id": None, "turns": None, "duration_ms": None, "cost_usd": None, "subtype": None,
+            "is_error": None, "api_error_status": None, "models": [], "output_tokens": None,
+            "cache_read_input_tokens": None, "rate_limited": False, "message": None, "reset_at": None}
+
+
 def read_session(cfg: dict, cdir: Path) -> dict | None:
     """What the worker's one Claude Code session cost and how it ended, from the
     session.json that lab-worker stores (and session.stderr when the CLI died before
@@ -923,7 +941,7 @@ def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
         # pattern (session_kill_regex) ended it. Deferred like any rate limit; the
         # reset time comes from the same stderr line via read_session.
         if not sess:
-            sess = c["session"] = {"rate_limited": True, "message": None, "reset_at": None}
+            sess = c["session"] = _empty_session()
         if not sess.get("rate_limited"):
             sess["rate_limited"], sess["message"], sess["reset_at"] = True, kill_reason[:100], None
         exec_status = "deferred"

@@ -123,7 +123,15 @@ usage_toml "$WORKK" 3 1 'retry = "4s"' 'rate_limit_regex = "hit your limit"'
 cd "$WORKK" || return 1
 export LAB_ROOT="$WORKK"
 LABU="$WORKK/tools/lab"
-export FAKE_CLAUDE_HANG=c0001 FAKE_CLAUDE_RESET="in 5s"
+export FAKE_CLAUDE_HANG=c0001 FAKE_CLAUDE_HANG_STYLE=noeol FAKE_CLAUDE_RESET="in 5s"
+assert_eq   "the stderr prefixer tags every line and flushes a partial one" \
+  "$(printf 'one\ntwo\n\nthree' | "$SRC/tools/lab-stderr-prefix" | od -An -c | tr -s ' \n' ' ')" \
+  "$(printf '[claude stderr] one\n[claude stderr] two\n\n[claude stderr] three' | od -An -c | tr -s ' \n' ' ')"
+assert_eq   "a configured regex with global inline flags still compiles inside the kill pattern" \
+  "$(python3 -c "
+import re, sys; sys.path.insert(0, 'tools'); import lab_campaign as m
+rx = re.compile(m.session_kill_regex({'usage': {'rate_limit_regex': '(?i)usage LIMIT'}}))
+print(bool(rx.search('[claude stderr] Usage limit reached')), bool(rx.search('usage limit reached')))")" "True False"
 t_hang0=$(date +%s)
 assert_ok   "campaign with a session that keeps running past its limit message runs to completion" timeout 150 "$LABU" run --poll-sec 1
 t_hang=$(( $(date +%s) - t_hang0 ))
@@ -144,7 +152,7 @@ import re, sys; sys.path.insert(0, 'tools'); import lab_campaign as m
 rx = re.compile(m.session_kill_regex({'usage': {'rate_limit_regex': m.RATE_LIMIT_RE_DEFAULT}}))
 print([bool(rx.search(s)) for s in ('epoch 3: rate limit of the optimizer reached', 'RATE_LIMIT hit in run.sh',
                                      '[claude stderr] You\'ve hit your limit · resets 3pm', '[claude stderr] API Error: 429 rate_limit_error')])")" "[False, False, True, True]"
-unset FAKE_CLAUDE_HANG FAKE_CLAUDE_RESET
+unset FAKE_CLAUDE_HANG FAKE_CLAUDE_HANG_STYLE FAKE_CLAUDE_RESET
 
 # --- E3: at the hard threshold a running session is killed and its job deferred ---
 WORKH="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-hard.XXXXXX")"

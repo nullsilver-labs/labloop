@@ -766,11 +766,13 @@ def cmd_watch_run(args) -> None:
                     f.seek(log_offset)
                     chunk = f.read()
                 log_offset += len(chunk)
+                # The unterminated tail is searched now (a message with no line end must
+                # still kill) and carried, so a line split across two polls is seen whole.
+                # The carry always begins at a true line start: a line that never ends is
+                # kept only up to 64 KiB from its start, never re-anchored mid-line.
                 chunk = log_carry + chunk
                 cut = chunk.rfind(b"\n") + 1
-                chunk, log_carry = chunk[:cut], chunk[cut:]
-                if len(log_carry) > 65536:          # a line with no end: search it anyway
-                    chunk, log_carry = chunk + log_carry, b""
+                log_carry = chunk[cut:][:65536]
                 m = pattern.search(chunk.decode("utf-8", "replace"))
                 if m:
                     kill_reason = f"kill pattern matched: {m.group(0)[:80]!r}"

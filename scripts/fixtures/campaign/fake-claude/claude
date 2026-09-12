@@ -17,6 +17,9 @@
 #                                  stderr and then KEEPS RUNNING (retrying every second,
 #                                  no result), the way a CLI that waits for the window
 #                                  would; the watcher must end it, not the CLI
+#   FAKE_CLAUDE_HANG_STYLE=noeol   … printed WITHOUT a trailing newline, then silence:
+#                                  nothing else is ever written (a line buffer would
+#                                  never flush it)
 set -euo pipefail
 prompt=""; model=""; turns=""; fmt="text"
 while [ $# -gt 0 ]; do
@@ -36,8 +39,13 @@ sleep_var="FAKE_CLAUDE_SLEEP_$cid"; nap="${!sleep_var:-0}"
 
 if [ "${FAKE_CLAUDE_HANG:-}" = "$cid" ]; then
   reset="${FAKE_CLAUDE_RESET:-in 2h}"
-  echo "You've hit your limit · resets $reset" >&2
-  for i in $(seq 1 600); do echo "retrying ($i)…" >&2; sleep 1; done
+  if [ "${FAKE_CLAUDE_HANG_STYLE:-}" = "noeol" ]; then
+    printf '%s' "You've hit your limit · resets $reset" >&2
+    sleep 600
+  else
+    echo "You've hit your limit · resets $reset" >&2
+    for i in $(seq 1 600); do echo "retrying ($i)…" >&2; sleep 1; done
+  fi
   exit 1
 fi
 if [ "${FAKE_CLAUDE_RATELIMIT:-}" = "$cid" ]; then
