@@ -21,7 +21,7 @@ gates, phases, protocol ceremony and a forum. See §7 for what was dropped and w
 |---|---|---|---|
 | M0 | Loop and synthetic acceptance implemented | No real OS-isolation proof in the reviewed evidence | Restricted evaluation boundary; fault-injection tests for settlement and final evaluation |
 | M1 | Worker contract implemented and tested | MNIST probe: 5 completed, final 0.9875 ≥ 0.985 | Probe demonstrates feasibility, not full-window reliability or superiority over interactive work |
-| M2 | Full operators and selection implemented | CIFAR-10: 40 settled, final 0.9472 ≥ 0.90 | Same-task greedy control and equal-resource comparison; original comparative criterion untested |
+| M2 | Full operators and selection implemented | CIFAR-10: 40 settled, final 0.9472 ≥ 0.90; greedy control running since 2026-09-12T11:40Z | Read the control's report, compare at equal GPU-hours (see "Live now"); original 24 h criterion untested |
 | M3 | Governor and fake-CLI tests implemented; live rate-limit enforcement by the watcher (2026-09-12, section E2b) | M2 had pacing OFF; no observed deferrals | Calibrate budget, then unattended validation |
 | M4 | Slots, VRAM checks and fake-GPU tests implemented | Reviewed campaigns used one GPU | Real two-GPU throughput comparison |
 | M5 | Phase removal and format 2.0 complete locally | Site renderer completion recorded historically | External deployment not independently audited in this review |
@@ -33,9 +33,39 @@ Passing synthetic tests does not establish OS isolation, exact crash recovery or
 subscription behavior. Both reviewed live reports disclose label separation OFF.
 
 M2's immutable report exists at `../labloop-m2/REPORT.md`, written
-2026-09-10T16:16:02Z. No report or population exists in `../labloop-m2-greedy` in the
-reviewed checkout. Do not rerun final evaluation or rewrite historical reports to
+2026-09-10T16:16:02Z. Do not rerun final evaluation or rewrite historical reports to
 complete this roadmap.
+
+### Live now (written 2026-09-12, for the next session)
+
+The **M2 greedy control** is running in `../labloop-m2-greedy` (campaign
+`m2-cifar10-greedy`, launched 2026-09-12T11:40Z under `lab watch --op campaign`,
+budget 1500 min, GPU 0, governor OFF like the search, tools synced from commit
+`9ff609a`, format 2.1; legacy job cards render byte-identically under the 1.4 copy the
+search used, and the selection code is unchanged). Expect roughly 7 h. Check with
+`tools/lab campaign status` there; nothing in that directory is to be edited while it runs.
+
+When it has finished (`REPORT.md` exists there):
+
+1. Read `../labloop-m2-greedy/REPORT.md` next to `../labloop-m2/REPORT.md`. M2's kill
+   criterion reads the search's best search fitness against the control's **at equal
+   GPU-hours** (search: best 0.9498 by c0032, 40 settled, 7.11 GPU-h, final 0.9472):
+   take the control's best-so-far at the search's GPU-hours from its LEDGER and
+   population, and the search's at the control's if the control ran shorter. Both runs
+   sit inside the ~0.4-point noise floor (n = 5000): a difference under that is a tie,
+   and a tie is reported as a tie. Record the comparison in this file's status table,
+   not in either report. Neither run is the prescribed 24-hour comparison; say so.
+2. Read the control's usage section. If any job was deferred, open that candidate's
+   `session.stderr` and `session.json` and confirm the headless CLI's wording matched
+   `usage.rate_limit_regex` (docs/campaign-setup.md, "The first real rate limit"); note
+   the wording here. Zero deferrals leaves M3's live evidence still pending.
+3. `scripts/sync-project.sh ../labloop-m1` and `../labloop-m2` when convenient: both
+   finished projects still carry 1.4 tool copies with phase-era `.claude/commands`,
+   `.claude/prompts` and `loop.conf`; their evidence is untouched by a sync.
+4. Then, in order: fix the finding-card preregistration values
+   (`docs/finding-cards-pilot.md`, proposals table) and write them into the two
+   comparison `campaign.toml`s before either starts; the two-GPU run (M4); next-work
+   item 1 below. Push `aira2-loop` and merge to `main`.
 
 ### Next work, in priority order
 
