@@ -39,13 +39,20 @@ echo "lab-worker: $cid ${LAB_OPERATOR:-?} model=$model max-turns=$turns mode=$mo
 # One session. `--output-format json` gives one result object: session_id, num_turns,
 # duration, usage, the final text. Stored beside the candidate as provenance; the
 # SessionStart hook records the transcript path for `lab usage`.
+#
+# The CLI's stderr is kept in session.stderr and ALSO echoed, line by line under a
+# `[claude stderr]` prefix, to this script's stdout — the watcher's log. `lab run`
+# launches the job with a kill pattern scoped to that prefix, so a usage-limit
+# message printed while the session keeps running (retrying, waiting) ends the
+# session at once and defers the job; nothing a training run prints can match it.
+prefix_stderr() { while IFS= read -r line || [ -n "$line" ]; do printf '[claude stderr] %s\n' "$line"; done; }
 claude -p "$card" \
   --model "$model" \
   --max-turns "$turns" \
   --permission-mode "$mode" \
   --output-format json \
-  > "$LAB_CANDIDATE_DIR/session.json" 2> "$LAB_CANDIDATE_DIR/session.stderr"
-rc=$?
+  2>&1 > "$LAB_CANDIDATE_DIR/session.json" | tee "$LAB_CANDIDATE_DIR/session.stderr" | prefix_stderr
+rc=${PIPESTATUS[0]}
 if [ "$rc" -ne 0 ] && [ ! -s "$LAB_CANDIDATE_DIR/session.json" ]; then
   echo "lab-worker: claude exited $rc before producing a result:" >&2
   tail -5 "$LAB_CANDIDATE_DIR/session.stderr" >&2

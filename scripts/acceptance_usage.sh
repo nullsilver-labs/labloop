@@ -111,6 +111,41 @@ assert_grep "REPORT counts the rate limit"                     "(1 after a rate-
 assert_grep "REPORT shows the deferred row"                    "| c0001 | draft | — | deferred |" REPORT.md
 unset FAKE_CLAUDE_RATELIMIT FAKE_CLAUDE_RESET
 
+# --- E2b: a limit message from a session that KEEPS RUNNING is enforced by the watcher --
+# NEXT.md M3 kill criterion: a worker never continues past a rate-limit message. The
+# fake CLI prints the message to stderr and then retries forever; lab-worker echoes the
+# CLI's stderr under a prefix and `lab run` launched the job with a kill pattern scoped
+# to that prefix, so the watcher ends the session within a poll, long before the job's
+# 2-minute wall clock, and the job is deferred and re-dispatched like any rate limit.
+WORKK="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-ratelimit-hang.XXXXXX")"
+worker_repo "$WORKK" acc-usage-hang
+usage_toml "$WORKK" 3 1 'retry = "4s"' 'rate_limit_regex = "hit your limit"'
+cd "$WORKK" || return 1
+export LAB_ROOT="$WORKK"
+LABU="$WORKK/tools/lab"
+export FAKE_CLAUDE_HANG=c0001 FAKE_CLAUDE_RESET="in 5s"
+t_hang0=$(date +%s)
+assert_ok   "campaign with a session that keeps running past its limit message runs to completion" timeout 150 "$LABU" run --poll-sec 1
+t_hang=$(( $(date +%s) - t_hang0 ))
+assert_eq   "the hung session's candidate is deferred, not failed" "$(pj "(p['candidates']['c0001']['status'], p['candidates']['c0001']['exec'])")" "('deferred', 'deferred')"
+assert_eq   "its reason says the watcher ended the session"    "$(pj "'kept running past it and was killed by the watcher' in p['candidates']['c0001']['fail_reason']")" True
+assert_eq   "the session record is rate-limited with the parsed reset time" \
+  "$(pj "(p['candidates']['c0001']['session']['rate_limited'], p['candidates']['c0001']['session']['reset_at'] is not None)")" "(True, True)"
+assert_ok   "the watch entry records a kill by pattern, not by wall clock" bash -c 'grep -rl "kill pattern matched" .lab/ >/dev/null'
+assert_ok   "the CLI's stderr reached the watcher log under its prefix" bash -c 'grep -rl "^\[claude stderr\] You.ve hit your limit" .lab/ >/dev/null'
+assert_grep "session.stderr still holds the CLI's stderr"      "hit your limit" candidates/c0001/session.stderr
+assert_ok   "the whole campaign took well under the 2-minute job wall clock (${t_hang}s)" test "$t_hang" -lt 100
+assert_eq   "no candidate.failed in the feed"                  "$(grep -c '"type":"candidate.failed"' events.jsonl || true)" 0
+assert_eq   "the job was re-dispatched and evaluated"          "$(pj "[(c['id'],c['exec']) for c in p['candidates'].values() if c.get('redispatch_of')=='c0001']")" "[('c0002', 'completed')]"
+assert_eq   "one rate-limit message, one deferral counted"     "$(pj "(p['usage']['rate_limits'], p['usage']['deferred'])")" "(1, 1)"
+assert_eq   "a training run that prints the words is not matched by the kill pattern" \
+  "$(python3 -c "
+import re, sys; sys.path.insert(0, 'tools'); import lab_campaign as m
+rx = re.compile(m.session_kill_regex({'usage': {'rate_limit_regex': m.RATE_LIMIT_RE_DEFAULT}}))
+print([bool(rx.search(s)) for s in ('epoch 3: rate limit of the optimizer reached', 'RATE_LIMIT hit in run.sh',
+                                     '[claude stderr] You\'ve hit your limit · resets 3pm', '[claude stderr] API Error: 429 rate_limit_error')])")" "[False, False, True, True]"
+unset FAKE_CLAUDE_HANG FAKE_CLAUDE_RESET
+
 # --- E3: at the hard threshold a running session is killed and its job deferred ---
 WORKH="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-hard.XXXXXX")"
 worker_repo "$WORKH" acc-usage-hard

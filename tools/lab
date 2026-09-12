@@ -725,6 +725,7 @@ def cmd_watch_run(args) -> None:
     pattern = re.compile(entry["kill_regex"]) if entry.get("kill_regex") else None
     kill_file = WATCH_DIR / f"{entry['id']}.kill"
     log_offset = 0
+    log_carry = b""          # the unterminated tail of the last chunk read
     kill_reason = None
 
     def freshest_output_age() -> float:
@@ -765,6 +766,11 @@ def cmd_watch_run(args) -> None:
                     f.seek(log_offset)
                     chunk = f.read()
                 log_offset += len(chunk)
+                chunk = log_carry + chunk
+                cut = chunk.rfind(b"\n") + 1
+                chunk, log_carry = chunk[:cut], chunk[cut:]
+                if len(log_carry) > 65536:          # a line with no end: search it anyway
+                    chunk, log_carry = chunk + log_carry, b""
                 m = pattern.search(chunk.decode("utf-8", "replace"))
                 if m:
                     kill_reason = f"kill pattern matched: {m.group(0)[:80]!r}"

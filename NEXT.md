@@ -22,7 +22,7 @@ gates, phases, protocol ceremony and a forum. See §7 for what was dropped and w
 | M0 | Loop and synthetic acceptance implemented | No real OS-isolation proof in the reviewed evidence | Restricted evaluation boundary; fault-injection tests for settlement and final evaluation |
 | M1 | Worker contract implemented and tested | MNIST probe: 5 completed, final 0.9875 ≥ 0.985 | Probe demonstrates feasibility, not full-window reliability or superiority over interactive work |
 | M2 | Full operators and selection implemented | CIFAR-10: 40 settled, final 0.9472 ≥ 0.90 | Same-task greedy control and equal-resource comparison; original comparative criterion untested |
-| M3 | Governor and fake-CLI tests implemented | M2 had pacing OFF; no observed deferrals | Calibrate budget, enforce live rate-limit stopping, then unattended validation |
+| M3 | Governor and fake-CLI tests implemented; live rate-limit enforcement by the watcher (2026-09-12, section E2b) | M2 had pacing OFF; no observed deferrals | Calibrate budget, then unattended validation |
 | M4 | Slots, VRAM checks and fake-GPU tests implemented | Reviewed campaigns used one GPU | Real two-GPU throughput comparison |
 | M5 | Phase removal and format 2.0 complete locally | Site renderer completion recorded historically | External deployment not independently audited in this review |
 | Finding cards | Implemented and tested (opt-in `[memory]`, format 2.1, section G) | None | Prompt-size pilot, then the preregistered legacy-vs-findings comparison (plan §7) |
@@ -43,8 +43,13 @@ complete this roadmap.
    not worker isolation), settlement recovery and interrupted-final handling. Add
    fault injection; prefer an explicit inconclusive interrupted final over a silent
    second read. Cover direct editing tools as well as Bash guardrails.
-2. Test rate-limit detection against a worker that emits a limit message and keeps
-   running; enforce termination rather than relying on CLI exit.
+2. ~~Test rate-limit detection against a worker that emits a limit message and keeps
+   running; enforce termination rather than relying on CLI exit.~~ Done 2026-09-12:
+   `lab-worker` echoes the CLI's stderr under a prefix into the watcher log and every
+   worker job carries a kill pattern scoped to that prefix (`session_kill_regex`);
+   acceptance E2b kills a fake CLI that retries forever and re-dispatches the job.
+   The wording of the real headless CLI is still to be confirmed on the first live
+   deferral (docs/campaign-setup.md).
 3. Complete the greedy comparison and calibrated unattended governor evidence on
    prospectively fixed configurations. Define comparable resource accounting before
    launch; preserve the original milestone criteria and report deviations explicitly.

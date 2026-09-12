@@ -716,6 +716,19 @@ def worker_env(cfg: dict, cid: str, operator: str, gpu: int | None, split: str =
     return env
 
 
+STDERR_PREFIX = "[claude stderr] "   # lab-worker echoes the CLI's stderr under this
+KILL_PATTERN_PREFIX = "kill pattern matched:"
+
+
+def session_kill_regex(cfg: dict) -> str:
+    """The watcher's kill pattern for a worker job: the usage rate-limit regex, but only
+    on lines lab-worker echoes from the CLI's stderr. A rate-limit message that the CLI
+    prints while it keeps running (waiting or retrying for the window) ends the session
+    within a watcher poll; the job is then settled as deferred, never failed. Nothing
+    the candidate's own run prints can match."""
+    return rf"(?im)^{re.escape(STDERR_PREFIX)}.*(?:{cfg['usage']['rate_limit_regex']})"
+
+
 def launch(cfg: dict, pop: dict, cid: str) -> None:
     c = pop["candidates"][cid]
     env = worker_env(cfg, cid, c["operator"], c["gpu"])
@@ -724,6 +737,8 @@ def launch(cfg: dict, pop: dict, cid: str) -> None:
     args = ["watch", "start", "--op", f"job-{cid}", "--budget-min", str(budget_min)]
     if cfg["resources"]["stall_min"]:
         args += ["--stall-min", str(cfg["resources"]["stall_min"])]
+    if c["operator"] != "baseline":
+        args += ["--kill-regex", session_kill_regex(cfg)]
     args += ["--", "bash", "-c", command]
     cp = _lab(*args, env=env)
     wid = cp.stdout.strip().splitlines()[-1]
@@ -903,6 +918,17 @@ def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
             exec_status, reason = "invalid", f"evaluator: {fit.get('error', 'no score')}"
         else:
             c["fitness"], c["n"] = fit["score"], fit.get("n")
+    elif exec_status == "killed" and kill_reason.startswith(KILL_PATTERN_PREFIX):
+        # the CLI printed a usage-limit message and kept running; the watcher's kill
+        # pattern (session_kill_regex) ended it. Deferred like any rate limit; the
+        # reset time comes from the same stderr line via read_session.
+        if not sess:
+            sess = c["session"] = {"rate_limited": True, "message": None, "reset_at": None}
+        if not sess.get("rate_limited"):
+            sess["rate_limited"], sess["message"], sess["reset_at"] = True, kill_reason[:100], None
+        exec_status = "deferred"
+        reason = (f"usage limit: {sess['message']}; the session kept running past it and was "
+                  "killed by the watcher")
     elif sess and sess["rate_limited"]:
         # the window is spent: not the candidate's fault, never `failed` (NEXT.md §4)
         exec_status, reason = "deferred", f"usage limit: {sess['message']}"
@@ -1859,6 +1885,11 @@ def cmd_job_card(args) -> None:
         cdir = L.ROOT / cdir
     card = json.loads((cdir / "job.json").read_text())
     task = (L.ROOT / card["task_file"]).read_text()
+    print(render_job_card(card, task))
+
+
+def render_job_card(card: dict, task: str) -> str:
+    """The prompt a worker receives, from its job.json snapshot and the task text."""
     out = [f"# Job {card['candidate']} — operator `{card['operator']}`", "",
            card["instructions"], "",
            "## Task", "", task.strip(), "",
@@ -1899,7 +1930,7 @@ def cmd_job_card(args) -> None:
     out += ["## Population", "", "| id | operator | status | fitness |", "|---|---|---|---|"]
     out += [f"| {p['id']} | {p['operator']} | {p['status']} | {p['fitness']} |" for p in card["population"]]
     out += ["", f"Best so far: {card['best']}", ""]
-    print("\n".join(out))
+    return "\n".join(out)
 
 
 # ---------------------------------------------------------------------------

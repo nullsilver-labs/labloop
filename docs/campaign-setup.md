@@ -82,6 +82,17 @@ wording and a 429. After the first unattended run, open the deferred candidate's
 `session.json` and `session.stderr`, confirm they matched, and tighten the regex in
 `campaign.toml` if the wording differs.
 
+**A session that keeps running past the message.** `lab run` does not rely on the
+CLI exiting. `lab-worker` echoes the CLI's stderr, line by line under a
+`[claude stderr]` prefix, into the job's watcher log, and every worker job is launched
+with a kill pattern that is the rate-limit regex scoped to that prefix. A CLI that
+prints the message and then waits or retries is killed by the watcher within one poll
+(the default poll is 15 s), the job is settled as `deferred` with the watcher named in
+its reason, and it is re-dispatched after the stated reset. Nothing a training run
+prints can match the pattern, because only the CLI's stderr carries the prefix. A
+transient message that the CLI would have retried through is deferred too: one
+re-dispatch, never a failed candidate.
+
 ## Finding cards (opt-in memory)
 
 By default a worker sees the first-parent lineage of clipped summaries. `[memory]

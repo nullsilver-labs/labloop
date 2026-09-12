@@ -13,6 +13,10 @@
 #   FAKE_CLAUDE_RATELIMIT=c0001    that candidate's session ends the way a spent Max
 #                                  window ends it: "You've hit your limit · resets …",
 #                                  is_error, exit 1, no work done
+#   FAKE_CLAUDE_HANG=c0001         that candidate's session prints the limit message to
+#                                  stderr and then KEEPS RUNNING (retrying every second,
+#                                  no result), the way a CLI that waits for the window
+#                                  would; the watcher must end it, not the CLI
 set -euo pipefail
 prompt=""; model=""; turns=""; fmt="text"
 while [ $# -gt 0 ]; do
@@ -30,6 +34,12 @@ cost_var="FAKE_CLAUDE_COST_$cid"; cost="${!cost_var:-${FAKE_CLAUDE_COST:-0.0}}"
 sleep_var="FAKE_CLAUDE_SLEEP_$cid"; nap="${!sleep_var:-0}"
 [ "$nap" != "0" ] && sleep "$nap"
 
+if [ "${FAKE_CLAUDE_HANG:-}" = "$cid" ]; then
+  reset="${FAKE_CLAUDE_RESET:-in 2h}"
+  echo "You've hit your limit · resets $reset" >&2
+  for i in $(seq 1 600); do echo "retrying ($i)…" >&2; sleep 1; done
+  exit 1
+fi
 if [ "${FAKE_CLAUDE_RATELIMIT:-}" = "$cid" ]; then
   reset="${FAKE_CLAUDE_RESET:-$(date -d '+2 hours' '+%-I%p' 2>/dev/null | tr 'APM' 'apm' || echo 3pm)}"
   python3 - "$model" "$cost" "$reset" <<'PY'
