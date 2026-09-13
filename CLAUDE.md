@@ -2,7 +2,10 @@
 
 > **Campaign workers** (`LAB_ROLE=worker`, launched by `lab run`): your job card is the
 > whole brief. You edit only your candidate dir, you never read labels, you stop when
-> `code/run.sh` has produced `out/predictions-search.json` and `summary.md` exists.
+> `code/run.sh` has completed synchronously in the foreground, its exit code is checked,
+> `out/predictions-search.json` and `summary.md` exist. Use a bounded Bash timeout;
+> never background work or start a nested watcher. Ending the session kills pending
+> work, not a handoff to training. The candidate already has its own watcher.
 > The rest of this file is for operator sessions and for the humans who read them.
 
 One repo, one research campaign, rendered live on nullsilver.com. `lab run` runs the
@@ -76,7 +79,8 @@ fine. To end a campaign by hand: `tools/lab campaign stop [--now]`.
 **Never leave running work without an enforcer.** `lab watch start --op NAME
 --budget-min N [--stall-min N] [--kill-regex RE] -- <command>` detaches work under a
 mechanical supervisor that heartbeats and kills on wall-clock, stall or pattern.
-`lab run` launches every job this way and settles a killed job mechanically, so the
+`lab run` launches every job this way; workers must run synchronously inside that
+watcher, never start another. It settles a killed job mechanically, so the
 LEDGER never waits for a session to come back. Run the campaign itself under a watcher
 too (`--op campaign`), so it has a budget of its own. A bare `nohup`/`setsid` is
 forbidden — an orphan without a watcher has no one enforcing its budget.

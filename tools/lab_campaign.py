@@ -669,7 +669,12 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
         "best": pop.get("best"),
         "contract": {
             "write": "code/run.sh (reads $LAB_SPLIT_INPUTS, writes $LAB_PREDICTIONS_OUT) and summary.md",
-            "run": "code/run.sh once for the search split before exiting",
+            "run": "code/run.sh once for the search split before exiting, synchronously in the foreground "
+                   f"(job wall-clock cap {cfg['resources']['job_wall_clock_sec']} seconds). "
+                   "Use a bounded Bash timeout within the remaining job budget; never run_in_background, "
+                   "shell &, nohup, setsid or nested lab watch. Wait for exit, check its exit code and "
+                   "predictions, then write summary.md before ending the session. An end_turn is not "
+                   "a handoff: pending work is killed and the candidate is invalid",
             "inherited": "the parent's code/ without its trained weights (*.pt etc.); you train afresh",
             "final": "lab re-runs code/run.sh later with LAB_SPLIT_INPUTS pointing at the final split; "
                      "it must reuse what you trained (persist weights inside the candidate dir and "
@@ -713,6 +718,7 @@ def worker_env(cfg: dict, cid: str, operator: str, gpu: int | None, split: str =
         "LAB_PREDICTIONS_OUT": str(cdir / "out" / f"predictions-{split}.json"),
         "LAB_WORKER_MODEL": cfg["resources"]["worker_model"],
         "LAB_WORKER_MAX_TURNS": str(cfg["resources"]["worker_max_turns"]),
+        "LAB_JOB_WALL_CLOCK_SEC": str(cfg["resources"]["job_wall_clock_sec"]),
         "CUDA_VISIBLE_DEVICES": "" if gpu is None else str(gpu),
     })
     return env
@@ -745,12 +751,14 @@ def launch(cfg: dict, pop: dict, cid: str) -> None:
     env = worker_env(cfg, cid, c["operator"], c["gpu"])
     command = cfg["data"]["baseline"] if c["operator"] == "baseline" else cfg["worker"]["command"]
     budget_min = max(1, math.ceil(cfg["resources"]["job_wall_clock_sec"] / 60))
-    args = ["watch", "start", "--op", f"job-{cid}", "--budget-min", str(budget_min)]
+    args = ["watch", "start", "--op", f"job-{cid}", "--budget-min", str(budget_min),
+            "--candidate-dir", str(cand_dir(cid))]
     if cfg["resources"]["stall_min"]:
         args += ["--stall-min", str(cfg["resources"]["stall_min"])]
     if c["operator"] != "baseline":
         args += ["--kill-regex", session_kill_regex(cfg)]
     args += ["--", "bash", "-c", command]
+    env.pop("LAB_ROLE", None)  # the watcher is the operator; only its child is a worker
     cp = _lab(*args, env=env)
     wid = cp.stdout.strip().splitlines()[-1]
     c.update({"status": "running", "watch": wid, "launched": L.now_iso()})
@@ -1497,7 +1505,9 @@ def run_final(cfg: dict, pop: dict, poll_sec: float) -> None:
     if not fin.get("watch"):
         env = worker_env(cfg, best, "final", c["gpu"], split="final")
         budget_min = max(1, math.ceil(cfg["resources"]["job_wall_clock_sec"] / 60))
+        env.pop("LAB_ROLE", None)
         cp = _lab("watch", "start", "--op", f"final-{best}", "--budget-min", str(budget_min),
+                  "--candidate-dir", str(cdir),
                   "--", "bash", "-c", f"cd {cdir} && bash code/run.sh", env=env)
         fin = {"candidate": best, "watch": cp.stdout.strip().splitlines()[-1],
                "started": L.now_iso(), "score": None, "n": None}

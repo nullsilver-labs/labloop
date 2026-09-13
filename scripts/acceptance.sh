@@ -190,5 +190,9 @@ done
 # shellcheck source=scripts/acceptance_findings.sh
 . "$SRC/scripts/acceptance_findings.sh"
 
+section "H. bounded worker process lifecycle (no LLM)"
+assert_ok "foreground completion, detached cleanup and operator isolation" \
+          timeout 120 python3 "$SRC/scripts/test_worker_lifecycle.py"
+
 printf '\n\033[1m%d passed, %d failed\033[0m\n' "$PASSED" "$FAILED"
 [ "$FAILED" -eq 0 ] || exit 1

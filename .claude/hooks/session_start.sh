@@ -35,8 +35,12 @@ if [ "$role" = "worker" ]; then
 
 Your whole brief is the job card in your prompt: operator, task, contract, parents.
 You may write only inside \`${LAB_CANDIDATE_DIR:-your candidate dir}\`. Fitness comes from
-\`lab eval\`, never from you; you never look for labels. When code/run.sh has run and
-out/predictions-search.json and summary.md exist, stop. If you cannot finish within
+\`lab eval\`, never from you; you never look for labels. Run code/run.sh synchronously
+in the foreground with a bounded Bash timeout inside the remaining job budget. No
+run_in_background, shell &, nohup, setsid or nested lab watch: your job already has
+a watcher. Wait for exit, check the exit code and out/predictions-search.json, then
+write summary.md and stop. Ending the session kills pending work; it is not a handoff.
+If you cannot finish within
 your turn budget, write summary.md saying what you learned and stop.
 EOF
   exit 0

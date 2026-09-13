@@ -9,7 +9,7 @@ LAB_HOOK_INPUT=$(cat 2>/dev/null || echo '{}')
 export LAB_HOOK_INPUT
 
 python3 - <<'PY'
-import json, os, re, sys
+import json, os, re, shlex, sys
 
 try:
     data = json.loads(os.environ.get("LAB_HOOK_INPUT", "{}"))
@@ -87,6 +87,49 @@ RULES = [
 # candidate dir and must never look for the hidden labels. The job card says so; this
 # makes the attempt visible and blocked at the tool boundary as well.
 if os.environ.get("LAB_ROLE") == "worker":
+    inp = data.get("tool_input") or {}
+    # A deliberately shallow guard, not a Bash parser. Skip conventional heredoc
+    # bodies (including <<- and multiple documents), but inspect their headers and
+    # commands after their delimiters. CLI controls and owned-process containment
+    # enforce lifetime even for shell syntax this heuristic does not recognize.
+    detached = inp.get("run_in_background")
+    heredocs = []
+    for line in cmd.splitlines():
+        if heredocs:
+            delimiter, strip_tabs = heredocs[0]
+            if (line.lstrip("\t") if strip_tabs else line) == delimiter:
+                heredocs.pop(0)
+            continue
+        lexer = shlex.shlex(line, posix=False, punctuation_chars=";&|<>")
+        lexer.whitespace_split = True
+        try:
+            tokens = list(lexer)
+        except ValueError:
+            # Do not interpret the remaining quoted body as shell commands. Only
+            # this heuristic fails open; explicit background and RULES still apply.
+            detached = inp.get("run_in_background")
+            break
+        for i, token in enumerate(tokens):
+            if token == "<<" and i + 1 < len(tokens):
+                word = tokens[i + 1]
+                strip_tabs = word.startswith("-")
+                word = word[1:] if strip_tabs else word
+                if re.fullmatch(r"(?:[\w]+|'[\w]+'|\"[\w]+\")", word):
+                    heredocs.append((word.strip("'\""), strip_tabs))
+            if token in ("&", "&;"):
+                detached = True
+            # Executables only at simple command positions, never prose arguments.
+            if i == 0 or tokens[i - 1] in (";", "&&", "||", "|", "&"):
+                executable = os.path.basename(token.strip("'\""))
+                if executable in ("nohup", "setsid", "disown"):
+                    detached = True
+                if executable == "lab" and tokens[i + 1:i + 3] in (["watch", "start"], ["watch", "_run"]):
+                    detached = True
+    if detached:
+        print("Blocked: workers must run synchronously in the foreground with a bounded "
+              "Bash timeout. No background tasks or nested watchers; wait for exit, "
+              "check predictions, and write summary.md before ending the session.", file=sys.stderr)
+        sys.exit(2)
     RULES.append((r"LAB_PRIVATE|labels\.json|/labels(?:/|\b)",
                   "a worker never reads labels. Fitness comes from `lab eval`, which is the "
                   "only reader of the search and final splits."))

@@ -45,6 +45,65 @@ tools/lab serve                                  # read-only page for a phone on
 tools/lab campaign stop [--now]                  # stop dispatching (and kill running jobs)
 ```
 
+## Supervising the campaign controller
+
+Use a wall-clock-only outer watcher for `lab run`, for example:
+
+```sh
+tools/lab watch start --op campaign --budget-min 60 -- tools/lab run campaign.toml --poll-sec 10
+```
+
+Do **not** add an outer `--stall-min` to this command with the current generic
+watcher: the controller quietly updates state files while candidate watchers and
+workers run in separate sessions with separate logs. Its own log/session CPU can
+therefore look idle during useful training. A ten-minute outer stall setting killed
+a progressing sustained smoke on 2026-09-12. The absolute outer budget remains the
+enforcer; candidate watchers retain their own wall/stall checks. A future
+campaign-aware stall check must measure actual campaign progress, not just the
+controller log. Set the outer wall cap with room for final execution/scoring; an
+outer timeout is an interruption, not a completed campaign.
+
+## Worker lifetime (Linux)
+
+The default `tools/lab-worker` disables Claude Code's explicit **and automatic**
+background tasks with `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`. This control and
+`BASH_DEFAULT_TIMEOUT_MS` / `BASH_MAX_TIMEOUT_MS` were verified in the locally
+installed Claude Code **2.1.269** binary (including the Bash auto-background branch),
+not assumed to be CLI flags. Both Bash timeouts are set to the job wall-clock cap;
+a worker should request a smaller timeout within its **remaining** budget. The outer
+watcher remains the deadline authority. Check these controls when upgrading the CLI.
+
+Workers run `code/run.sh` synchronously, wait for its exit, check the exit code and
+predictions, then write `summary.md` before ending the session. No `run_in_background`,
+shell `&`, `nohup`, `setsid`, or nested `lab watch`: the candidate already has its
+watcher. The Bash hook rejects common detach attempts at simple command positions,
+not mentions in quoted prose, and skips conventional heredoc payloads. It is a
+shallow heuristic, not a full shell parser: wrappers, complex quoting/delimiters,
+and commands embedded in scripts can evade it. CLI background controls and owned
+process containment are the lifetime enforcement, not perfect shell detection.
+`lab watch start/_run` also refuses worker invocations. Operator watchers remain
+available.
+
+Linux subreapers contain the CLI lifetime and each candidate watch (including
+baseline/final execution). On CLI return, owned live descendants are terminated and
+reaped **before** the wrapper checks predictions; pending work makes the candidate
+invalid even if the CLI returned success. There is no grace period to await missing
+predictions or to salvage late outputs. On job completion or watcher kill, detached
+and double-forked descendants are likewise drained before the watcher publishes a
+terminal entry, releases its resource lease, or permits settlement. Cleanup uses
+pidfds with direct-child ownership checks, never broad process-name/UID kills.
+TERM has one second, then KILL/reaping has five seconds. If the kernel cannot kill a
+process, the watcher retains the lease, records `cleanup_error`, and retries visibly.
+
+This is lifecycle containment, **not OS security isolation**: hooks are guardrails,
+a same-user adversarial process can bypass them, and externally killing the watcher
+itself (especially SIGKILL), host failure, or external service delegation is outside
+this guarantee. Kernel I/O can delay teardown indefinitely; don't claim compute has
+stopped while the watcher is running with `cleanup_error`. Linux `/proc`, `prctl`, and Python/kernel
+pidfd support are required; unsupported systems fail before candidate execution.
+Do not update tools or resume the tainted historical control for comparison: use a
+fresh campaign identity and freshly trained candidates after a bounded smoke test.
+
 ## The usage governor (the Claude Max window)
 
 Max is a rolling 5-hour allowance, not money, and `lab run` treats it like a GPU:

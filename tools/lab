@@ -634,6 +634,8 @@ def _watch_repair(entry: dict) -> dict:
 
 
 def cmd_watch_start(args) -> None:
+    if os.environ.get("LAB_ROLE") == "worker":
+        die("workers cannot start nested watchers; run synchronously under the candidate watcher")
     cmd = list(args.command or [])
     if cmd and cmd[0] == "--":
         cmd = cmd[1:]
@@ -657,6 +659,7 @@ def cmd_watch_start(args) -> None:
         "format": FORMAT_VERSION,
         "id": wid,
         "kind": "op",
+        "candidate_dir": args.candidate_dir,
         "name": args.op,
         "cmd": cmd,
         "log": str(log_path.relative_to(ROOT)),
@@ -707,14 +710,22 @@ def _session_cpu_seconds(sid_pid: int) -> float:
 
 def cmd_watch_run(args) -> None:
     """The watcher process itself (internal; launched detached by `watch start`)."""
+    if os.environ.get("LAB_ROLE") == "worker":
+        die("workers cannot run nested watchers")
     path = _watch_path(args.id)
     entry = json.loads(path.read_text())
     log_path = ROOT / entry["log"]
     log_path.parent.mkdir(parents=True, exist_ok=True)
     logf = open(log_path, "ab", buffering=0)
+    contained = bool(entry.get("candidate_dir"))
+    child_env = os.environ.copy()
+    if contained:
+        import lab_process
+        lab_process.enable_subreaper()
+        child_env.update(LAB_ROLE="worker", LAB_CANDIDATE_DIR=entry["candidate_dir"])
     child = subprocess.Popen(entry["cmd"], cwd=str(ROOT), stdin=subprocess.DEVNULL,
                              stdout=logf, stderr=subprocess.STDOUT,
-                             start_new_session=True)
+                             start_new_session=True, env=child_env)
     entry["pid"] = os.getpid()
     entry["child_pid"] = child.pid
     write_json_atomic(path, entry)
@@ -779,6 +790,11 @@ def cmd_watch_run(args) -> None:
             except OSError:
                 pass
         if kill_reason:
+            if contained:
+                # Do not kill the subreaper (this watcher): detached children must
+                # be adopted and drained before its entry can become terminal.
+                rc = -signal.SIGTERM
+                break
             try:
                 os.killpg(child.pid, signal.SIGTERM)
             except (OSError, ProcessLookupError):
@@ -797,6 +813,24 @@ def cmd_watch_run(args) -> None:
         write_json_atomic(path, entry)
         time.sleep(WATCH_POLL_SEC)
 
+    if contained:
+        while True:
+            try:
+                pending = lab_process.cleanup(child)
+                if pending and not kill_reason:
+                    rc = 2
+                    logf.write(b"lab watch: lifecycle violation: live candidate descendants cleaned up\n")
+                break
+            except RuntimeError as exc:
+                # Unkillable kernel I/O cannot safely release a lease. Keep the
+                # watcher alive and visible rather than settling over late work.
+                logf.write((str(exc) + "\n").encode())
+                if not kill_reason:
+                    rc = 2
+                entry["cleanup_error"] = str(exc)
+                entry["heartbeat"] = now_iso()
+                write_json_atomic(path, entry)
+                time.sleep(WATCH_POLL_SEC)
     logf.close()
     entry["exit_code"] = rc
     entry["ended"] = now_iso()
@@ -1176,6 +1210,7 @@ def main(argv: list[str] | None = None) -> None:
                    help="kill if no new log output AND no CPU activity in the child's "
                         "process tree for this many minutes")
     w.add_argument("--kill-regex", help="kill when this pattern appears in new log output")
+    w.add_argument("--candidate-dir", help=argparse.SUPPRESS)  # lab run's owned job tree
     w.add_argument("command", nargs=argparse.REMAINDER,
                    help="-- <command...> to run and supervise")
     w.set_defaults(func=cmd_watch_start)
