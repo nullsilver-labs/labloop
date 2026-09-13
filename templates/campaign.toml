@@ -45,6 +45,8 @@ command = "tools/lab-worker"
 [selection]                      # AIRA₂ temperature-scaled rank selection
 temperature = 0.3                # over normalised rank in [0,1]; lower = greedier
 crossover_p = 0.15
+draft_p = 0.0                    # chance of a fresh approach instead of a child; drawn before
+                                 # crossover. 0 = drafts only while the population is empty
 max_debug_retries = 1
 # seed = 12345                   # default: derived from campaign.id
 

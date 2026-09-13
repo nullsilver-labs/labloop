@@ -55,6 +55,19 @@ first = m.pick_job(cfg, pop, rng, set())
 second = m.pick_job(cfg, pop, rng, {(first[0], tuple(first[1]))})
 print(first[0], second[0], first[1] != second[1])")" "improve improve True"
 
+assert_eq   "selection.draft_p draws a fresh draft before crossover; 0 leaves the old random stream intact" \
+  "$(python3 -c "
+import sys, random; sys.path.insert(0, 'tools'); import lab_campaign as m
+def cand(i, fit): return {'id': i, 'operator': 'draft' if i != 'c0000' else 'baseline', 'parents': [], 'status': 'evaluated', 'fitness': fit, 'debugged': False}
+pop = {'candidates': {'c0000': cand('c0000', 0.1), 'c0001': cand('c0001', 0.9), 'c0002': cand('c0002', 0.8)}, 'usage': m.usage_defaults()}
+def run(sel):
+    cfg = {'selection': dict(temperature=1.0, max_debug_retries=1, **sel), 'report': {'higher_is_better': True}, 'resources': {'max_parallel_jobs': 1}}
+    return [m.choose_job(cfg, pop, random.Random(5))[:2] for _ in range(1)][0]
+always = run({'crossover_p': 0.0, 'draft_p': 1.0})
+never = run({'crossover_p': 0.0, 'draft_p': 0.0})
+legacy = run({'crossover_p': 0.0})
+print(always[0], always[1] == [], never == legacy, never[0])")" "draft True True improve"
+
 WORKP="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-sync.XXXXXX")"
 mkdir -p "$WORKP/tools" "$WORKP/candidates/c0000" && echo old > "$WORKP/tools/lab" && echo evidence > "$WORKP/candidates/c0000/summary.md" && echo '[campaign]' > "$WORKP/campaign.toml"
 assert_ok   "sync-project refreshes tooling"                   bash "$SRC/scripts/sync-project.sh" "$WORKP"

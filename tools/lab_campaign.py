@@ -83,8 +83,10 @@ WEIGHT_PATTERNS = ["*.pt", "*.pth", "*.ckpt", "*.safetensors", "*.bin", "*.npz",
 
 OPERATOR_TEXT = {
     "baseline": "Produce the trivial baseline exactly as the task describes it. No cleverness.",
-    "draft": "Write a first complete solution from the task statement. Prefer simple and "
-             "runnable over ambitious. State in summary.md what you tried and why.",
+    "draft": "Write a complete solution from the task statement. Prefer simple and "
+             "runnable over ambitious. If the population below already holds candidates, "
+             "take a different approach from theirs, not a variant of one. State in "
+             "summary.md what you tried and why.",
     "improve": "You inherit the parent's code. Make ONE hypothesised change, state it in "
                "summary.md before running, run, and report what happened. Do not revert "
                "to a different approach; that is a draft.",
@@ -245,11 +247,16 @@ def load_campaign(path: Path) -> dict:
     cfg["selection"] = {
         "temperature": float(s.get("temperature", 0.3)),
         "crossover_p": float(s.get("crossover_p", 0.15)),
+        "draft_p": float(s.get("draft_p", 0.0)),
         "max_debug_retries": int(s.get("max_debug_retries", 1)),
         "seed": int(s.get("seed", int(hashlib.sha256(cid.encode()).hexdigest()[:8], 16))),
     }
     if not (0 <= cfg["selection"]["crossover_p"] <= 1):
         L.die(f"{path.name}: selection.crossover_p must be in [0,1]")
+    if not (0 <= cfg["selection"]["draft_p"] <= 1):
+        L.die(f"{path.name}: selection.draft_p must be in [0,1]")
+    if cfg["selection"]["draft_p"] + cfg["selection"]["crossover_p"] > 1:
+        L.die(f"{path.name}: selection.draft_p + selection.crossover_p must not exceed 1")
     if cfg["selection"]["temperature"] <= 0:
         L.die(f"{path.name}: selection.temperature must be > 0")
 
@@ -1456,6 +1463,10 @@ def choose_job(cfg: dict, pop: dict, rng: random.Random) -> tuple[str, list[str]
         if len([c for c in running if c["operator"] == "draft"]) < cfg["resources"]["max_parallel_jobs"]:
             return ("draft", [], None)
         return None
+    # a fresh approach, not a tweak: drawn before crossover, and only when draft_p > 0 so
+    # a campaign without the key consumes exactly the random stream it always did
+    if cfg["selection"].get("draft_p", 0.0) > 0 and rng.random() < cfg["selection"]["draft_p"]:
+        return ("draft", [], None)
     if len(evaluated) >= 2 and rng.random() < cfg["selection"]["crossover_p"]:
         a, b = rank_select(cfg, evaluated, rng, k=2)
         return ("crossover", [a["id"], b["id"]], None)

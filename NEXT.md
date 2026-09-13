@@ -151,6 +151,20 @@ change only selection. Fix common resource cutoff and early-stop handling before
 launch. Neither historical run establishes the original 24 h criterion. Comparative
 validation and calibrated unattended governor evidence remain **pending**.
 
+### Selection findings from the pair and the `draft_p` change (2026-09-13)
+
+The summary titles of both arms show a third of each arm's compute re-testing ideas a
+sibling had already tried (search: label smoothing 6×, flip TTA 7×; greedy: mixup 5×,
+"raise the training budget" 5×), because legacy memory shows only the first-parent
+lineage. That is what finding cards address, so the legacy-vs-findings comparison is
+now the highest-value tooling experiment. Separately, `draft` was dispatched only while
+the population was empty, and the improve brief forbids changing approach, so
+approach-level exploration was structurally off (one accidental exception: search
+c0019 improved the trivial baseline into a ResNet9). `selection.draft_p` (default 0,
+drawn before crossover, unit-tested; a config without the key consumes the same random
+stream as before) is on main since 2026-09-13; a campaign that wants approach
+exploration preregisters it. Not applied to engram-pilot-w0, whose tools are frozen.
+
 ### Next work, in priority order
 
 1. Harden the evaluation boundary (the documented unrestricted sudo Python rule is
@@ -166,9 +180,10 @@ validation and calibrated unattended governor evidence remain **pending**.
    acceptance E2b kills a fake CLI that retries forever and re-dispatches the job.
    The wording of the real headless CLI is still to be confirmed on the first live
    deferral (docs/campaign-setup.md).
-3. Complete the greedy comparison and calibrated unattended governor evidence on
-   prospectively fixed configurations. Define comparable resource accounting before
-   launch; preserve the original milestone criteria and report deviations explicitly.
+3. ~~Complete the greedy comparison~~ (done 2026-09-13, "Matched pair settled"); the
+   calibrated unattended governor evidence is still pending. A Sonnet-vs-Opus
+   `worker_model` pair on the engram task would exercise it: run the Sonnet arm first
+   and calibrate `usage.window_budget` from its cost before the Opus arm.
 4. ~~Implement finding cards as a separate opt-in change~~ (done 2026-09-12), ~~run the
    prompt-size pilot~~ (done 2026-09-12: facts-only cards +26 %, cards at their limits
    +79 % over the legacy job card on M2's 39 jobs; `docs/finding-cards-pilot.md`), then

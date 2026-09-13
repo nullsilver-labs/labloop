@@ -99,8 +99,11 @@ One process, `lab run`, runs the whole campaign. Every tick:
    or are killed at their own wall-clock cap. No prompt, no wait.
 3. **Dispatch** while a GPU slot and a usage slot are free:
    - empty population → `draft` (one per free GPU, different seeds);
-   - otherwise sample a parent by temperature-scaled rank over search fitness
-     (AIRA₂ §3), then `improve` with p = 0.85 or `crossover` (two parents) with p = 0.15;
+   - otherwise, with `selection.draft_p` (default 0) a fresh `draft`; else sample a
+     parent by temperature-scaled rank over search fitness (AIRA₂ §3), then `improve`
+     or `crossover` (two parents) with `crossover_p` (default 0.15). Added 2026-09-13:
+     with draft_p = 0 the loop drafts exactly once per campaign and the improve brief
+     forbids changing approach, so approach-level exploration was structurally off;
    - a `failed` candidate under its retry cap → `debug` on it instead.
 4. **Stop** when a stop condition fires: GPU-hours, candidate count, wall clock,
    or no improvement in the best search fitness for N settled candidates.
