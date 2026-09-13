@@ -14,7 +14,7 @@ revised here after the fact.
 |---|---|---|---|
 | M0 | Loop and synthetic acceptance implemented | No real OS-isolation proof in the reviewed evidence | Restricted evaluation boundary; fault-injection tests for settlement and final evaluation |
 | M1 | Worker contract implemented and tested | MNIST probe: 5 completed, final 0.9875 ≥ 0.985 | Probe demonstrates feasibility, not full-window reliability or superiority over interactive work |
-| M2 | Full operators and selection implemented; bounded worker lifecycle fix synthetically tested | Search: 40 settled, final 0.9472 ≥ 0.90. Historical greedy stopped: 15 settled (8 completed, 7 invalid), final 0.947 ≥ 0.90 | Wall-only sustained smoke passed lifecycle (two ~310s foreground trainings); task final .8914 < .90. Fresh matched pair authorized, preflight pending |
+| M2 | Full operators and selection implemented; bounded worker lifecycle live-validated | Frozen matched pair 2026-09-13: search 40/40 completed, final .9464; greedy 40/40 completed, final .9406; lease-matched D = +.0044 at B = 26334 s (one sd, over the .004 band by a hair) | One pair, one order; label separation OFF in both; the 24 h criterion not run |
 | M3 | Governor and fake-CLI tests implemented; live rate-limit enforcement by the watcher (2026-09-12, section E2b) | M2 had pacing OFF; no observed deferrals | Calibrate budget, then unattended validation |
 | M4 | Slots, VRAM checks and fake-GPU tests implemented | Reviewed campaigns used one GPU | Real two-GPU throughput comparison |
 | M5 | Phase removal and format 2.0 complete locally | Site renderer completion recorded historically | External deployment not independently audited in this review |
@@ -111,22 +111,39 @@ separate from lifecycle. Search leases871s + final15s = .24611 combined lease-ho
 agent usage $0.6514438. Minor summary/provenance defects remain documented in
 `docs/lifecycle-smoke-20260912.md`; no full-window/security/comparative claim follows.
 
-The frozen matched pair is **live** (protocol, order draw and provenance in
-`../labloop-m2-matched-20260912`; arms `../labloop-m2-matched-search-20260912` and
-`../labloop-m2-matched-greedy-20260912`; only `selection.temperature`/`crossover_p`
-differ: .3/.15 vs .01/0, so the greedy arm dispatches `improve` only, by design).
-Search arm finished 2026-09-13T01:15:50Z: 40 settled, 40 completed, best c0035 .9542,
-final .9464 (task claim supported), 9.65 lease-h, 9.73 h wall, no deferrals. Greedy arm
-launched 01:25:40Z, still running at 08:05Z with 37 settled, all completed, best c0029
-.9484, circuit counters 0/0, frozen bundle hashes verified. `scripts/matched_compare.py`
-implements the preregistered B/D rule from finished-watcher leases and
-`scripts/matched_audit.sh` takes one read-only terminal-audit snapshot; the provisional
-read at B = 23451 s was search c0024 .9528 vs greedy c0029 .9484, D = +.0044, to be
-recomputed once the greedy REPORT.md exists. Greedy c0025's summary discloses that its
-worker read eight sibling candidates' summaries outside its contract; the guard blocks
-writes to other candidate dirs, not reads, and undisclosed reads are not detectable from
-the retained evidence (the CLI returns only the final result). These capped runs do not
-claim the original 24 h horizon if count/resource stops occur first.
+### Matched pair settled (2026-09-13)
+
+Both arms of the frozen matched pair (`../labloop-m2-matched-20260912` holds protocol,
+order draw and provenance) finished without a circuit trip: search arm 40/40 completed,
+final .9464, 9.65 lease-h, 9.73 h wall, REPORT 01:15:50Z; greedy arm 40/40 completed,
+final .9406, 7.32 lease-h, 7.40 h wall, REPORT 08:49:37Z. No deferrals, no rate-limit
+messages, no cleanup errors, every session served sonnet-5 as main model, frozen bundle
+hashes unchanged at both terminal audits (`docs/matched-pair-20260912/`).
+
+Preregistered resource-matched read (`scripts/matched_compare.py`, from finished-watcher
+leases): **B = 26334 s**; search best eligible c0024 .9528 (cum 20510 s), greedy best
+eligible c0029 .9484 (cum 16830 s); **D = +.0044**, one hair over the prospectively fixed
+.004 band, so "search advantage within this exploratory pair". Read it as what it is:
+one pair, one order, one search-split sd of a difference is about .0044 at n = 5000, so
+D is one standard deviation. Automatic finals (search c0035 .9464, greedy c0029 .9406)
+are the frozen candidates' task claims, not the cutoff comparison. Greedy candidates
+were cheaper (mean learned lease 634 s vs 891 s), which the lease-matched cutoff
+absorbs and the count-based headline numbers do not. The M2 design's own 24 h criterion
+was not run; this pair stopped at 40 candidates.
+
+The only differences between arms were `selection.temperature`/`crossover_p` (.3/.15 vs
+.01/0), so the greedy arm dispatching `improve` only is by design. Greedy c0025's summary
+discloses that its worker read eight sibling summaries outside its contract; the guard
+blocks writes to other candidate dirs, not reads, and undisclosed reads are not
+detectable from the retained evidence. Both arms ran with label separation OFF (frozen
+before the `labeval` setup was finished); `labeval` now works (`sudo -n -u labeval
+python3` verified 2026-09-13) and the next campaign uses it.
+
+Next campaign scaffolded: `../labloop-engram` (engram-pilot-w0: frozen Qwen3-0.6B,
+Engram-style hashed n-gram memory, 4096 fictional facts from cartridge's generator,
+8 candidates, threshold .50, labels under `/srv/labloop-private` as `labeval`, uv venv,
+tools from `50e312c`). Its README lists the pre-launch steps: install labels, two
+reference runs (full FT, LoRA) into `data/train/reference/RESULTS.md`, trust, check.
 
 After a strict smoke pass, fresh matched search and greedy identities with the **same**
 fixed lifecycle tools, data, model, seeds, GPU, budgets, memory and usage policy;

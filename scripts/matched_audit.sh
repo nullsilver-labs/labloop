@@ -35,7 +35,7 @@ nvidia-smi --query-gpu=index,uuid,utilization.gpu,memory.used --format=csv,nohea
 echo "compute processes:"; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv,noheader | sed 's/^/  /'; echo "  (end)"
 echo
 echo "## processes referencing the arm (expect none after settlement)"
-pgrep -af "$arm" | grep -v "matched_audit" | cut -c1-150 || echo none
+{ pgrep -af "$arm" | grep -v "matched_audit" | cut -c1-150; } | grep . || echo none
 echo
 echo "## newest writes under candidates/ (compare across two snapshots)"
 find "$arm/candidates" -type f -printf '%TY-%Tm-%TdT%TH:%TM:%TSZ %p\n' 2>/dev/null | sort | tail -5 | sed "s|$arm/||"
