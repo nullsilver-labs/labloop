@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+"""lab-stderr-prefix — copy stdin to stdout with every line prefixed `[claude stderr] `.
+
+Used by lab-worker to echo the Claude CLI's stderr into the job's watcher log, where
+`lab run`'s kill pattern (lab_campaign.session_kill_regex) is scoped to that prefix.
+Unbuffered by design: a partial line is written the moment it arrives, so a
+usage-limit message printed without a trailing newline still reaches the watcher at
+once instead of waiting in a line buffer until the CLI prints something else.
+"""
+import os
+import sys
+
+PREFIX = b"[claude stderr] "
+
+
+def main() -> None:
+    at_line_start = True
+    while True:
+        try:
+            chunk = os.read(0, 65536)
+        except InterruptedError:
+            continue
+        if not chunk:
+            return
+        out = bytearray()
+        for i, piece in enumerate(chunk.split(b"\n")):
+            if i:
+                out += b"\n"
+                at_line_start = True
+            if piece:
+                if at_line_start:
+                    out += PREFIX
+                out += piece
+                at_line_start = False
+        view = memoryview(out)
+        while view:
+            try:
+                n = os.write(1, view)
+            except BrokenPipeError:
+                return
+            view = view[n:]
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(130)

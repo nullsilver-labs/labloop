@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# lab-worker — one Claude Code session, one job. The default `[worker] command`.
+#
+# `lab run` launches this under a watcher with the worker contract in the environment
+# (see tools/lab_campaign.py). It renders the job card, runs ONE headless Claude Code
+# session on subscription login, then checks the contract mechanically: code/run.sh
+# and the search predictions must exist. It never reads labels, never spawns a second
+# session, and exits non-zero when the contract is unmet so the loop records the
+# candidate as invalid instead of guessing.
+#
+# Exit codes: 0 contract met · 2 contract unmet (session ran) · 3 session failed to start
+set -uo pipefail
+
+: "${LAB_CANDIDATE_DIR:?lab-worker must be launched by lab run}"
+: "${LAB_JOB:?}" "${LAB_PREDICTIONS_OUT:?}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LAB="$HERE/lab"
+ROOT="${LAB_ROOT:-$(cd "$HERE/.." && pwd)}"
+cd "$ROOT" || exit 3
+
+model="${LAB_WORKER_MODEL:-claude-sonnet-5}"
+turns="${LAB_WORKER_MAX_TURNS:-40}"
+mode="${LAB_PERMISSION_MODE:-auto}"
+cid="$(basename "$LAB_CANDIDATE_DIR")"
+
+# Subscription login only: refuse a paid route rather than silently billing it.
+for v in ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN ANTHROPIC_BASE_URL CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX; do
+  if [ -n "${!v:-}" ]; then
+    echo "lab-worker: $v is set; the loop runs on subscription login only (docs/aira2-loop-design.md §4)" >&2
+    exit 3
+  fi
+done
+command -v claude >/dev/null 2>&1 || { echo "lab-worker: no \`claude\` on PATH" >&2; exit 3; }
+
+card="$("$LAB" job card "$LAB_CANDIDATE_DIR")" || { echo "lab-worker: no job card" >&2; exit 3; }
+export LAB_MODEL="$model" LAB_ROLE=worker
+# Supported by the locally inspected Claude Code 2.1.269 binary: disables both
+# explicit tool backgrounding and automatic Bash backgrounding. The watcher is
+# still the wall-clock authority; these timeouts only keep a long Bash call inline.
+export CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1
+export BASH_DEFAULT_TIMEOUT_MS="$(python3 -c 'import os; print(max(1, int(float(os.environ.get("LAB_JOB_WALL_CLOCK_SEC", "600")) * 1000)))')"
+export BASH_MAX_TIMEOUT_MS="$BASH_DEFAULT_TIMEOUT_MS"
+echo "lab-worker: $cid ${LAB_OPERATOR:-?} model=$model max-turns=$turns mode=$mode"
+
+# One session. `--output-format json` gives one result object: session_id, num_turns,
+# duration, usage, the final text. Stored beside the candidate as provenance; the
+# SessionStart hook records the transcript path for `lab usage`.
+#
+# The CLI's stderr is kept in session.stderr and ALSO echoed, unbuffered and under a
+# `[claude stderr]` prefix on every line (tools/lab-stderr-prefix), to this script's
+# stdout — the watcher's log. `lab run` launches the job with a kill pattern scoped to
+# that prefix, so a usage-limit message printed while the session keeps running
+# (retrying, waiting) ends the session at once and defers the job; a message without
+# a trailing newline reaches the log just the same. The candidate's own training output
+# never passes through the CLI's stderr in `-p` mode, so it cannot carry the prefix.
+python3 "$HERE/lab_process.py" claude -p "$card" \
+  --model "$model" \
+  --max-turns "$turns" \
+  --permission-mode "$mode" \
+  --output-format json \
+  2>&1 > "$LAB_CANDIDATE_DIR/session.json" | tee "$LAB_CANDIDATE_DIR/session.stderr" | "$HERE/lab-stderr-prefix"
+rc=${PIPESTATUS[0]}
+if [ "$rc" -ne 0 ] && [ "$rc" -ne 125 ] && [ ! -s "$LAB_CANDIDATE_DIR/session.json" ]; then
+  echo "lab-worker: claude exited $rc before producing a result:" >&2
+  tail -5 "$LAB_CANDIDATE_DIR/session.stderr" >&2
+  exit 3
+fi
+python3 - "$LAB_CANDIDATE_DIR/session.json" <<'PY' || true
+import json, sys
+try:
+    r = json.load(open(sys.argv[1]))
+except Exception as e:
+    print(f"lab-worker: session.json unreadable: {e}"); sys.exit(0)
+print(f"lab-worker: session {r.get('session_id','?')} turns={r.get('num_turns','?')} "
+      f"ms={r.get('duration_ms','?')} error={r.get('is_error', False)}")
+PY
+
+# The contract, checked mechanically. A summary is owed even on failure.
+unmet=()
+[ "$rc" -ne 125 ] || unmet+=("CLI returned with live descendants (cleaned up; no late completion accepted)")
+[ -f "$LAB_CANDIDATE_DIR/code/run.sh" ]     || unmet+=("code/run.sh missing")
+[ -f "$LAB_PREDICTIONS_OUT" ]               || unmet+=("$(basename "$LAB_PREDICTIONS_OUT") missing")
+if [ ! -s "$LAB_CANDIDATE_DIR/summary.md" ]; then
+  {
+    echo "# $cid — no summary left by the worker"
+    echo
+    echo "Final session text (mechanically copied by lab-worker):"
+    echo
+    python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("result","")[:3000])' \
+      "$LAB_CANDIDATE_DIR/session.json" 2>/dev/null || echo "_none_"
+  } > "$LAB_CANDIDATE_DIR/summary.md"
+fi
+if [ "${#unmet[@]}" -gt 0 ]; then
+  echo "lab-worker: contract unmet: ${unmet[*]}" >&2
+  exit 2
+fi
+echo "lab-worker: contract met"

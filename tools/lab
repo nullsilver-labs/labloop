@@ -1,28 +1,24 @@
 #!/usr/bin/env python3
 """lab — the single CLI for a nullsilver research repo.
 
-This is the *only* legal writer of `state.json` and `events.jsonl`. Everything the
-website consumes flows through here, which is why it validates aggressively and
-redacts unconditionally: the event feed is public in realtime.
+This is the *only* legal writer of `population.json`, `LEDGER.md` and `events.jsonl`.
+Everything the website consumes flows through here, which is why it validates
+aggressively and redacts unconditionally: the event feed is public in realtime.
 
 Zero dependencies beyond the Python 3 standard library.
 
-Subcommands:
-    lab init                      bootstrap state.json / events.jsonl / notebooks
-    lab log <type> --msg ...      append a validated, redacted event
-    lab events tail [-n N]        read back the feed
-    lab state get [key]           read state.json
-    lab state set phase=analyze   transition (validated against the state machine)
-    lab trial new <exp_id>        create a compliant trial dir, emit trial.launch
-    lab trial log <dir> --data    append a record to results.jsonl
-    lab trial done <dir>          close a trial, update LEDGER, emit trial.done
+Subcommands (the campaign loop itself lives in tools/lab_campaign.py):
+    lab run [campaign.toml]       run the search loop (reap → enforce → dispatch → report)
+    lab campaign init|check|status|usage|stop
+    lab candidate list
+    lab eval <candidate dir>      score a candidate on the hidden search split
+    lab job card <candidate dir>  the job card a worker receives
     lab watch start|list|check|kill|close
                                   detached watchdog for long-running work
-    lab protocol freeze           snapshot PROTOCOL.md -> protocol/revNNN.md
-    lab protocol activate         adopt a new revision, emit protocol.revised
-    lab gate request|resolve      raise / clear a human checkpoint
-    lab model [--json]            which model drives this session (requested + served)
-    lab validate                  lint the whole repo against the contract
+    lab log <type> --msg ...      append a validated, redacted event
+    lab events tail [-n N]        read back the feed
+    lab usage [--since --json]    token usage per session, model and role
+    lab validate                  lint the repo against the contract
     lab format show|sync|version  the output-format contract for consumers
 """
 from __future__ import annotations
@@ -34,91 +30,55 @@ import json
 import os
 import platform
 import re
-import shutil
 import signal
 import subprocess
 import sys
 import time
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 # ---------------------------------------------------------------------------
-# The contract: phases, transitions, statuses, event types and their feed class.
+# The contract: event types and their feed class, limits, the format version.
+# The campaign vocabulary (operators, candidate and campaign statuses, claims)
+# lives in tools/lab_campaign.py and is published through FORMAT.json from there.
 # ---------------------------------------------------------------------------
 
 # Output format version, as consumed by nullsilver.com and any other parser.
 # MAJOR bumps when a consumer that ignores the change would misread the data:
-# a key renamed or removed, a phase or status renamed, an event type's feed class
-# changed, a limit tightened. MINOR bumps for additive changes a consumer can
-# safely ignore: a new event type, a new optional key, a new phase appended.
+# a key renamed or removed, a status renamed, an event type's feed class changed,
+# a limit tightened. MINOR bumps for additive changes a consumer can safely
+# ignore: a new event type, a new optional key.
 #
-# It is stamped into state.json, into every event as it is written, and into each
-# trial's config.json, and published whole in FORMAT.json. Per-event stamping is
-# what makes an append-only feed readable across upgrades: lines written by an
-# older lab keep their old version forever, so a consumer never has to guess which
-# rules applied to a given line. A missing `format` means pre-1.0.
+# It is stamped into population.json, into every event as it is written, into
+# each candidate's config.json and each watch entry, and published whole in
+# FORMAT.json. Per-event stamping is what makes an append-only feed readable
+# across upgrades: lines written by an older lab keep their old version forever,
+# so a consumer never has to guess which rules applied to a given line.
 #
-# Version history lives in README.md under "Format versioning".
-FORMAT_VERSION = "1.3"
-
-PHASES = ["init", "build", "pilot", "execute", "analyze", "decide", "conclude"]
-
-# phase -> the phases it may legally exit to (see CLAUDE.md / the state machine)
-TRANSITIONS: dict[str, list[str]] = {
-    "init": ["build"],
-    "build": ["pilot"],
-    "pilot": ["execute", "build"],      # back to build if measurement is broken
-    "execute": ["analyze"],
-    "analyze": ["decide"],
-    "decide": ["init", "conclude"],     # init starts run N+1
-    "conclude": [],                     # terminal
-}
-
-STATUSES = ["running", "awaiting_gate", "idle", "concluded"]
-
-VERDICTS = ["GO", "NO-GO", "INCONCLUSIVE"]
+# 2.0 removed the phase machine (phases, gates, protocol revisions, trials,
+# sessions, predictions) and its state.json. 2.1 adds the optional finding cards
+# (candidates/cNNNN/finding.json, population.json `memory`, job.json `findings`).
+# Version history: README.md, "Format versioning".
+FORMAT_VERSION = "2.1"
 
 # Every event type carries a fixed feed class. `news` reaches the homepage and RSS,
 # `activity` only the project timeline, `none` is chart data.
 EVENT_FEED: dict[str, str] = {
-    "project.created": "news",
-    "session.start": "activity",
-    "session.end": "activity",
-    "phase.enter": "activity",
-    "phase.exit": "activity",
-    "protocol.revised": "news",
-    "prediction": "activity",
-    "trial.launch": "activity",
-    "trial.done": "activity",
-    "trial.verdict": "activity",
+    "campaign.start": "news",
+    "campaign.stop": "news",
+    "campaign.paused": "activity",
+    "candidate.launch": "activity",
+    "candidate.done": "activity",
+    "candidate.failed": "activity",
     "metric": "none",
-    "run.done": "news",
-    "surprise": "activity",
-    "kill": "activity",
-    "error": "activity",
     "note": "activity",
-    "gate.requested": "activity",
-    "gate.resolved": "activity",
-    "gate.overridden": "activity",
-    "project.concluded": "news",
+    "error": "activity",
 }
 
 MSG_MAX = 140
 EVENT_MAX_BYTES = 4096
-METRIC_MIN_INTERVAL_SEC = 60  # per trial
-
-PROTOCOL_REQUIRED_KEYS = [
-    "id", "title", "kind", "revision", "status", "autonomy", "budgets",
-    "created", "updated",
-]
-PROTOCOL_SECTIONS = [
-    "Idea", "Questions", "Hypotheses", "Success criteria", "Prior & related work",
-    "Experiment sketch", "Guardrails", "Out of scope", "Changelog",
-]
-
-PLACEHOLDER = "REPLACE-ME"
+METRIC_MIN_INTERVAL_SEC = 60  # per candidate
 
 # Secret shapes that must never reach a public feed.
 REDACT_PATTERNS = [
@@ -151,21 +111,21 @@ def now_iso() -> str:
 
 
 def repo_root() -> Path:
-    """Repo root = nearest ancestor holding PROTOCOL.md, else the git root."""
+    """Repo root = nearest ancestor holding campaign.toml or population.json, else
+    the git root, else the working directory."""
     env = os.environ.get("LAB_ROOT") or os.environ.get("CLAUDE_PROJECT_DIR")
     if env:
         return Path(env).resolve()
     here = Path.cwd().resolve()
     for cand in [here, *here.parents]:
-        if (cand / "PROTOCOL.md").exists() or (cand / ".git").exists():
+        if (cand / "campaign.toml").exists() or (cand / "population.json").exists() \
+                or (cand / ".git").exists():
             return cand
     return here
 
 
 ROOT = repo_root()
-STATE_PATH = ROOT / "state.json"
 EVENTS_PATH = ROOT / "events.jsonl"
-PROTOCOL_PATH = ROOT / "PROTOCOL.md"
 LEDGER_PATH = ROOT / "LEDGER.md"
 LAB_DIR = ROOT / ".lab"          # runtime scratch, gitignored
 
@@ -177,25 +137,6 @@ def write_json_atomic(path: Path, obj: Any) -> None:
     os.replace(tmp, path)
 
 
-def read_json(path: Path) -> Any:
-    try:
-        return json.loads(path.read_text())
-    except FileNotFoundError:
-        die(f"{path.relative_to(ROOT) if path.is_relative_to(ROOT) else path} not found — run `lab init` first")
-    except json.JSONDecodeError as e:
-        die(f"{path.name} is not valid JSON: {e}")
-
-
-def load_state() -> dict:
-    return read_json(STATE_PATH)
-
-
-def save_state(state: dict) -> None:
-    state["format"] = FORMAT_VERSION   # always reflects the lab that last wrote it
-    state["updated_at"] = now_iso()
-    write_json_atomic(STATE_PATH, state)
-
-
 def git(*args: str) -> str:
     try:
         out = subprocess.run(
@@ -205,99 +146,6 @@ def git(*args: str) -> str:
         return out.stdout.strip()
     except Exception:
         return ""
-
-
-def run_dir(run: int) -> Path:
-    return ROOT / "runs" / f"r{run:03d}"
-
-
-# ---------------------------------------------------------------------------
-# Minimal YAML frontmatter parsing (scalars, one level of nesting, simple lists).
-# Enough for PROTOCOL.md's fixed schema; no external dependency.
-# ---------------------------------------------------------------------------
-
-def _coerce(raw: str) -> Any:
-    v = raw.strip()
-    if not v:
-        return ""
-    # Quoted scalar: take what's inside the quotes, ignore any trailing comment.
-    if v[0] in "\"'":
-        close = v.find(v[0], 1)
-        if close != -1:
-            return v[1:close]
-    # Unquoted scalar: ' #' starts a comment, as in real YAML. The shipped
-    # templates annotate their frontmatter this way.
-    v = re.split(r"\s+#", v, maxsplit=1)[0].strip()
-    if not v:
-        return ""
-    low = v.lower()
-    if low in ("true", "false"):
-        return low == "true"
-    if low in ("null", "~", "none"):
-        return None
-    try:
-        return int(v)
-    except ValueError:
-        pass
-    try:
-        return float(v)
-    except ValueError:
-        pass
-    return v
-
-
-def parse_frontmatter(text: str) -> tuple[dict, str]:
-    """Return (frontmatter dict, body). Raises ValueError on malformed input."""
-    if not text.startswith("---"):
-        raise ValueError("file does not start with a '---' frontmatter block")
-    end = text.find("\n---", 3)
-    if end == -1:
-        raise ValueError("unterminated frontmatter block (missing closing '---')")
-    head = text[text.find("\n") + 1:end]
-    body = text[end + 4:]
-
-    data: dict[str, Any] = {}
-    parent: str | None = None
-    for lineno, line in enumerate(head.splitlines(), start=2):
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
-        indent = len(line) - len(line.lstrip())
-        stripped = line.strip()
-        if stripped.startswith("- "):
-            if parent is None:
-                raise ValueError(f"line {lineno}: list item outside a key")
-            data.setdefault(parent, [])
-            if not isinstance(data[parent], list):
-                data[parent] = []
-            data[parent].append(_coerce(stripped[2:]))
-            continue
-        if ":" not in stripped:
-            raise ValueError(f"line {lineno}: expected 'key: value'")
-        key, _, val = stripped.partition(":")
-        key = key.strip()
-        if indent == 0:
-            if val.strip() == "":
-                data[key] = {}
-                parent = key
-            else:
-                data[key] = _coerce(val)
-                parent = None
-        else:
-            if parent is None:
-                raise ValueError(f"line {lineno}: indented key without a parent")
-            if not isinstance(data.get(parent), dict):
-                data[parent] = {}
-            data[parent][key] = _coerce(val)
-    return data, body
-
-
-def load_protocol() -> tuple[dict, str]:
-    if not PROTOCOL_PATH.exists():
-        die("PROTOCOL.md not found — this repo has no project yet")
-    try:
-        return parse_frontmatter(PROTOCOL_PATH.read_text())
-    except ValueError as e:
-        die(f"PROTOCOL.md frontmatter: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -375,39 +223,37 @@ def ingest_push(event: dict) -> None:
         pass
 
 
-def has_event(etype: str) -> bool:
-    """True if an event of this type is already in the feed."""
-    if not EVENTS_PATH.exists():
-        return False
-    needle = f'"type":"{etype}"'
-    return any(needle in line for line in EVENTS_PATH.read_text().splitlines())
-
-
-def _metric_throttled(trial: str) -> bool:
-    """True if a metric event for this trial was emitted < 60s ago."""
+def _metric_throttled(key: str) -> bool:
+    """True if a metric event for this key (a candidate) was emitted < 60s ago."""
     LAB_DIR.mkdir(parents=True, exist_ok=True)
     path = LAB_DIR / "metric_throttle.json"
     try:
         seen = json.loads(path.read_text())
     except Exception:
         seen = {}
-    last = seen.get(trial, 0)
+    last = seen.get(key, 0)
     now = time.time()
     if now - last < METRIC_MIN_INTERVAL_SEC:
         return True
-    seen[trial] = now
+    seen[key] = now
     write_json_atomic(path, seen)
     return False
 
 
 def emit(etype: str, msg: str, data: dict | None = None,
-         state: dict | None = None, trial: str | None = None) -> dict | None:
-    """Validate, redact and append one event. Returns the event, or None if dropped."""
+         candidate: str | None = None) -> dict | None:
+    """Validate, redact and append one event. Returns the event, or None if dropped.
+
+    Every event carries `campaign` and `candidate` at the top level (null when the
+    payload names none), so a consumer can group the feed without reading `data`."""
     if etype not in EVENT_FEED:
         die(f"unknown event type '{etype}'. Known types: {', '.join(sorted(EVENT_FEED))}")
 
+    data = dict(data or {})
+    if candidate:
+        data.setdefault("candidate", candidate)
     if etype == "metric":
-        key = trial or (data or {}).get("trial") or "global"
+        key = data.get("candidate") or "global"
         if _metric_throttled(str(key)):
             # Not an error: full-resolution metrics live in results.jsonl.
             warn(f"metric event throttled (<{METRIC_MIN_INTERVAL_SEC}s since last for {key})")
@@ -418,26 +264,12 @@ def emit(etype: str, msg: str, data: dict | None = None,
         warn(f"msg truncated to {MSG_MAX} chars (it renders in the site news column)")
         msg = msg[: MSG_MAX - 1].rstrip() + "…"
 
-    st = state if state is not None else (load_state() if STATE_PATH.exists() else {})
-    data = dict(data or {})
-    if trial:
-        data.setdefault("trial", trial)
-    # Provenance is injected here, never asked of a prompt or a hook: the feed is
-    # append-only, so a session or run that forgot would stay unattributable forever.
-    if etype == "session.start":
-        data = {**requested_model(st.get("phase")), **data}
-    elif etype == "session.end":
-        data = {**agent_record(data.get("phase_ran") or st.get("phase")), **data}
-    elif etype == "run.done":
-        data.setdefault("models", run_models(st.get("run")))
-
     event = {
         "format": FORMAT_VERSION,
         "ts": now_iso(),
         "type": etype,
-        "phase": st.get("phase"),
-        "run": st.get("run"),
-        "revision": st.get("revision"),
+        "campaign": data.get("campaign"),
+        "candidate": data.get("candidate"),
         "msg": msg,
         "data": data,
     }
@@ -454,13 +286,28 @@ def emit(etype: str, msg: str, data: dict | None = None,
 FORMAT_PATH = ROOT / "FORMAT.json"
 
 
+def _campaign_module():
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import lab_campaign
+    return lab_campaign
+
+
+def _findings_module():
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import lab_findings
+    return lab_findings
+
+
 def format_manifest() -> dict:
-    """The whole machine-readable contract, derived from the constants above.
+    """The whole machine-readable contract, derived from the constants in this file
+    and in tools/lab_campaign.py.
 
     Published so a consumer can build its filters from the repo instead of
     hardcoding this table and drifting from it — the feed classes especially,
     since that is what decides whether an event reaches RSS.
     """
+    C = _campaign_module()
+    F = _findings_module()
     return {
         "format": FORMAT_VERSION,
         "generator": "nullsilver-lab",
@@ -468,34 +315,53 @@ def format_manifest() -> dict:
         "note": ("Generated file — do not edit. Regenerate with `tools/lab format "
                  "sync`; `tools/lab validate` fails if it has drifted from the code."),
         "files": {
-            "state": "state.json",
+            "campaign": "campaign.toml",
+            "population": "population.json",
             "events": "events.jsonl",
-            "protocol": "PROTOCOL.md",
-            "protocol_revisions": "protocol/rev<NNN>.md",
-            "plan": "plan.json",
             "ledger": "LEDGER.md",
-            "notes": "NOTES.md",
-            "handoff": "HANDOFF.md",
-            "run_summary": "runs/r<NNN>/summary.md",
-            "experiment_spec": "runs/r<NNN>/specs/exp<NN>_<slug>.md",
-            "trial_dir": "runs/r<NNN>/trials/<trial_id>/",
             "report": "REPORT.md",
-            "claims": "CLAIMS.md",
+            "candidate_dir": "candidates/c<NNNN>/",
+            "candidate_config": "candidates/c<NNNN>/config.json",
+            "candidate_job": "candidates/c<NNNN>/job.json",
+            "candidate_summary": "candidates/c<NNNN>/summary.md",
+            "candidate_fitness": "candidates/c<NNNN>/fitness.json",
+            "candidate_finding": "candidates/c<NNNN>/finding.json",
+            "candidate_session": "candidates/c<NNNN>/session.json",
+            "candidate_predictions": "candidates/c<NNNN>/out/predictions-<split>.json",
         },
-        "state": {
-            "keys": ["format", "project", "kind", "phase", "run", "revision",
-                     "status", "models", "active_trials", "awaiting", "updated_at"],
-            "models_keys": ["started_with", "by_phase", "sources"],
-            "statuses": STATUSES,
-            "status_badges": {"running": "Running",
-                              "awaiting_gate": "Waiting for review",
-                              "idle": "Idle",
-                              "concluded": "Concluded"},
-            "awaiting_keys": ["type", "question", "since"],
+        "campaign": {
+            "note": ("population.json is the live state of a campaign, written only by "
+                     "`lab run`: one entry per candidate plus the campaign's status, best "
+                     "candidate, budgets spent, usage-governor state, final score and claim."),
+            "keys": ["format", "campaign", "campaign_file", "campaign_sha256", "status",
+                     "started", "finished", "tick", "seed", "auth_preflight", "candidates",
+                     "best", "settled", "settled_at_best", "gpu_seconds", "stop_reason",
+                     "final", "claim", "usage", "memory", "updated_at"],
+            "statuses": C.CAMPAIGN_STATUS,
+            "status_badges": {"running": "Searching",
+                              "waiting_usage": "Waiting for the usage window",
+                              "stopping": "Finishing",
+                              "finished": "Finished"},
+            "claims": C.CLAIMS,
+            "claim_note": ("Written once by `lab run` from the final split against the "
+                           "success_threshold fixed in campaign.toml before the run. "
+                           "`untested` while the search runs."),
         },
-        "phases": {"names": PHASES, "transitions": TRANSITIONS},
+        "candidates": {
+            "operators": C.OPERATORS,
+            "statuses": C.CAND_STATUS,
+            "exec_statuses": C.EXEC_STATUS,
+            "keys": ["id", "operator", "parents", "status", "exec", "gpu", "watch",
+                     "launched", "ended", "exit_code", "fitness", "n", "fail_reason",
+                     "debugged", "path", "session", "redispatch_of", "defers"],
+            "fitness_note": ("`fitness` is the search-split score, read by `lab eval` "
+                             "only; higher or lower is better per campaign.toml "
+                             "[report].higher_is_better. It is optimistic by construction; "
+                             "the final score in population.json `final` is one read of "
+                             "the untouched final split."),
+        },
         "events": {
-            "keys": ["format", "ts", "type", "phase", "run", "revision", "msg", "data"],
+            "keys": ["format", "ts", "type", "campaign", "candidate", "msg", "data"],
             "types": EVENT_FEED,
             "feed_classes": {
                 "news": "homepage news column; eligible for RSS",
@@ -504,47 +370,50 @@ def format_manifest() -> dict:
             },
             "ts_format": "%Y-%m-%dT%H:%M:%SZ (UTC)",
         },
-        "verdicts": VERDICTS,
         "provenance": {
-            "note": ("Which model produced a piece of work — two facts, kept apart: "
-                     "`requested` is what the launcher asked for (LAB_MODEL, else "
-                     ".claude/loop.conf as it reads today), `served` is what actually "
-                     "answered, read from the Claude Code session transcript. "
-                     "loop.conf is current config, edited over a project's life — "
-                     "never the answer by itself."),
-            "session_start": "session.start event -> data {requested, requested_source}",
-            "session_end": ("session.end event -> data {requested, requested_source, "
-                            "served, served_source}"),
-            "trial": ("<trial_dir>/config.json -> agent {requested, requested_source, "
-                      "served, served_source} (served as of trial launch)"),
-            "run_live": "state.json -> models (the run in progress)",
-            "run_final": "run.done event -> data.models (frozen with the verdict)",
+            "note": ("Which model produced a candidate — two facts, kept apart: "
+                     "`requested` is the worker model named in campaign.toml, `served` is "
+                     "what actually answered, read from the session result the worker "
+                     "stores (session.json, modelUsage)."),
+            "candidate": ("candidates/c<NNNN>/config.json -> agent {requested, "
+                          "requested_source, served, served_source}"),
             "sources": {
-                "transcript": ("served: read from the session transcript — the record "
-                               "of what answered, fallbacks and switches included"),
-                "env": "requested: recorded by the session that ran (LAB_MODEL)",
-                "conf": ("requested: reconstructed from .claude/loop.conf as it reads "
-                         "today — a guess"),
-                "none": "unknown; requested is the string 'unknown', served is []",
+                "campaign.toml": "requested: [resources] worker_model",
+                "session.json modelUsage": "served: the models that answered the session",
+                "none": "no session ran (the baseline) or no result was stored",
             },
-            "display": ("models is {started_with, by_phase, sources}. by_phase values "
-                        "are ordered lists — more than one entry means a fallback or "
-                        "mid-session switch; show them all. started_with may be null: "
-                        "render it as unknown, never as a default model. sources "
-                        "within {transcript, env} is a record; any conf or none means "
-                        "partly reconstructed, and a consumer should say so."),
+            "cost_note": ("session.json total_cost_usd is the list-price equivalent "
+                          "`claude -p` reports; on a subscription it is a measure of usage, "
+                          "not a bill."),
         },
-        "trial": {
-            "id_format": "<UTC %Y%m%dT%H%M>-<4 hex chars>",
-            "required_files": ["config.json", "results.jsonl", "summary.md"],
-            "optional_files": ["console.log"],
-            "note": "summary.md is written when the trial ends, including when killed.",
+        "memory": {
+            "note": ("What a worker is told about earlier candidates. `legacy` (the default, and "
+                     "every campaign started before 2.1) is the first-parent lineage of clipped "
+                     "summaries. `findings-v1` (campaign.toml [memory] mode) publishes one "
+                     "immutable finding card per settled candidate and gives each job a "
+                     "deterministic, bounded snapshot of cards from every branch, stored whole "
+                     "in job.json `findings`. The effective policy and its limits are frozen in "
+                     "population.json `memory` when the campaign starts."),
+            "policies": C.MEMORY_POLICIES,
+            "card_schema": F.SCHEMA,
+            "card_keys": ["schema", "campaign", "campaign_sha256", "candidate", "sequence",
+                          "operator", "parents", "execution", "search", "metric", "comparisons",
+                          "comparison_note", "provenance", "report", "caveats", "evidence_limits",
+                          "integrity", "created_at"],
+            "card_note": ("Written once by `lab run` after settlement, never edited. `search` "
+                          "is the search-split measurement only; `report` is the worker's own "
+                          "Finding section (status ok | missing | malformed | undecodable), "
+                          "worker-reported and never a measurement. Nothing about the final "
+                          "split is ever in a card."),
+            "report_statuses": list(F.REPORT_STATUSES),
+            "limits": {"max_cards": F.MAX_CARDS, "max_bytes": F.MAX_BYTES,
+                       "field_bytes": dict(F.FIELD_BYTES), "topics_max": F.TOPICS_MAX,
+                       "topic_max_bytes": F.TOPIC_MAX_BYTES},
         },
-        "protocol": {
-            "frontmatter_keys": PROTOCOL_REQUIRED_KEYS,
-            "sections": PROTOCOL_SECTIONS,
-            "kinds": ["research", "artifact", "writing"],
-            "autonomy": ["gated", "auto"],
+        "ledger": {
+            "columns": ["campaign", "operator", "candidate", "status", "claim", "path", "note"],
+            "statuses": ["running", "done", "failed", "killed", "invalid", "deferred"],
+            "note": "One row per candidate, written only by `lab run`; never deleted.",
         },
         "limits": {
             "msg_max_chars": MSG_MAX,
@@ -569,51 +438,36 @@ def cmd_format(args) -> None:
 # LEDGER
 # ---------------------------------------------------------------------------
 
-LEDGER_HEADER = """# LEDGER — every trial, ever
+LEDGER_HEADER = """# LEDGER — every candidate, ever
 
-One row per trial. Never delete a row; a failed or killed trial is evidence.
-Statuses: `running | done | killed | invalidated`.
-Verdicts (against the **pre-registered** gate in the spec): `GO | NO-GO | INCONCLUSIVE`.
-Rows are written by `lab trial new` / `lab trial done` — edit the note column by hand
-if you must, never the rest.
+One row per candidate. Never delete a row; a failed, invalid, killed or deferred
+candidate is evidence. Statuses: `running | done | failed | killed | invalid | deferred`.
+The claim column is filled once, for the frozen candidate, from the final split.
+Rows are written by `lab run` — edit the note column by hand if you must, never the rest.
 
-| run | exp | trial | status | verdict | path | note |
+| campaign | operator | candidate | status | claim | path | note |
 |---|---|---|---|---|---|---|
 """
 
 
-def ledger_upsert(trial_id: str, row: dict) -> None:
-    """Insert or replace the row for trial_id, preserving file order."""
+def ledger_upsert(candidate_id: str, row: dict) -> None:
+    """Insert or replace the row for candidate_id, preserving file order.
+    Row keys: run (campaign id), exp (operator), status, verdict (claim), path, note."""
     if not LEDGER_PATH.exists():
         LEDGER_PATH.write_text(LEDGER_HEADER)
     lines = LEDGER_PATH.read_text().splitlines()
     new = "| {run} | {exp} | {trial} | {status} | {verdict} | `{path}` | {note} |".format(
-        run=row.get("run", ""), exp=row.get("exp", ""), trial=trial_id,
+        run=row.get("run", ""), exp=row.get("exp", ""), trial=candidate_id,
         status=row.get("status", ""), verdict=row.get("verdict") or "",
         path=row.get("path", ""), note=(row.get("note") or "").replace("|", "/"),
     )
     for i, line in enumerate(lines):
-        if line.startswith("|") and f"| {trial_id} |" in line:
+        if line.startswith("|") and f"| {candidate_id} |" in line:
             lines[i] = new
             break
     else:
         lines.append(new)
     LEDGER_PATH.write_text("\n".join(lines) + "\n")
-
-
-def ledger_row(trial_id: str) -> dict | None:
-    """Parse the existing LEDGER row for trial_id, so an update can preserve
-    fields it was not given — a later pass must not blank an earlier one's work."""
-    if not LEDGER_PATH.exists():
-        return None
-    for line in LEDGER_PATH.read_text().splitlines():
-        if line.startswith("|") and f"| {trial_id} |" in line:
-            cells = [c.strip() for c in line.strip().strip("|").split("|")]
-            if len(cells) >= 7:
-                return {"run": cells[0], "exp": cells[1], "trial": cells[2],
-                        "status": cells[3], "verdict": cells[4],
-                        "path": cells[5].strip("`"), "note": cells[6]}
-    return None
 
 
 # ---------------------------------------------------------------------------
@@ -671,212 +525,8 @@ def hardware_fingerprint() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Model provenance — who was asked to run a session, and who actually answered.
-# Two facts, kept apart on purpose, each labelled with how it was obtained.
+# Commands: the feed
 # ---------------------------------------------------------------------------
-
-SESSION_POINTER = LAB_DIR / "session-current"
-
-
-def requested_model(phase: str | None = None) -> dict[str, str]:
-    """What the launcher asked for — and how sure we are of the answer.
-
-    The launchers (`loop.sh`, `/orchestrate`) export `LAB_MODEL` alongside
-    `claude --model`, so the value travels with the session that actually ran;
-    `requested_source: env` marks that record. Falling back to `.claude/loop.conf`
-    reads the file as it is *now* — current config, not history — so it is
-    labelled `conf`, a guess a reader must never mistake for the record.
-    """
-    env = os.environ.get("LAB_MODEL", "").strip()
-    if env:
-        return {"requested": env, "requested_source": "env"}
-    conf = load_conf(required=False) or {}
-    if phase and conf.get(phase):
-        return {"requested": conf[phase], "requested_source": "conf"}
-    return {"requested": "unknown", "requested_source": "none"}
-
-
-def session_transcript() -> Path | None:
-    """The transcript of the session driving this process, if a hook recorded it.
-
-    The SessionStart hook writes `.lab/session-current` (the session id) and a
-    record in `.lab/sessions/<sid>.json` carrying `transcript_path`; the Stop
-    hook clears the pointer. No pointer — a human running `lab` by hand — means
-    no transcript, and served-model provenance honestly reports `none`.
-    """
-    try:
-        sid = SESSION_POINTER.read_text().strip()
-        rec = json.loads((LAB_DIR / "sessions" / f"{sid}.json").read_text())
-        path = Path(rec["transcript_path"])
-        return path if path.is_file() else None
-    except Exception:
-        return None
-
-
-def served_models(transcript: Path | None) -> list[str]:
-    """Models that actually answered, in order of first appearance.
-
-    Read from the Claude Code session transcript — the ground truth that
-    survives `--fallback-model`, usage-limit downgrades and mid-session
-    switches, none of which the `--model` flag (or LAB_MODEL) can see. More
-    than one entry means the session changed model partway through.
-    """
-    if transcript is None:
-        return []
-    out: list[str] = []
-    try:
-        with open(transcript) as f:
-            for line in f:
-                try:
-                    entry = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                if entry.get("type") != "assistant":
-                    continue
-                model = (entry.get("message") or {}).get("model")
-                if model and model != "<synthetic>" and model not in out:
-                    out.append(model)
-    except OSError:
-        return []
-    return out
-
-
-def agent_record(phase: str | None = None) -> dict[str, Any]:
-    """The full who-ran-this record: requested and served, with their sources."""
-    rec: dict[str, Any] = requested_model(phase)
-    served = served_models(session_transcript())
-    rec["served"] = served
-    rec["served_source"] = "transcript" if served else "none"
-    return rec
-
-
-def run_models(run: Any) -> dict[str, Any]:
-    """Which models drove a run, rolled up from the feed so the site never scans it.
-
-    `session.start` events record what was requested; `session.end` events
-    record what the transcript says was served. Per phase, served supersedes
-    requested — the transcript outranks the flag — and requested only fills
-    phases whose sessions left no transcript record. `by_phase` values are
-    ordered lists: a list longer than one is a fallback or a mid-session
-    switch, made visible instead of silent. `sources` is the distinct
-    provenance values the rollup is built from — within {transcript, env} it
-    is a record; any `conf` or `none` means partly reconstructed.
-    """
-    out: dict[str, Any] = {"started_with": None, "by_phase": {}, "sources": []}
-    if run is None or not EVENTS_PATH.exists():
-        return out
-
-    requested: dict[str, list[str]] = {}       # phase -> models, by first appearance
-    req_sources: dict[str, set[str]] = {}
-    served: dict[str, list[str]] = {}
-    order: list[str] = []                      # phases in first-seen order
-
-    for line in EVENTS_PATH.read_text().splitlines():
-        if not line.strip():
-            continue
-        try:
-            e = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if e.get("run") != run:
-            continue
-        d = e.get("data") or {}
-        if e.get("type") == "session.start":
-            phase, model = e.get("phase"), d.get("requested")
-            if phase and model and model != "unknown":
-                if phase not in order:
-                    order.append(phase)
-                bucket = requested.setdefault(phase, [])
-                if model not in bucket:
-                    bucket.append(model)
-                req_sources.setdefault(phase, set()).add(
-                    d.get("requested_source", "none"))
-        elif e.get("type") == "session.end":
-            # A session ends *after* transitioning, so the event's own `phase`
-            # may already be the next one; `phase_ran` is the session's truth.
-            phase, models = d.get("phase_ran") or e.get("phase"), d.get("served") or []
-            if phase and models:
-                if phase not in order:
-                    order.append(phase)
-                bucket = served.setdefault(phase, [])
-                for m in models:
-                    if m not in bucket:
-                        bucket.append(m)
-
-    sources: set[str] = set()
-    for phase in order:
-        if phase in served:
-            out["by_phase"][phase] = served[phase]
-            sources.add("transcript")
-        else:
-            out["by_phase"][phase] = requested[phase]
-            sources |= req_sources[phase]
-    for phase in order:
-        if out["by_phase"].get(phase):
-            out["started_with"] = out["by_phase"][phase][0]
-            break
-    out["sources"] = sorted(sources)
-    return out
-
-
-# ---------------------------------------------------------------------------
-# Commands
-# ---------------------------------------------------------------------------
-
-def cmd_init(args) -> None:
-    fm, body = load_protocol()
-    if PLACEHOLDER in PROTOCOL_PATH.read_text():
-        die("PROTOCOL.md still contains REPLACE-ME placeholders — the human writes "
-            "revision 1 before the lab starts (see README.md)")
-    missing = [k for k in PROTOCOL_REQUIRED_KEYS if k not in fm]
-    if missing:
-        die(f"PROTOCOL.md frontmatter is missing: {', '.join(missing)}")
-    if STATE_PATH.exists() and not args.force:
-        die("state.json already exists (use --force only on a fresh clone)")
-
-    state = {
-        "format": FORMAT_VERSION,
-        "project": fm["id"],
-        "kind": fm.get("kind", "research"),
-        "phase": "init",
-        "run": 1,
-        "revision": int(fm.get("revision", 1)),
-        "status": "running",
-        "models": run_models(1),
-        "active_trials": [],
-        "awaiting": None,
-        "updated_at": now_iso(),
-    }
-    write_json_atomic(STATE_PATH, state)
-    write_json_atomic(FORMAT_PATH, format_manifest())
-    EVENTS_PATH.touch()
-    (ROOT / "protocol").mkdir(exist_ok=True)
-    run_dir(1).joinpath("specs").mkdir(parents=True, exist_ok=True)
-    run_dir(1).joinpath("trials").mkdir(parents=True, exist_ok=True)
-    if not LEDGER_PATH.exists():
-        LEDGER_PATH.write_text(LEDGER_HEADER)
-    if not (ROOT / "NOTES.md").exists():
-        (ROOT / "NOTES.md").write_text(
-            "# NOTES — lab notebook\n\nNewest entries at the bottom. This is where the "
-            "*thinking* lives: predictions with confidence, interpretations, surprises,\n"
-            "failed ideas and why they failed, literature pointers. LEDGER holds the "
-            "facts; when the two disagree, LEDGER wins.\n")
-    if not (ROOT / "HANDOFF.md").exists():
-        (ROOT / "HANDOFF.md").write_text(
-            "# HANDOFF\n\n## Just happened\n\nProject initialized; no phase has run yet.\n\n"
-            "## State of the run\n\nRun 1, revision 1, phase `init`.\n\n"
-            "## Next phase should\n\nCompile PROTOCOL.md into plan.json and the specs.\n\n"
-            "## Open questions / risks\n\nNone yet.\n\n## For the human\n\nNothing pending.\n")
-
-    # Freeze revision 1 so the diff viewer has a baseline.
-    frozen = ROOT / "protocol" / f"rev{int(fm.get('revision', 1)):03d}.md"
-    if not frozen.exists():
-        shutil.copyfile(PROTOCOL_PATH, frozen)
-
-    emit("project.created", f"{fm['id']} initialized: {fm['title']}",
-         {"kind": state["kind"], "revision": state["revision"]}, state=state)
-    print(f"initialized {fm['id']} — phase=init run=1 revision={state['revision']}")
-
 
 def cmd_log(args) -> None:
     data = {}
@@ -887,15 +537,9 @@ def cmd_log(args) -> None:
             die(f"--data is not valid JSON: {e}")
         if not isinstance(data, dict):
             die("--data must be a JSON object")
-    ev = emit(args.type, args.msg, data, trial=args.trial)
+    ev = emit(args.type, args.msg, data, candidate=args.candidate)
     if ev is None:
         sys.exit(0)
-    # A session boundary changes who is driving the current run — live state the
-    # site reads off state.json rather than by scanning the feed.
-    if args.type in ("session.start", "session.end") and STATE_PATH.exists():
-        state = load_state()
-        state["models"] = run_models(state.get("run"))
-        save_state(state)
     print(json.dumps(ev, separators=(",", ":")))
 
 
@@ -916,288 +560,26 @@ def cmd_events(args) -> None:
         print(l)
 
 
-def cmd_state_get(args) -> None:
-    state = load_state()
-    if args.key:
-        if args.key not in state:
-            die(f"no such key '{args.key}' in state.json")
-        v = state[args.key]
-        # Scalars print bare (shell-friendly); everything else prints as JSON,
-        # so `null` reads as null and not as Python's None.
-        print(v if isinstance(v, str) else json.dumps(v))
-    else:
-        print(json.dumps(state, indent=2))
-
-
-def cmd_state_set(args) -> None:
-    state = load_state()
-    for assignment in args.assignments:
-        if "=" not in assignment:
-            die(f"expected key=value, got '{assignment}'")
-        key, _, val = assignment.partition("=")
-        key, val = key.strip(), val.strip()
-
-        if key == "phase":
-            _set_phase(state, val)
-        elif key == "status":
-            _set_status(state, val)
-        else:
-            die(f"'{key}' is not settable by hand. phase and status are; run and "
-                "revision move only via `lab state set phase=init` (from decide) and "
-                "`lab protocol activate`.")
-    save_state(state)
-    print(json.dumps({k: state[k] for k in ("phase", "run", "revision", "status")}))
-
-
-def _set_phase(state: dict, target: str) -> None:
-    cur = state["phase"]
-    if target not in PHASES:
-        die(f"'{target}' is not a phase. Phases: {', '.join(PHASES)}")
-    if state["status"] == "concluded":
-        die("project is concluded — no further transitions")
-    if state["status"] == "awaiting_gate":
-        die("a gate is open (see state.awaiting) — resolve it with `lab gate resolve` "
-            "before transitioning")
-    allowed = TRANSITIONS[cur]
-    if target not in allowed:
-        die(f"illegal transition {cur} -> {target}. Legal from {cur}: "
-            f"{', '.join(allowed) if allowed else '(terminal)'}")
-    if state.get("active_trials"):
-        die(f"{len(state['active_trials'])} trial(s) still open: "
-            f"{', '.join(state['active_trials'])} — close them with `lab trial done` first")
-
-    emit("phase.exit", f"exit {cur}", {"from": cur, "to": target}, state=state)
-    state["phase"] = target
-    if cur == "decide" and target == "init":
-        state["run"] = int(state["run"]) + 1
-        state["models"] = run_models(state["run"])   # a fresh run starts unattributed
-        rd = run_dir(state["run"])
-        (rd / "specs").mkdir(parents=True, exist_ok=True)
-        (rd / "trials").mkdir(parents=True, exist_ok=True)
-    state["updated_at"] = now_iso()
-    emit("phase.enter", f"enter {target} (run {state['run']})",
-         {"from": cur, "to": target}, state=state)
-
-
-def _set_status(state: dict, target: str) -> None:
-    if target not in STATUSES:
-        die(f"'{target}' is not a status. Statuses: {', '.join(STATUSES)}")
-    if target == "awaiting_gate":
-        die("raise gates with `lab gate request` so the question is recorded")
-    if target == "concluded":
-        if state["phase"] != "conclude":
-            die("status=concluded is only legal from phase=conclude")
-        state["status"] = "concluded"
-        state["awaiting"] = None
-        # The conclude phase logs its own headline; emitting a second one here would
-        # put a duplicate — and the less informative of the two — on the homepage
-        # and in RSS. Only backstop a phase that forgot.
-        if not has_event("project.concluded"):
-            emit("project.concluded", "project concluded", {"runs": state["run"]}, state=state)
-        return
-    if state["status"] == "concluded":
-        die("project is concluded — reopening needs a human editing state.json by hand")
-    if state["status"] == "awaiting_gate" and target != "running":
-        die("resolve the open gate with `lab gate resolve` instead")
-    state["status"] = target
-
-
-def cmd_trial_new(args) -> None:
-    state = load_state()
-    if state["status"] == "concluded":
-        die("project is concluded")
-    if state["phase"] not in ("build", "pilot", "execute"):
-        die(f"trials may only be launched in build/pilot/execute (phase is {state['phase']})")
-
-    rd = run_dir(state["run"]) / "trials"
-    rd.mkdir(parents=True, exist_ok=True)
-    while True:
-        trial_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M") + "-" + uuid.uuid4().hex[:4]
-        tdir = rd / trial_id
-        try:
-            tdir.mkdir(exist_ok=False)   # collision-proof by construction
-            break
-        except FileExistsError:
-            continue
-
-    config: dict[str, Any] = {}
-    if args.config:
-        raw = args.config
-        if raw.startswith("@"):
-            raw = Path(raw[1:]).read_text()
-        try:
-            config = json.loads(raw)
-        except json.JSONDecodeError as e:
-            die(f"--config is not valid JSON: {e}")
-
-    seed = args.seed if args.seed is not None else config.get("seed")
-    if seed is None:
-        seed = int(hashlib.sha256(trial_id.encode()).hexdigest()[:8], 16) % (2**31)
-        warn(f"no --seed given; derived seed {seed} from the trial id and recorded it")
-    config["seed"] = seed
-
-    snapshot = {
-        "format": FORMAT_VERSION,
-        "trial_id": trial_id,
-        "exp_id": args.exp_id,
-        "run": state["run"],
-        "revision": state["revision"],
-        "phase": state["phase"],
-        "spec": args.spec or "",
-        "start_time": now_iso(),
-        "seed": seed,
-        "command": args.command or "",
-        "argv": sys.argv,
-        "cwd": str(Path.cwd()),
-        "git_commit": git("rev-parse", "--short", "HEAD") or "no-git",
-        "git_dirty": bool(git("status", "--porcelain")),
-        "hardware": hardware_fingerprint(),
-        "packages": package_versions(args.packages.split(",") if args.packages else []),
-        "agent": agent_record(state["phase"]),
-        "config": config,
-    }
-    agent = snapshot["agent"]
-    if agent["requested_source"] != "env" and not agent["served"]:
-        warn(f"agent model is a guess ({agent['requested']!r} from "
-             f"{agent['requested_source']}): the launcher did not export LAB_MODEL "
-             "and no session transcript is known")
-    write_json_atomic(tdir / "config.json", snapshot)
-    (tdir / "results.jsonl").touch()
-    (tdir / "console.log").touch()
-
-    state.setdefault("active_trials", []).append(trial_id)
-    save_state(state)
-    rel = str(tdir.relative_to(ROOT))
-    ledger_upsert(trial_id, {"run": state["run"], "exp": args.exp_id, "status": "running",
-                             "verdict": "", "path": rel, "note": args.note or ""})
-    emit("trial.launch", args.note or f"{args.exp_id} trial launched",
-         {"exp": args.exp_id, "spec": args.spec or ""}, state=state, trial=trial_id)
-    print(rel)
-
-
-def cmd_trial_log(args) -> None:
-    tdir = Path(args.dir)
-    if not tdir.is_absolute():
-        tdir = ROOT / tdir
-    if not (tdir / "config.json").exists():
-        die(f"{args.dir} is not a trial dir")
-    try:
-        rec = json.loads(args.data)
-    except json.JSONDecodeError as e:
-        die(f"--data is not valid JSON: {e}")
-    if not isinstance(rec, dict):
-        die("--data must be a JSON object")
-    rec.setdefault("ts", now_iso())
-    with open(tdir / "results.jsonl", "a") as f:
-        f.write(json.dumps(rec, default=str) + "\n")
-    if args.metric_msg:
-        emit("metric", args.metric_msg, rec, trial=tdir.name)
-
-
-def cmd_trial_done(args) -> None:
-    state = load_state()
-    tdir = Path(args.dir)
-    if not tdir.is_absolute():
-        tdir = ROOT / tdir
-    if not (tdir / "config.json").exists():
-        die(f"{args.dir} is not a trial dir")
-    trial_id = tdir.name
-    summary = tdir / "summary.md"
-    if not summary.exists() or not summary.read_text().strip():
-        die(f"{args.dir}/summary.md is missing or empty. Every trial gets a summary — "
-            "a killed one says so and why (templates/trial-summary.md)")
-    if args.verdict and args.verdict not in VERDICTS:
-        die(f"verdict must be one of {', '.join(VERDICTS)}")
-    if args.killed and not args.reason:
-        die("--killed requires --reason")
-
-    cfg = json.loads((tdir / "config.json").read_text())
-    # ended_at is provenance: stamp it once, when the trial actually ends. A later
-    # call (e.g. a verdict backfill) must not rewrite the clock (RUN_PROBLEMS #4).
-    if not cfg.get("ended_at"):
-        cfg["ended_at"] = now_iso()
-    cfg["outcome"] = "killed" if args.killed else "done"
-    if args.killed:
-        cfg["kill_reason"] = args.reason
-    write_json_atomic(tdir / "config.json", cfg)
-
-    state["active_trials"] = [t for t in state.get("active_trials", []) if t != trial_id]
-    save_state(state)
-
-    rel = str(tdir.relative_to(ROOT))
-    prev = ledger_row(trial_id) or {}
-    ledger_upsert(trial_id, {
-        "run": cfg.get("run", state["run"]), "exp": cfg.get("exp_id", ""),
-        "status": "killed" if args.killed else "done",
-        "verdict": args.verdict or prev.get("verdict") or "", "path": rel,
-        "note": args.note or (args.reason if args.killed else "")
-                or prev.get("note") or "",
-    })
-    if args.killed:
-        emit("kill", f"{cfg.get('exp_id','trial')} killed: {args.reason}",
-             {"exp": cfg.get("exp_id", ""), "reason": args.reason}, state=state, trial=trial_id)
-    emit("trial.done",
-         args.note or (f"{cfg.get('exp_id','trial')} "
-                       f"{'killed' if args.killed else 'finished'}"
-                       f"{': ' + args.verdict if args.verdict else ''}"),
-         {"exp": cfg.get("exp_id", ""), "verdict": args.verdict or None,
-          "killed": bool(args.killed)}, state=state, trial=trial_id)
-    print(rel)
-
-
-def cmd_trial_verdict(args) -> None:
-    """Judge a closed trial. Closing and judging are separate writes: this fills
-    the LEDGER verdict column and never touches the trial's clock or outcome."""
-    state = load_state()
-    tdir = Path(args.dir)
-    if not tdir.is_absolute():
-        tdir = ROOT / tdir
-    if not (tdir / "config.json").exists():
-        die(f"{args.dir} is not a trial dir")
-    trial_id = tdir.name
-    if args.verdict not in VERDICTS:
-        die(f"verdict must be one of {', '.join(VERDICTS)}")
-    cfg = json.loads((tdir / "config.json").read_text())
-    if cfg.get("outcome") not in ("done", "killed"):
-        die(f"{args.dir} is still open — close it with `lab trial done` first")
-
-    rel = str(tdir.relative_to(ROOT))
-    prev = ledger_row(trial_id) or {}
-    ledger_upsert(trial_id, {
-        "run": prev.get("run") or cfg.get("run", state["run"]),
-        "exp": prev.get("exp") or cfg.get("exp_id", ""),
-        "status": prev.get("status") or cfg.get("outcome", ""),
-        "verdict": args.verdict, "path": rel,
-        "note": args.note or prev.get("note") or "",
-    })
-    emit("trial.verdict",
-         args.note or f"{cfg.get('exp_id','trial')} verdict: {args.verdict}",
-         {"exp": cfg.get("exp_id", ""), "verdict": args.verdict},
-         state=state, trial=trial_id)
-    print(rel)
-
-
 # ---------------------------------------------------------------------------
 # watch — a detached, mechanical supervisor for long-running work.
 #
-# The contract that makes detachment legal (CLAUDE.md "Long runs"): a phase session
-# may end its turn while work runs ONLY if that work is under a watcher, because the
-# watcher — not the session — enforces the budget. One watcher per process, setsid so
-# it survives the session; it heartbeats, kills on wall-clock / stall / kill-regex /
-# session request, and for trials it writes a facts-only summary stub and closes the
-# trial through `lab trial done --killed`, so the LEDGER never depends on a session
-# coming back. Judgment (real summaries, curve reading) stays with sessions; the
-# driver (loop.sh / orchestrator) launches one when a watch needs paperwork.
+# The contract that makes detachment legal (CLAUDE.md "Long runs"): a session may
+# end its turn while work runs ONLY if that work is under a watcher, because the
+# watcher — not the session — enforces the budget. One watcher per process, setsid
+# so it survives the session that launched it; it heartbeats and kills on
+# wall-clock / stall / kill-regex / session request. `lab run` launches every job
+# this way and reads the entry back when it reaps, so a killed job is settled
+# mechanically, never left to a session coming back.
 #
 # Registry: .lab/watch/<id>.json, written only by its watcher while status=running,
 # then never again — so `close` can archive it to .lab/watch/done/ without racing.
 # A session asks for a kill by writing .lab/watch/<id>.kill (the reason, one line);
-# the watcher picks it up within one poll and owns the paperwork.
+# the watcher picks it up within one poll.
 # ---------------------------------------------------------------------------
 
 WATCH_DIR = LAB_DIR / "watch"
 WATCH_ARCHIVE = WATCH_DIR / "done"
-WATCH_POLL_SEC = 15
+WATCH_POLL_SEC = float(os.environ.get("LAB_WATCH_POLL_SEC") or 15)  # tests shorten it
 WATCH_TERM_GRACE_SEC = 30
 WATCH_HEARTBEAT_STALE_SEC = 120   # 8 missed polls => the watcher itself is presumed dead
 
@@ -1252,38 +634,22 @@ def _watch_repair(entry: dict) -> dict:
 
 
 def cmd_watch_start(args) -> None:
+    if os.environ.get("LAB_ROLE") == "worker":
+        die("workers cannot start nested watchers; run synchronously under the candidate watcher")
     cmd = list(args.command or [])
     if cmd and cmd[0] == "--":
         cmd = cmd[1:]
     if not cmd:
-        die("no command given. Usage: lab watch start (--trial DIR | --op NAME) "
-            "[--budget-min N] [--stall-min N] [--kill-regex RE] -- <command...>")
-    if bool(args.trial) == bool(args.op):
-        die("exactly one of --trial DIR or --op NAME is required")
+        die("no command given. Usage: lab watch start --op NAME --budget-min N "
+            "[--stall-min N] [--kill-regex RE] -- <command...>")
+    if not args.op:
+        die("--op NAME is required (a job, a download, the campaign itself)")
+    if args.budget_min is None:
+        die("a watch without a wall-clock budget is an unenforced orphan: pass --budget-min")
 
-    budget_min = args.budget_min
-    if args.trial:
-        tdir = Path(args.trial)
-        if not tdir.is_absolute():
-            tdir = ROOT / tdir
-        if not (tdir / "config.json").exists():
-            die(f"{args.trial} is not a trial dir")
-        wid = tdir.name
-        log_path = tdir / "console.log"
-        if budget_min is None:
-            cfg = json.loads((tdir / "config.json").read_text())
-            hours = (cfg.get("config", {}).get("kill", {}) or {}).get("max_wall_clock_hours")
-            if hours:
-                budget_min = int(float(hours) * 60)
-        name = wid
-    else:
-        slug = re.sub(r"[^a-z0-9-]+", "-", args.op.lower()).strip("-") or "op"
-        wid = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M") + "-" + slug
-        log_path = WATCH_DIR / f"{wid}.log"
-        name = args.op
-    if budget_min is None:
-        die("a watch without a wall-clock budget is an unenforced orphan: pass "
-            "--budget-min (trials may omit it if config kill.max_wall_clock_hours is set)")
+    slug = re.sub(r"[^a-z0-9-]+", "-", args.op.lower()).strip("-") or "op"
+    wid = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M") + "-" + slug
+    log_path = WATCH_DIR / f"{wid}.log"
     if _watch_path(wid).exists():
         die(f"watch {wid} already exists")
 
@@ -1292,12 +658,12 @@ def cmd_watch_start(args) -> None:
     entry = {
         "format": FORMAT_VERSION,
         "id": wid,
-        "kind": "trial" if args.trial else "op",
-        "name": name,
-        "trial_dir": str(tdir.relative_to(ROOT)) if args.trial else None,
+        "kind": "op",
+        "candidate_dir": args.candidate_dir,
+        "name": args.op,
         "cmd": cmd,
         "log": str(log_path.relative_to(ROOT)),
-        "budget_min": budget_min,
+        "budget_min": args.budget_min,
         "stall_min": args.stall_min or 0,
         "kill_regex": args.kill_regex or "",
         "started": now_iso(),
@@ -1311,7 +677,7 @@ def cmd_watch_start(args) -> None:
     }
     write_json_atomic(_watch_path(wid), entry)
     # Detach: re-exec ourselves as the watcher in a fresh session (setsid), so the
-    # watcher and its child survive the phase session that launched them.
+    # watcher and its child survive the session that launched them.
     subprocess.Popen(
         [sys.executable, str(Path(__file__).resolve()), "watch", "_run", wid],
         start_new_session=True, cwd=str(ROOT),
@@ -1344,14 +710,22 @@ def _session_cpu_seconds(sid_pid: int) -> float:
 
 def cmd_watch_run(args) -> None:
     """The watcher process itself (internal; launched detached by `watch start`)."""
+    if os.environ.get("LAB_ROLE") == "worker":
+        die("workers cannot run nested watchers")
     path = _watch_path(args.id)
     entry = json.loads(path.read_text())
     log_path = ROOT / entry["log"]
     log_path.parent.mkdir(parents=True, exist_ok=True)
     logf = open(log_path, "ab", buffering=0)
+    contained = bool(entry.get("candidate_dir"))
+    child_env = os.environ.copy()
+    if contained:
+        import lab_process
+        lab_process.enable_subreaper()
+        child_env.update(LAB_ROLE="worker", LAB_CANDIDATE_DIR=entry["candidate_dir"])
     child = subprocess.Popen(entry["cmd"], cwd=str(ROOT), stdin=subprocess.DEVNULL,
                              stdout=logf, stderr=subprocess.STDOUT,
-                             start_new_session=True)
+                             start_new_session=True, env=child_env)
     entry["pid"] = os.getpid()
     entry["child_pid"] = child.pid
     write_json_atomic(path, entry)
@@ -1361,25 +735,21 @@ def cmd_watch_run(args) -> None:
     stall_sec = (entry.get("stall_min") or 0) * 60
     pattern = re.compile(entry["kill_regex"]) if entry.get("kill_regex") else None
     kill_file = WATCH_DIR / f"{entry['id']}.kill"
-    tdir = (ROOT / entry["trial_dir"]) if entry.get("trial_dir") else None
     log_offset = 0
+    log_carry = b""          # the unterminated tail of the last chunk read
     kill_reason = None
 
     def freshest_output_age() -> float:
-        newest = 0.0
-        for f in ([log_path] + ([tdir / "results.jsonl"] if tdir else [])):
-            try:
-                newest = max(newest, f.stat().st_mtime)
-            except OSError:
-                pass
-        return (time.time() - newest) if newest else 0.0
+        try:
+            return time.time() - log_path.stat().st_mtime
+        except OSError:
+            return 0.0
 
     # File mtimes are a *progress* signal, not a *liveness* signal: a stage that
     # makes dozens of sequential model calls between checkpoints writes nothing
-    # while being perfectly healthy (RUN_PROBLEMS #3, two trials killed wrongly).
-    # CPU time in the child's process tree is the liveness signal the watcher can
-    # read without the experiment's cooperation, so a stall kill now requires
-    # BOTH: no new output AND no CPU activity for stall_min.
+    # while being perfectly healthy. CPU time in the child's process tree is the
+    # liveness signal the watcher can read without the job's cooperation, so a
+    # stall kill requires BOTH: no new output AND no CPU activity for stall_min.
     cpu_seen = 0.0
     cpu_last_tick = time.time()
 
@@ -1407,12 +777,24 @@ def cmd_watch_run(args) -> None:
                     f.seek(log_offset)
                     chunk = f.read()
                 log_offset += len(chunk)
+                # The unterminated tail is searched now (a message with no line end must
+                # still kill) and carried, so a line split across two polls is seen whole.
+                # The carry always begins at a true line start: a line that never ends is
+                # kept only up to 64 KiB from its start, never re-anchored mid-line.
+                chunk = log_carry + chunk
+                cut = chunk.rfind(b"\n") + 1
+                log_carry = chunk[cut:][:65536]
                 m = pattern.search(chunk.decode("utf-8", "replace"))
                 if m:
                     kill_reason = f"kill pattern matched: {m.group(0)[:80]!r}"
             except OSError:
                 pass
         if kill_reason:
+            if contained:
+                # Do not kill the subreaper (this watcher): detached children must
+                # be adopted and drained before its entry can become terminal.
+                rc = -signal.SIGTERM
+                break
             try:
                 os.killpg(child.pid, signal.SIGTERM)
             except (OSError, ProcessLookupError):
@@ -1431,6 +813,24 @@ def cmd_watch_run(args) -> None:
         write_json_atomic(path, entry)
         time.sleep(WATCH_POLL_SEC)
 
+    if contained:
+        while True:
+            try:
+                pending = lab_process.cleanup(child)
+                if pending and not kill_reason:
+                    rc = 2
+                    logf.write(b"lab watch: lifecycle violation: live candidate descendants cleaned up\n")
+                break
+            except RuntimeError as exc:
+                # Unkillable kernel I/O cannot safely release a lease. Keep the
+                # watcher alive and visible rather than settling over late work.
+                logf.write((str(exc) + "\n").encode())
+                if not kill_reason:
+                    rc = 2
+                entry["cleanup_error"] = str(exc)
+                entry["heartbeat"] = now_iso()
+                write_json_atomic(path, entry)
+                time.sleep(WATCH_POLL_SEC)
     logf.close()
     entry["exit_code"] = rc
     entry["ended"] = now_iso()
@@ -1441,31 +841,6 @@ def cmd_watch_run(args) -> None:
     else:
         entry["status"] = "done" if rc == 0 else "failed"
     write_json_atomic(path, entry)
-
-    # A watchdog-killed trial is closed mechanically, right now: the LEDGER must not
-    # depend on a session coming back to admit the kill. The stub summary states
-    # facts only; the next session may enrich it, never delete it.
-    if tdir is not None and kill_reason:
-        summary = tdir / "summary.md"
-        if not summary.exists() or not summary.read_text().strip():
-            n_rows = 0
-            try:
-                n_rows = sum(1 for _ in open(tdir / "results.jsonl"))
-            except OSError:
-                pass
-            summary.write_text(
-                f"# summary — {entry['name']} (KILLED by watchdog)\n\n"
-                f"- reason: {kill_reason}\n"
-                f"- started {entry['started']}, killed {entry['ended']}, "
-                f"exit code {rc}\n"
-                f"- results.jsonl rows at kill: {n_rows}\n\n"
-                f"Facts-only stub written mechanically by `lab watch`. Verdict: n/a. "
-                f"The next session should read results.jsonl/console.log and enrich "
-                f"this summary if the numbers matter.\n")
-        subprocess.run(
-            [sys.executable, str(Path(__file__).resolve()), "trial", "done",
-             str(tdir), "--killed", "--reason", kill_reason],
-            cwd=str(ROOT), stdin=subprocess.DEVNULL, capture_output=True)
 
 
 def cmd_watch_list(args) -> None:
@@ -1516,10 +891,9 @@ def cmd_watch_kill(args) -> None:
     if entry["status"] != "running":
         die(f"watch {args.id} is {entry['status']}, not running")
     if not args.reason:
-        die("--reason is required: the kill reason lands in the trial summary and LEDGER")
+        die("--reason is required: the kill reason lands in the candidate's summary and LEDGER")
     (WATCH_DIR / f"{args.id}.kill").write_text(args.reason.strip() + "\n")
-    print(f"kill requested; the watcher will act within {WATCH_POLL_SEC}s and "
-          f"handle the paperwork")
+    print(f"kill requested; the watcher will act within {WATCH_POLL_SEC}s")
 
 
 def cmd_watch_close(args) -> None:
@@ -1529,11 +903,6 @@ def cmd_watch_close(args) -> None:
     entry = _watch_repair(json.loads(path.read_text()))
     if entry["status"] == "running":
         die(f"watch {args.id} is still running — kill it or wait for it")
-    if entry["kind"] == "trial":
-        state = load_state()
-        if entry["id"] in state.get("active_trials", []):
-            die(f"trial {entry['id']} is still open — write its summary.md and run "
-                f"`lab trial done` before closing the watch")
     WATCH_ARCHIVE.mkdir(parents=True, exist_ok=True)
     path.rename(WATCH_ARCHIVE / path.name)
     kf = WATCH_DIR / f"{args.id}.kill"
@@ -1542,88 +911,15 @@ def cmd_watch_close(args) -> None:
     print(f"archived to .lab/watch/done/{path.name}")
 
 
-def cmd_protocol_freeze(args) -> None:
-    fm, _ = load_protocol()
-    rev = int(fm["revision"])
-    dest = ROOT / "protocol" / f"rev{rev:03d}.md"
-    dest.parent.mkdir(exist_ok=True)
-    if dest.exists():
-        existing = dest.read_text()
-        if existing == PROTOCOL_PATH.read_text():
-            print(f"{dest.relative_to(ROOT)} (already frozen, identical)")
-            return
-        die(f"{dest.relative_to(ROOT)} already exists and differs — frozen revisions "
-            "are evidence. Bump `revision` in PROTOCOL.md before freezing again.")
-    shutil.copyfile(PROTOCOL_PATH, dest)
-    print(str(dest.relative_to(ROOT)))
-
-
-def cmd_protocol_activate(args) -> None:
-    state = load_state()
-    fm, body = load_protocol()
-    new_rev = int(fm["revision"])
-    old_rev = int(state["revision"])
-    if new_rev != old_rev + 1:
-        die(f"PROTOCOL.md says revision {new_rev}, state says {old_rev} — a revision "
-            "bumps by exactly 1 and only in the decide phase")
-    frozen = ROOT / "protocol" / f"rev{old_rev:03d}.md"
-    if not frozen.exists():
-        die(f"revision {old_rev} was never frozen — run `lab protocol freeze` on the "
-            "old text before editing PROTOCOL.md")
-    if f"rev{new_rev}" not in body and f"revision {new_rev}" not in body.lower():
-        die(f"the Changelog has no entry for revision {new_rev} — every revision "
-            "records what changed and which result motivated it")
-    shutil.copyfile(PROTOCOL_PATH, ROOT / "protocol" / f"rev{new_rev:03d}.md")
-    state["revision"] = new_rev
-    save_state(state)
-    emit("protocol.revised", args.diff_summary or f"protocol revised to rev {new_rev}",
-         {"revision": new_rev, "from": old_rev,
-          "diff_summary": args.diff_summary or ""}, state=state)
-    print(f"revision {old_rev} -> {new_rev}")
-
-
-def cmd_gate_request(args) -> None:
-    state = load_state()
-    if state["status"] == "awaiting_gate":
-        die(f"a gate is already open: {state['awaiting'].get('question')}")
-    if state["status"] == "concluded":
-        die("project is concluded")
-    state["status"] = "awaiting_gate"
-    state["awaiting"] = {"type": args.type, "question": args.question, "since": now_iso()}
-    save_state(state)
-    emit("gate.requested", args.question, {"gate_type": args.type}, state=state)
-    print(f"awaiting_gate: {args.question}")
-
-
-def cmd_gate_resolve(args) -> None:
-    state = load_state()
-    if state["status"] != "awaiting_gate" or not state.get("awaiting"):
-        die("no gate is open")
-    gate = state["awaiting"]
-    decision = "approved" if args.approve else "rejected"
-    state["awaiting"] = None
-    state["status"] = "running"
-    save_state(state)
-    emit("gate.resolved", f"{gate.get('type', 'gate')} {decision}"
-                          + (f": {args.note}" if args.note else ""),
-         {"gate_type": gate.get("type"), "question": gate.get("question"),
-          "decision": decision, "note": args.note or ""}, state=state)
-    print(f"{decision}; status=running, phase={state['phase']}")
-
-
-# ---------------------------------------------------------------------------
-# validate
-# ---------------------------------------------------------------------------
-
 # ---------------------------------------------------------------------------
 # usage — where the tokens went.
 #
 # Reads the session records in .lab/sessions/*.json (written by the SessionStart
-# hook for every session: phase, orchestrator and ad-hoc alike) and pulls per-turn
-# usage from each session's Claude Code transcript; if the transcript has been
-# cleaned up, falls back to the phase session's stream-json log in .lab/sessions/.
-# Subagent (sidechain) turns are counted and attributed separately, so delegation
-# shows up as delegation instead of vanishing into the parent's numbers.
+# hook for every session: worker and operator alike) and pulls per-turn usage from
+# each session's Claude Code transcript. Subagent (sidechain) turns are counted and
+# attributed separately, so delegation shows up as delegation instead of vanishing
+# into the parent's numbers. The per-candidate list-price view is `lab campaign
+# usage`, read from each worker's session.json.
 #
 # `in_equiv` is input-equivalent tokens per model, using the price ratios shared
 # by all current Claude models (in 1.0, cache write 1.25, cache read 0.1, out 5.0).
@@ -1672,28 +968,6 @@ def _usage_from_lines(lines, sidechain_of) -> dict:
     return out
 
 
-def _phase_log_index() -> dict:
-    """Map session_id -> stream-json log path, for transcripts that are gone."""
-    index = {}
-    for log in sorted((LAB_DIR / "sessions").glob("*.log")):
-        try:
-            with open(log, encoding="utf-8", errors="replace") as f:
-                for _ in range(3):
-                    line = f.readline()
-                    if not line:
-                        break
-                    try:
-                        sid = json.loads(line).get("session_id")
-                    except json.JSONDecodeError:
-                        continue
-                    if sid:
-                        index[sid] = log
-                        break
-        except OSError:
-            continue
-    return index
-
-
 def cmd_usage(args) -> None:
     since = None
     if args.since:
@@ -1702,7 +976,6 @@ def cmd_usage(args) -> None:
         except ValueError:
             die("--since wants YYYY-MM-DD")
 
-    log_index = None
     sessions = []
     for rec_path in sorted((LAB_DIR / "sessions").glob("*.json")):
         try:
@@ -1714,23 +987,16 @@ def cmd_usage(args) -> None:
             continue
         sid = rec.get("session_id", rec_path.stem)
         transcript = rec.get("transcript_path") or ""
-        source = None
-        if transcript and os.path.exists(transcript):
-            source, sidechain_of = transcript, (lambda e: bool(e.get("isSidechain")))
-        else:
-            if log_index is None:
-                log_index = _phase_log_index()
-            if sid in log_index:
-                source = log_index[sid]
-                sidechain_of = (lambda e: bool(e.get("parent_tool_use_id")))
+        source = transcript if transcript and os.path.exists(transcript) else None
+        cand = os.path.basename(rec.get("candidate_dir") or "") or "-"
         row = {"session": sid, "start": start,
                "date": datetime.fromtimestamp(start, tz=timezone.utc)
                        .strftime("%m-%d %H:%M") if start else "?",
-               "role": rec.get("role", "phase"), "phase": rec.get("phase", "?"),
-               "run": rec.get("run", "?"), "source": str(source) if source else None}
+               "role": rec.get("role", "operator"), "candidate": cand,
+               "source": str(source) if source else None}
         if source:
             u = _usage_from_lines(open(source, encoding="utf-8", errors="replace"),
-                                  sidechain_of)
+                                  lambda e: bool(e.get("isSidechain")))
             row.update(u)
             row["in_equiv"] = _in_equiv(u["total"])
         sessions.append(row)
@@ -1759,15 +1025,15 @@ def cmd_usage(args) -> None:
         _usage_add(m, r["total"])
         _usage_add(m["sub"], r["sub"])
 
-    print(f"{'date (UTC)':11} {'role':6} {'phase':9} {'turns':>5} {'sub':>4} "
+    print(f"{'date (UTC)':11} {'role':8} {'candidate':9} {'turns':>5} {'sub':>4} "
           f"{'out':>8} {'cache_r':>12} {'in_equiv':>10}")
     for r in sessions:
         if not r.get("source"):
-            print(f"{r['date']:11} {r['role'][:6]:6} {r['phase'][:9]:9} "
-                  f"{'—':>5} {'—':>4} {'—':>8} {'—':>12} {'—':>10}  (no transcript/log)")
+            print(f"{r['date']:11} {r['role'][:8]:8} {r['candidate'][:9]:9} "
+                  f"{'—':>5} {'—':>4} {'—':>8} {'—':>12} {'—':>10}  (no transcript)")
             continue
         t = r["total"]
-        print(f"{r['date']:11} {r['role'][:6]:6} {r['phase'][:9]:9} {r['turns']:>5} "
+        print(f"{r['date']:11} {r['role'][:8]:8} {r['candidate'][:9]:9} {r['turns']:>5} "
               f"{r['sub_turns']:>4} {t.get('output_tokens',0):>8,} "
               f"{t.get('cache_read_input_tokens',0):>12,} {r['in_equiv']:>10,}")
 
@@ -1785,9 +1051,12 @@ def cmd_usage(args) -> None:
         print(f"  {role:12} sessions={m['sessions']:<3} turns={m['turns']:<5} "
               f"cache_r={m.get('cache_read_input_tokens',0):<13,} in_equiv={_in_equiv(m):,}{sub}")
     if missing:
-        print(f"\n{missing} session(s) had no transcript and no matching phase log — "
-              "their tokens are not counted above.")
+        print(f"\n{missing} session(s) had no transcript — their tokens are not counted above.")
 
+
+# ---------------------------------------------------------------------------
+# validate
+# ---------------------------------------------------------------------------
 
 def cmd_validate(args) -> None:
     errors: list[str] = []
@@ -1795,79 +1064,6 @@ def cmd_validate(args) -> None:
 
     def err(msg: str) -> None:
         errors.append(msg)
-
-    # --- PROTOCOL.md -------------------------------------------------------
-    fm: dict = {}
-    if not PROTOCOL_PATH.exists():
-        err("PROTOCOL.md is missing")
-    else:
-        text = PROTOCOL_PATH.read_text()
-        try:
-            fm, body = parse_frontmatter(text)
-            for k in PROTOCOL_REQUIRED_KEYS:
-                if k not in fm:
-                    err(f"PROTOCOL.md frontmatter missing key '{k}'")
-            if fm.get("kind") not in ("research", "artifact", "writing"):
-                err(f"PROTOCOL.md kind='{fm.get('kind')}' is not a known project kind")
-            if fm.get("status") not in ("active", "concluded"):
-                err(f"PROTOCOL.md status='{fm.get('status')}' must be active|concluded")
-            if fm.get("autonomy") not in ("gated", "auto"):
-                err(f"PROTOCOL.md autonomy='{fm.get('autonomy')}' must be gated|auto")
-            if not isinstance(fm.get("revision"), int):
-                err("PROTOCOL.md revision must be an integer")
-            if not isinstance(fm.get("budgets"), dict):
-                err("PROTOCOL.md budgets must be a mapping")
-            for section in PROTOCOL_SECTIONS:
-                if not re.search(rf"^#+\s+{re.escape(section)}\s*$", body,
-                                 re.MULTILINE | re.IGNORECASE):
-                    err(f"PROTOCOL.md is missing the required section '{section}'")
-            if PLACEHOLDER in text:
-                err("PROTOCOL.md still contains REPLACE-ME placeholders")
-        except ValueError as e:
-            err(f"PROTOCOL.md frontmatter: {e}")
-
-    # --- state.json --------------------------------------------------------
-    state: dict = {}
-    if not STATE_PATH.exists():
-        err("state.json is missing — run `lab init`")
-    else:
-        try:
-            state = json.loads(STATE_PATH.read_text())
-        except json.JSONDecodeError as e:
-            err(f"state.json is not valid JSON: {e}")
-        if state:
-            for k in ("format", "project", "kind", "phase", "run", "revision",
-                      "status", "models", "active_trials", "awaiting", "updated_at"):
-                if k not in state:
-                    err(f"state.json missing key '{k}'")
-            if "models" in state:
-                models = state["models"]
-                if not isinstance(models, dict) or not {
-                        "started_with", "by_phase", "sources"} <= set(models):
-                    err("state.json models must be {started_with, by_phase, sources}")
-            if state.get("format") != FORMAT_VERSION:
-                err(f"state.json declares format {state.get('format')!r}, this lab "
-                    f"writes {FORMAT_VERSION!r} — any `lab` write will restamp it")
-            if state.get("phase") not in PHASES:
-                err(f"state.json phase='{state.get('phase')}' is not a legal phase")
-            if state.get("status") not in STATUSES:
-                err(f"state.json status='{state.get('status')}' is not a legal status")
-            if not isinstance(state.get("active_trials"), list):
-                err("state.json active_trials must be a list")
-            aw = state.get("awaiting")
-            if aw is not None:
-                if not isinstance(aw, dict) or not {"type", "question", "since"} <= set(aw):
-                    err("state.json awaiting must be null or {type, question, since}")
-                if state.get("status") != "awaiting_gate":
-                    err("state.json has an open `awaiting` but status is not awaiting_gate")
-            elif state.get("status") == "awaiting_gate":
-                err("state.json status=awaiting_gate but `awaiting` is null")
-            if fm and state.get("revision") != fm.get("revision"):
-                err(f"state.json revision={state.get('revision')} disagrees with "
-                    f"PROTOCOL.md revision={fm.get('revision')}")
-            if fm and state.get("project") != fm.get("id"):
-                err(f"state.json project={state.get('project')} disagrees with "
-                    f"PROTOCOL.md id={fm.get('id')}")
 
     # --- FORMAT.json -------------------------------------------------------
     if not FORMAT_PATH.exists():
@@ -1887,9 +1083,7 @@ def cmd_validate(args) -> None:
             err(f"FORMAT.json is not valid JSON: {e}")
 
     # --- events.jsonl ------------------------------------------------------
-    if not EVENTS_PATH.exists():
-        err("events.jsonl is missing — run `lab init`")
-    else:
+    if EVENTS_PATH.exists():
         for i, line in enumerate(EVENTS_PATH.read_text().splitlines(), start=1):
             if not line.strip():
                 continue
@@ -1900,7 +1094,8 @@ def cmd_validate(args) -> None:
             except json.JSONDecodeError as e:
                 err(f"events.jsonl:{i} is not valid JSON: {e}")
                 continue
-            if ev.get("type") not in EVENT_FEED:
+            major = str(ev.get("format", "")).split(".")[0]
+            if major == FORMAT_VERSION.split(".")[0] and ev.get("type") not in EVENT_FEED:
                 err(f"events.jsonl:{i} unknown event type '{ev.get('type')}'")
             for k in ("ts", "type", "msg"):
                 if k not in ev:
@@ -1910,75 +1105,69 @@ def cmd_validate(args) -> None:
                 err(f"events.jsonl:{i} msg is {len(msg)} chars (max {MSG_MAX})")
             if "\n" in msg:
                 err(f"events.jsonl:{i} msg contains a newline")
+    else:
+        notes.append("no events.jsonl yet (written by the first `lab run`)")
 
-    # every known type must have a feed class (acceptance §14.4)
+    # every known type must have a feed class
     for t in EVENT_FEED:
         if EVENT_FEED[t] not in ("news", "activity", "none"):
             err(f"event type '{t}' has no valid feed class")
 
-    # --- trial dirs --------------------------------------------------------
-    active = set(state.get("active_trials") or [])
-    for tdir in sorted((ROOT / "runs").glob("r*/trials/*")):
-        if not tdir.is_dir():
-            continue
-        rel = tdir.relative_to(ROOT)
-        for required in ("config.json", "results.jsonl"):
-            if not (tdir / required).exists():
-                err(f"{rel} is missing {required}")
-        if not (tdir / "summary.md").exists():
-            if tdir.name in active:
-                notes.append(f"{rel}: running, summary.md pending")
-            else:
-                err(f"{rel} is missing summary.md (closed trials must be summarized)")
-        cfgp = tdir / "config.json"
-        if cfgp.exists():
-            try:
-                cfg = json.loads(cfgp.read_text())
-                for k in ("trial_id", "seed", "git_commit", "start_time", "hardware", "packages"):
-                    if k not in cfg:
-                        err(f"{rel}/config.json missing '{k}'")
-            except json.JSONDecodeError as e:
-                err(f"{rel}/config.json is not valid JSON: {e}")
-
-    # --- plan.json ---------------------------------------------------------
-    planp = ROOT / "plan.json"
-    if planp.exists():
+    # --- population.json and the candidate dirs ----------------------------
+    popp = ROOT / "population.json"
+    if popp.exists():
+        C = _campaign_module()
+        F = _findings_module()
         try:
-            plan = json.loads(planp.read_text())
-            if not isinstance(plan.get("experiments"), list) or not plan["experiments"]:
-                err("plan.json has no experiments")
-            for e in plan.get("experiments", []):
-                for k in ("id", "hypothesis", "primary_metric", "gate", "baselines",
-                          "kill_criteria", "budget"):
-                    if k not in e:
-                        err(f"plan.json experiment '{e.get('id','?')}' missing '{k}'")
-                gate = e.get("gate") or {}
-                if not isinstance(gate, dict) or "value" not in gate or "direction" not in gate:
-                    err(f"plan.json experiment '{e.get('id','?')}' gate needs a numeric "
-                        "value and a direction")
-                elif not isinstance(gate["value"], (int, float)):
-                    err(f"plan.json experiment '{e.get('id','?')}' gate.value is not numeric")
-                if e.get("spec") and not (ROOT / e["spec"]).exists():
-                    err(f"plan.json experiment '{e.get('id','?')}' spec {e['spec']} not found")
+            pop = json.loads(popp.read_text())
         except json.JSONDecodeError as e:
-            err(f"plan.json is not valid JSON: {e}")
-
-    # --- .claude/loop.conf -------------------------------------------------
-    conf = load_conf(required=False)
-    if conf is None:
-        err(".claude/loop.conf is missing")
+            err(f"population.json is not valid JSON: {e}")
+            pop = {}
+        if pop:
+            for k in ("format", "campaign", "status", "candidates", "claim"):
+                if k not in pop:
+                    err(f"population.json missing key '{k}'")
+            if pop.get("status") not in C.CAMPAIGN_STATUS:
+                err(f"population.json status='{pop.get('status')}' is not a campaign status")
+            if pop.get("claim") not in C.CLAIMS:
+                err(f"population.json claim='{pop.get('claim')}' is not a claim")
+            for cid, c in (pop.get("candidates") or {}).items():
+                cdir = ROOT / c.get("path", f"candidates/{cid}")
+                if c.get("status") not in C.CAND_STATUS:
+                    err(f"population.json {cid} status='{c.get('status')}' is not a candidate status")
+                if c.get("operator") not in C.OPERATORS:
+                    err(f"population.json {cid} operator='{c.get('operator')}' is not an operator")
+                if not (cdir / "config.json").exists():
+                    err(f"{cdir.relative_to(ROOT)} has no config.json")
+                if c.get("status") in ("evaluated", "failed", "deferred", "frozen"):
+                    if not (cdir / "summary.md").exists():
+                        err(f"{cdir.relative_to(ROOT)} settled without a summary.md")
+                if c.get("status") in ("evaluated", "frozen") and not (cdir / "fitness.json").exists():
+                    err(f"{cdir.relative_to(ROOT)} is evaluated but has no fitness.json")
+            mem = pop.get("memory") or {"policy": "legacy"}
+            if mem.get("policy") not in C.MEMORY_POLICIES:
+                err(f"population.json memory policy '{mem.get('policy')}' is unknown")
+            elif mem["policy"] == F.POLICY:
+                # cards are required only for settled attempts of an opted-in campaign
+                for cid, c in (pop.get("candidates") or {}).items():
+                    if c.get("exec") not in F.EXEC_STATUSES:
+                        continue
+                    fp = ROOT / c.get("path", f"candidates/{cid}") / "finding.json"
+                    if not fp.exists():
+                        err(f"{fp.relative_to(ROOT)} is missing for a settled candidate (memory {F.POLICY})")
+                        continue
+                    try:
+                        card = json.loads(fp.read_text())
+                        problems = F.validate_card(card)
+                    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as e:
+                        card, problems = None, [f"unreadable: {e}"]
+                    for pr in problems:
+                        err(f"{fp.relative_to(ROOT)}: {pr}")
+                    if not problems and (card.get("candidate") != cid or
+                                         (card.get("execution") or {}).get("exec") != c.get("exec")):
+                        err(f"{fp.relative_to(ROOT)} does not match population.json")
     else:
-        for phase in PHASES:
-            if not conf.get(phase):
-                err(f".claude/loop.conf has no model for phase '{phase}'")
-        if not conf.get("orchestrator"):
-            err(".claude/loop.conf has no orchestrator= model (attended mode)")
-        if conf.get("permission_mode") not in ("auto", "bypassPermissions"):
-            err(".claude/loop.conf permission_mode must be auto|bypassPermissions")
-        for phase in PHASES:
-            p = ROOT / ".claude" / "prompts" / f"{phase}.md"
-            if not p.exists():
-                err(f"missing phase prompt .claude/prompts/{phase}.md")
+        notes.append("no population.json (no campaign has run here)")
 
     for n in notes:
         print(f"note: {n}")
@@ -1990,42 +1179,6 @@ def cmd_validate(args) -> None:
     print("lab validate: OK" + (f" ({len(notes)} note(s))" if notes else ""))
 
 
-def load_conf(required: bool = True) -> dict[str, str] | None:
-    path = ROOT / ".claude" / "loop.conf"
-    if not path.exists():
-        if required:
-            die(".claude/loop.conf not found")
-        return None
-    conf: dict[str, str] = {}
-    for line in path.read_text().splitlines():
-        line = line.split("#", 1)[0].strip()
-        if not line or "=" not in line:
-            continue
-        k, _, v = line.partition("=")
-        conf[k.strip()] = v.strip()
-    return conf
-
-
-def cmd_model(args) -> None:
-    phase = load_state().get("phase") if STATE_PATH.exists() else None
-    rec = agent_record(phase)
-    if args.json:
-        print(json.dumps(rec, separators=(",", ":")))
-    else:
-        served = ", ".join(rec["served"]) or "unknown"
-        print(f"requested {rec['requested']} ({rec['requested_source']}); "
-              f"served {served} ({rec['served_source']})")
-
-
-def cmd_conf(args) -> None:
-    conf = load_conf() or {}
-    if args.key:
-        print(conf.get(args.key, ""))
-    else:
-        for k, v in conf.items():
-            print(f"{k}={v}")
-
-
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -2035,15 +1188,11 @@ def main(argv: list[str] | None = None) -> None:
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    sp = sub.add_parser("init", help="bootstrap the repo from PROTOCOL.md")
-    sp.add_argument("--force", action="store_true")
-    sp.set_defaults(func=cmd_init)
-
     sp = sub.add_parser("log", help="append an event to the public feed")
     sp.add_argument("type", help=f"one of: {', '.join(sorted(EVENT_FEED))}")
     sp.add_argument("--msg", required=True, help=f"<= {MSG_MAX} chars, one line")
     sp.add_argument("--data", help="JSON object with the structured payload")
-    sp.add_argument("--trial", help="trial id (required for metric throttling)")
+    sp.add_argument("--candidate", help="candidate id (metric throttling is per candidate)")
     sp.set_defaults(func=cmd_log)
 
     sp = sub.add_parser("events", help="read the event feed")
@@ -2052,57 +1201,16 @@ def main(argv: list[str] | None = None) -> None:
     sp.add_argument("--class", dest="feed_class", choices=["news", "activity", "none"])
     sp.set_defaults(func=cmd_events)
 
-    sp = sub.add_parser("state", help="read/write state.json")
-    ssub = sp.add_subparsers(dest="state_cmd", required=True)
-    g = ssub.add_parser("get")
-    g.add_argument("key", nargs="?")
-    g.set_defaults(func=cmd_state_get)
-    s = ssub.add_parser("set")
-    s.add_argument("assignments", nargs="+", metavar="key=value")
-    s.set_defaults(func=cmd_state_set)
-
-    sp = sub.add_parser("trial", help="trial dirs — the run-dir contract")
-    tsub = sp.add_subparsers(dest="trial_cmd", required=True)
-    t = tsub.add_parser("new")
-    t.add_argument("exp_id")
-    t.add_argument("--config", help="JSON object, or @path/to/config.json")
-    t.add_argument("--seed", type=int)
-    t.add_argument("--command", help="the exact command line being run")
-    t.add_argument("--spec", help="path to the experiment spec")
-    t.add_argument("--packages", help="extra comma-separated packages to fingerprint")
-    t.add_argument("--note", help="one-line ledger note / launch message")
-    t.set_defaults(func=cmd_trial_new)
-    t = tsub.add_parser("log")
-    t.add_argument("dir")
-    t.add_argument("--data", required=True, help="JSON object appended to results.jsonl")
-    t.add_argument("--metric-msg", help="also emit a (throttled) metric event")
-    t.set_defaults(func=cmd_trial_log)
-    t = tsub.add_parser("done")
-    t.add_argument("dir")
-    t.add_argument("--verdict", help="|".join(VERDICTS))
-    t.add_argument("--killed", action="store_true")
-    t.add_argument("--reason", help="why it was killed")
-    t.add_argument("--note", help="one-line ledger note / event message "
-                                  "(omitted = keep the existing ledger note)")
-    t.set_defaults(func=cmd_trial_done)
-    t = tsub.add_parser("verdict", help="judge a closed trial — fills the LEDGER "
-                                        "verdict column, never touches its clock")
-    t.add_argument("dir")
-    t.add_argument("--verdict", required=True, help="|".join(VERDICTS))
-    t.add_argument("--note", help="ledger note (omitted = keep the existing note)")
-    t.set_defaults(func=cmd_trial_verdict)
-
     sp = sub.add_parser("watch", help="detached watchdog for long-running work")
     wsub = sp.add_subparsers(dest="watch_cmd", required=True)
     w = wsub.add_parser("start", help="launch a command under a detached watcher")
-    w.add_argument("--trial", help="trial dir: console.log is the log, kills auto-close the trial")
-    w.add_argument("--op", help="name for non-trial work (a download, a corpus build)")
-    w.add_argument("--budget-min", type=int,
-                   help="wall-clock kill budget (trials default to config kill.max_wall_clock_hours)")
+    w.add_argument("--op", required=True, help="name for the work (a job, a download, the campaign)")
+    w.add_argument("--budget-min", type=int, required=True, help="wall-clock kill budget")
     w.add_argument("--stall-min", type=int, default=0,
-                   help="kill if no new output (log/results.jsonl) AND no CPU "
-                        "activity in the child's process tree for this many minutes")
+                   help="kill if no new log output AND no CPU activity in the child's "
+                        "process tree for this many minutes")
     w.add_argument("--kill-regex", help="kill when this pattern appears in new log output")
+    w.add_argument("--candidate-dir", help=argparse.SUPPRESS)  # lab run's owned job tree
     w.add_argument("command", nargs=argparse.REMAINDER,
                    help="-- <command...> to run and supervise")
     w.set_defaults(func=cmd_watch_start)
@@ -2119,38 +1227,16 @@ def main(argv: list[str] | None = None) -> None:
     w.add_argument("--next-deadline", action="store_true",
                    help="seconds until the nearest live watch budget deadline")
     w.set_defaults(func=cmd_watch_check)
-    w = wsub.add_parser("kill", help="ask the watcher to kill its child and do the paperwork")
+    w = wsub.add_parser("kill", help="ask the watcher to kill its child")
     w.add_argument("id")
     w.add_argument("--reason", required=True)
     w.set_defaults(func=cmd_watch_kill)
-    w = wsub.add_parser("close", help="archive a finished watch after its paperwork is done")
+    w = wsub.add_parser("close", help="archive a finished watch")
     w.add_argument("id")
     w.set_defaults(func=cmd_watch_close)
 
-    sp = sub.add_parser("protocol", help="revision mechanism")
-    psub = sp.add_subparsers(dest="protocol_cmd", required=True)
-    f = psub.add_parser("freeze")
-    f.set_defaults(func=cmd_protocol_freeze)
-    a = psub.add_parser("activate")
-    a.add_argument("--diff-summary", help="one line: what changed and why")
-    a.set_defaults(func=cmd_protocol_activate)
-
-    sp = sub.add_parser("gate", help="human checkpoints")
-    gsub = sp.add_subparsers(dest="gate_cmd", required=True)
-    r = gsub.add_parser("request")
-    r.add_argument("--type", required=True,
-                   help="revision_approval | conclude_approval | question | blocked | stalled")
-    r.add_argument("--question", required=True)
-    r.set_defaults(func=cmd_gate_request)
-    v = gsub.add_parser("resolve")
-    mx = v.add_mutually_exclusive_group(required=True)
-    mx.add_argument("--approve", action="store_true")
-    mx.add_argument("--reject", action="store_true")
-    v.add_argument("--note")
-    v.set_defaults(func=cmd_gate_resolve)
-
     sp = sub.add_parser("usage", help="token usage per session/model/role — reads "
-                                      "session transcripts and phase logs")
+                                      "session transcripts")
     sp.add_argument("--since", help="YYYY-MM-DD (UTC); default: all recorded sessions")
     sp.add_argument("--json", action="store_true")
     sp.set_defaults(func=cmd_usage)
@@ -2164,25 +1250,23 @@ def main(argv: list[str] | None = None) -> None:
                          "version = print the format version alone")
     sp.set_defaults(func=cmd_format)
 
-    sp = sub.add_parser("model", help="which model drives this session (requested + served)")
-    sp.add_argument("--json", action="store_true",
-                    help="print {requested, requested_source, served, served_source}")
-    sp.set_defaults(func=cmd_model)
-
-    sp = sub.add_parser("conf", help="read .claude/loop.conf")
-    sp.add_argument("key", nargs="?")
-    sp.set_defaults(func=cmd_conf)
+    # The search loop (docs/aira2-loop-design.md). Registered from its own module; a failure to
+    # import it must not take the plumbing down with it.
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import lab_campaign
+        lab_campaign.register(sub, sys.modules[__name__])
+    except Exception as e:  # pragma: no cover
+        warn(f"campaign commands unavailable: {e}")
 
     args = p.parse_args(argv)
 
-    # state.json / events.jsonl / LEDGER.md are read-modify-write; with detached
-    # watchers closing trials while a session works, writers can now be concurrent.
-    # One blocking flock serializes them. The watcher's long-lived `_run` loop never
-    # takes it (it mutates only its own registry file and shells back into `lab
-    # trial done`, which takes the lock in its own short-lived process).
-    mutating = args.cmd in ("init", "log", "state", "trial", "protocol", "gate") \
-        and not (args.cmd == "state" and getattr(args, "state_cmd", "") == "get")
-    if mutating:
+    # events.jsonl and LEDGER.md are read-modify-write; `lab run` and a hand-run
+    # `lab log` or `lab eval` can be concurrent. One blocking flock serializes them.
+    # The watcher's long-lived `_run` loop never takes it (it mutates only its own
+    # registry file); `lab run` holds its own campaign.lock for the loop and takes
+    # this one per write through ledger_lock().
+    if args.cmd in ("log", "eval"):
         LAB_DIR.mkdir(parents=True, exist_ok=True)
         lock = open(LAB_DIR / "lab.lock", "w")
         t0 = time.time()

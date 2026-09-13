@@ -1,0 +1,34 @@
+# audit snapshot 2026-09-13T08:52:18Z  arm=/mnt/data/projects/nullsilver/labloop-m2-matched-greedy-20260912
+
+## campaign
+campaign m2-cifar10-matched-greedy-20260912  status finished  tick 2661  settled 40  best c0029  claim supported  gpu-h 7.32
+  usage: $10.94 spent in the last 5 h, 22 session(s); no window_budget (rate-limit detection only); level ok; waited 0 min over 0 pause(s), 0 deferred, 0 rate-limit message(s)
+
+## watchers not terminal (expect none)
+none
+registry: 1 live records; done/: 41
+
+## cleanup_error in watcher records (expect none)
+none
+
+## frozen bundle hashes
+all 120 entries match
+
+## GPU
+0, GPU-e0b37c91-c1d0-b071-4c0f-4556a4b6b103, 0 %, 1 MiB
+1, GPU-bcae09b3-efb1-15db-81ba-e525b8d19397, 0 %, 2 MiB
+compute processes:
+  (end)
+
+## processes referencing the arm (expect none after settlement)
+none
+
+## newest writes under candidates/ (compare across two snapshots)
+2026-09-13T08:48:56.1317640960Z candidates/c0039/session.stderr
+2026-09-13T08:49:16.8342309880Z candidates/c0039/config.json
+2026-09-13T08:49:16.8492313260Z candidates/c0039/fitness.json
+2026-09-13T08:49:18.5972707150Z candidates/c0029/out/predictions-final.json
+2026-09-13T08:49:36.9926849340Z candidates/c0029/fitness.json
+
+## population
+status finished settled 40 gpu_seconds 26334.0 stop 'max_candidates 40 reached' final {'candidate': 'c0029', 'watch': '20260913T0849-final-c0029', 'started': '2026-09-13T08:49:16Z', 'score': 0.9406, 'n': 10000, 'ended': '2026-09-13T08:49:37Z'} claim supported
