@@ -111,11 +111,22 @@ separate from lifecycle. Search leases871s + final15s = .24611 combined lease-ho
 agent usage $0.6514438. Minor summary/provenance defects remain documented in
 `docs/lifecycle-smoke-20260912.md`; no full-window/security/comparative claim follows.
 
-The user has authorized fresh full matched comparisons after this pass. Preflight
-is checking a cost-bounded pair (40 candidates and12 search lease-hours per arm,
-24h dispatch ceiling), identical frozen tools/task/settings except selection,
-sequentially on the same3090. Neither arm has launched. These capped runs do not
-claim the original24h horizon if count/resource stops occur first.
+The frozen matched pair is **live** (protocol, order draw and provenance in
+`../labloop-m2-matched-20260912`; arms `../labloop-m2-matched-search-20260912` and
+`../labloop-m2-matched-greedy-20260912`; only `selection.temperature`/`crossover_p`
+differ: .3/.15 vs .01/0, so the greedy arm dispatches `improve` only, by design).
+Search arm finished 2026-09-13T01:15:50Z: 40 settled, 40 completed, best c0035 .9542,
+final .9464 (task claim supported), 9.65 lease-h, 9.73 h wall, no deferrals. Greedy arm
+launched 01:25:40Z, still running at 08:05Z with 37 settled, all completed, best c0029
+.9484, circuit counters 0/0, frozen bundle hashes verified. `scripts/matched_compare.py`
+implements the preregistered B/D rule from finished-watcher leases and
+`scripts/matched_audit.sh` takes one read-only terminal-audit snapshot; the provisional
+read at B = 23451 s was search c0024 .9528 vs greedy c0029 .9484, D = +.0044, to be
+recomputed once the greedy REPORT.md exists. Greedy c0025's summary discloses that its
+worker read eight sibling candidates' summaries outside its contract; the guard blocks
+writes to other candidate dirs, not reads, and undisclosed reads are not detectable from
+the retained evidence (the CLI returns only the final result). These capped runs do not
+claim the original 24 h horizon if count/resource stops occur first.
 
 After a strict smoke pass, fresh matched search and greedy identities with the **same**
 fixed lifecycle tools, data, model, seeds, GPU, budgets, memory and usage policy;
@@ -128,7 +139,9 @@ validation and calibrated unattended governor evidence remain **pending**.
 1. Harden the evaluation boundary (the documented unrestricted sudo Python rule is
    not worker isolation), settlement recovery and interrupted-final handling. Add
    fault injection; prefer an explicit inconclusive interrupted final over a silent
-   second read. Cover direct editing tools as well as Bash guardrails.
+   second read. Cover direct editing tools as well as Bash guardrails. Scope worker
+   reads to the job card's allowed paths (own dir, parents, data, task): the matched
+   greedy arm's c0025 read sibling summaries and the guard only blocks writes.
 2. ~~Test rate-limit detection against a worker that emits a limit message and keeps
    running; enforce termination rather than relying on CLI exit.~~ Done 2026-09-12:
    `lab-worker` echoes the CLI's stderr under a prefix into the watcher log and every
