@@ -220,6 +220,9 @@ def load_campaign(path: Path) -> dict:
     if not isinstance(gpus, list) or not all(isinstance(g, int) for g in gpus):
         L.die(f"{path.name}: resources.gpus must be a list of ints (may be empty for CPU)")
     slots = gpus if gpus else [None]
+    if not isinstance(r.get("worker_model_by_operator", {}), dict):
+        L.die(f"{path.name}: [resources.worker_model_by_operator] must be a table of "
+              "operator = \"model-id\"")
     cfg["resources"] = {
         "gpus": gpus,
         "slots": slots,
@@ -229,10 +232,20 @@ def load_campaign(path: Path) -> dict:
         "stall_min": int(r.get("stall_min", 0)),
         "worker_max_turns": int(r.get("worker_max_turns", 40)),
         "worker_model": r.get("worker_model", "claude-sonnet-5"),
+        "worker_model_by_operator": dict(r.get("worker_model_by_operator") or {}),
         "min_free_vram_mb": int(r.get("min_free_vram_mb", 0)),
     }
     if cfg["resources"]["max_parallel_jobs"] < 1:
         L.die(f"{path.name}: resources.max_parallel_jobs must be >= 1")
+    worker_ops = [o for o in OPERATORS if o != "baseline"]
+    for op, model in cfg["resources"]["worker_model_by_operator"].items():
+        # a typo here would silently run the whole campaign on the default model
+        if op not in worker_ops:
+            L.die(f"{path.name}: resources.worker_model_by_operator.{op} is not a worker "
+                  f"operator (one of {', '.join(worker_ops)}); the baseline runs the "
+                  "campaign's baseline command, not a session")
+        if not isinstance(model, str) or not model.strip():
+            L.die(f"{path.name}: resources.worker_model_by_operator.{op} must be a model id")
 
     cfg["usage"] = parse_usage(raw, path.name)
 
@@ -248,6 +261,7 @@ def load_campaign(path: Path) -> dict:
         "temperature": float(s.get("temperature", 0.3)),
         "crossover_p": float(s.get("crossover_p", 0.15)),
         "draft_p": float(s.get("draft_p", 0.0)),
+        "initial_drafts": int(s.get("initial_drafts", 1)),
         "max_debug_retries": int(s.get("max_debug_retries", 1)),
         "seed": int(s.get("seed", int(hashlib.sha256(cid.encode()).hexdigest()[:8], 16))),
     }
@@ -259,6 +273,9 @@ def load_campaign(path: Path) -> dict:
         L.die(f"{path.name}: selection.draft_p + selection.crossover_p must not exceed 1")
     if cfg["selection"]["temperature"] <= 0:
         L.die(f"{path.name}: selection.temperature must be > 0")
+    if cfg["selection"]["initial_drafts"] < 1:
+        L.die(f"{path.name}: selection.initial_drafts must be >= 1 (every campaign drafts "
+              "at least once after the baseline)")
 
     st = raw.get("stop", {})
     cfg["stop"] = {
@@ -432,6 +449,9 @@ def cmd_campaign_check(args) -> None:
         "privilege_separation": bool(cfg["eval"]["user"]),
         "success_threshold": cfg["report"]["success_threshold"],
         "memory": cfg["memory"]["mode"],
+        "worker_model": cfg["resources"]["worker_model"],
+        "worker_model_by_operator": cfg["resources"]["worker_model_by_operator"],
+        "initial_drafts": cfg["selection"]["initial_drafts"],
         "usage_governor": ("estimate + rate-limit detection" if cfg["usage"]["window_budget"]
                            else "rate-limit detection only (no usage.window_budget)"),
         "usage": {k: v for k, v in cfg["usage"].items() if k != "rate_limit_regex"},
@@ -593,6 +613,17 @@ def lineage(pop: dict, cid: str, depth: int = 5) -> list[str]:
     return out
 
 
+def worker_model_for(cfg: dict, operator: str) -> tuple[str, str]:
+    """(model id, requested_source) for a job. [resources.worker_model_by_operator] lets
+    one operator run on another model — a stronger one for `draft`, where the approach is
+    chosen, than for the improve jobs that tweak it. Without the table the source string
+    stays the bare "campaign.toml" every existing config.json carries."""
+    by_op = cfg["resources"].get("worker_model_by_operator") or {}
+    if operator in by_op:
+        return by_op[operator], f"campaign.toml worker_model_by_operator.{operator}"
+    return cfg["resources"]["worker_model"], "campaign.toml worker_model" if by_op else "campaign.toml"
+
+
 def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
                   gpu: int | None, rng: random.Random, origin: dict | None = None) -> str:
     """origin: the deferred job this candidate re-dispatches ({from, defers}), if any."""
@@ -622,6 +653,9 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
             shutil.copytree(src, cdir / "code", dirs_exist_ok=True,
                             ignore=shutil.ignore_patterns(*WEIGHT_PATTERNS))
     seed = rng.randrange(2**31)
+    # the baseline runs a command, not a session: no model is requested for it
+    req_model, req_source = (worker_model_for(cfg, operator) if operator != "baseline"
+                             else (None, "campaign.toml"))
     snapshot = {
         "format": L.FORMAT_VERSION,
         "candidate": cid,
@@ -640,8 +674,8 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
         "git_dirty": bool(L.git("status", "--porcelain")),
         "hardware": L.hardware_fingerprint(),
         "packages": L.package_versions([]),
-        "agent": {"requested": cfg["resources"]["worker_model"] if operator != "baseline" else None,
-                  "requested_source": "campaign.toml", "served": [], "served_source": "none"},
+        "agent": {"requested": req_model, "requested_source": req_source,
+                  "served": [], "served_source": "none"},
         "redispatch_of": origin["from"] if origin else None,
         "defers": origin["defers"] if origin else 0,
     }
@@ -723,7 +757,7 @@ def worker_env(cfg: dict, cid: str, operator: str, gpu: int | None, split: str =
         "LAB_SPLIT": split,
         "LAB_SPLIT_INPUTS": str(cfg["data"][split]["inputs"]),
         "LAB_PREDICTIONS_OUT": str(cdir / "out" / f"predictions-{split}.json"),
-        "LAB_WORKER_MODEL": cfg["resources"]["worker_model"],
+        "LAB_WORKER_MODEL": worker_model_for(cfg, operator)[0],
         "LAB_WORKER_MAX_TURNS": str(cfg["resources"]["worker_max_turns"]),
         "LAB_JOB_WALL_CLOCK_SEC": str(cfg["resources"]["job_wall_clock_sec"]),
         "CUDA_VISIBLE_DEVICES": "" if gpu is None else str(gpu),
@@ -1458,8 +1492,16 @@ def choose_job(cfg: dict, pop: dict, rng: random.Random) -> tuple[str, list[str]
                 return ("debug", [c["id"]], None)
             c["debugged"] = True
     non_baseline = [c for c in evaluated if c["operator"] != "baseline"]
-    if not non_baseline:
-        # nothing to improve on yet: draft, but don't stack more drafts than slots
+    # The opening drafts: `selection.initial_drafts` (default 1) independent first
+    # approaches before any improve or crossover is drawn, so the whole search does not
+    # hang off one draft's luck — each extra draft costs one improve slot. Dispatched
+    # drafts are counted whatever became of them (running, failed, deferred), and a
+    # re-dispatch counts with its original, not again. After them the old rule still
+    # holds: with nothing non-baseline evaluated there is nothing to improve on.
+    drafted = sum(1 for c in cands.values()
+                  if c["operator"] == "draft" and not c.get("redispatch_of"))
+    if drafted < cfg["selection"].get("initial_drafts", 1) or not non_baseline:
+        # don't stack more drafts than slots; the rest are dispatched on later ticks
         if len([c for c in running if c["operator"] == "draft"]) < cfg["resources"]["max_parallel_jobs"]:
             return ("draft", [], None)
         return None
@@ -1627,9 +1669,14 @@ def usage_report_lines(cfg: dict, pop: dict, wall_hours: float) -> list[str]:
            f"soft {ucfg['soft']:.0%} / hard {ucfg['hard']:.0%}, plus rate-limit detection"
            if ucfg["window_budget"] else
            "OFF — no usage.window_budget; rate-limit detection only")
+    # what campaign.toml asked for, per operator when it names one; what actually answered
+    # is per candidate in config.json agent.served.
+    by_op = cfg["resources"].get("worker_model_by_operator") or {}
+    models = cfg["resources"]["worker_model"] + "".join(f"; {op} {m}" for op, m in sorted(by_op.items()))
     return [
         "| | |", "|---|---|",
         f"| governor | {gov} |",
+        f"| worker model requested | {models} |",
         f"| worker sessions | {len(sessions)} (turns: median {sorted(turns)[len(turns) // 2] if turns else '—'}, "
         f"max {max(turns) if turns else '—'}) |",
         f"| list-price equivalent, all sessions | ${total:.2f} (median ${median:.2f} per session) |" if costs

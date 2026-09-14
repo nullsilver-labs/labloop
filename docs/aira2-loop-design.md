@@ -98,7 +98,9 @@ One process, `lab run`, runs the whole campaign. Every tick:
 2. **Enforce** budgets (§4). Over any hard limit → stop launching; running jobs finish
    or are killed at their own wall-clock cap. No prompt, no wait.
 3. **Dispatch** while a GPU slot and a usage slot are free:
-   - empty population → `draft` (one per free GPU, different seeds);
+   - empty population → `draft` (one per free GPU, different seeds), and until
+     `selection.initial_drafts` (default 1, added 2026-09-14) drafts have been
+     dispatched, so a campaign need not hang off one draft's luck;
    - otherwise, with `selection.draft_p` (default 0) a fresh `draft`; else sample a
      parent by temperature-scaled rank over search fitness (AIRA₂ §3), then `improve`
      or `crossover` (two parents) with `crossover_p` (default 0.15). Added 2026-09-13:
@@ -137,7 +139,7 @@ gpus              = [0, 1]
 gpu_hours_total   = 40
 job_wall_clock    = "3h"
 worker_max_turns  = 40
-worker_model      = "claude-sonnet-5"
+worker_model      = "claude-sonnet-5"   # [resources.worker_model_by_operator] overrides it per operator
 usage_soft        = 0.70               # fraction of the Max 5-hour window, stop dispatching
 usage_hard        = 0.90               # pause everything
 

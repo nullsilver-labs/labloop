@@ -68,6 +68,66 @@ never = run({'crossover_p': 0.0, 'draft_p': 0.0})
 legacy = run({'crossover_p': 0.0})
 print(always[0], always[1] == [], never == legacy, never[0])")" "draft True True improve"
 
+assert_eq   "selection.initial_drafts: 1 is today's stream, N drafts come before the first improve, a re-dispatch is not a second draft" \
+  "$(python3 -c "
+import sys, random; sys.path.insert(0, 'tools'); import lab_campaign as m
+def cand(i, op, status, fit=None, redis=None, dbg=True):
+    return {'id': i, 'operator': op, 'parents': [], 'status': status, 'fitness': fit, 'debugged': dbg, 'redispatch_of': redis}
+def cfg(mpj=1, **sel):
+    return {'selection': dict(temperature=1.0, crossover_p=0.0, max_debug_retries=1, **sel),
+            'report': {'higher_is_better': True}, 'resources': {'max_parallel_jobs': mpj}}
+def pop(*cs): return {'candidates': {c['id']: c for c in cs}, 'usage': m.usage_defaults()}
+B = cand('c0000', 'baseline', 'evaluated', 0.1)
+D = cand('c0001', 'draft', 'evaluated', 0.9)
+legacy = m.choose_job(cfg(), pop(B, D), random.Random(5))[:2]
+one = m.choose_job(cfg(initial_drafts=1), pop(B, D), random.Random(5))[:2]
+second = m.choose_job(cfg(initial_drafts=3), pop(B, D), random.Random(5))[0]
+done = m.choose_job(cfg(initial_drafts=3), pop(B, D, cand('c0002', 'draft', 'failed'), cand('c0003', 'draft', 'running')), random.Random(5))[0]
+redis = m.choose_job(cfg(2, initial_drafts=3), pop(B, D, cand('c0002', 'draft', 'deferred'), cand('c0003', 'draft', 'running', redis='c0002')), random.Random(5))[0]
+cap = m.choose_job(cfg(2, initial_drafts=4), pop(B, D, cand('c0002', 'draft', 'running'), cand('c0003', 'draft', 'queued')), random.Random(5))
+print(legacy[0], legacy == one, second, done, redis, cap)")" "improve True draft improve draft None"
+
+assert_eq   "resources.worker_model_by_operator resolves per operator and names the key it came from" \
+  "$(python3 -c "
+import sys; sys.path.insert(0, 'tools'); import lab_campaign as m
+plain = {'resources': {'worker_model': 'claude-sonnet-5', 'worker_model_by_operator': {}}}
+byop = {'resources': {'worker_model': 'claude-sonnet-5', 'worker_model_by_operator': {'draft': 'claude-opus-5'}}}
+print(m.worker_model_for(plain, 'draft'), m.worker_model_for(byop, 'draft'), m.worker_model_for(byop, 'improve'))")" \
+  "('claude-sonnet-5', 'campaign.toml') ('claude-opus-5', 'campaign.toml worker_model_by_operator.draft') ('claude-sonnet-5', 'campaign.toml worker_model')"
+
+assert_grep "without the table a candidate's provenance still reads plain campaign.toml" \
+            '"requested_source": "campaign.toml",' candidates/c0001/config.json
+{ cat campaign.toml; printf '\n[resources.worker_model_by_operator]\ndraft = "claude-opus-5"\n'; } > by-op.toml
+assert_ok   "campaign check accepts a per-operator worker model"          "$LABS" campaign check by-op.toml
+assert_ok   "campaign check prints the per-operator model" \
+            bash -c '"$0" campaign check by-op.toml | grep -q claude-opus-5' "$LABS"
+{ cat campaign.toml; printf '\n[resources.worker_model_by_operator]\nimporve = "claude-opus-5"\n'; } > bad-op.toml
+assert_fail "campaign check refuses an unknown operator key"              "$LABS" campaign check bad-op.toml
+{ cat campaign.toml; printf '\n[resources.worker_model_by_operator]\nbaseline = "claude-opus-5"\n'; } > bad-base.toml
+assert_fail "campaign check refuses a model for the baseline"             "$LABS" campaign check bad-base.toml
+sed 's/^crossover_p = .*/&\ninitial_drafts = 0/' campaign.toml > bad-drafts.toml
+assert_fail "campaign check refuses initial_drafts below 1"               "$LABS" campaign check bad-drafts.toml
+
+# The two keys end to end: two opening drafts, then an improve, on a per-operator model.
+WORKM="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-models.XXXXXX")"
+worker_repo "$WORKM" acc-models
+cd "$WORKM" || return 1
+export LAB_ROOT="$WORKM"
+LABM="$WORKM/tools/lab"
+sed -i -e 's#^command = .*#command = "bash scripts/fixtures/campaign/worker.sh"#' \
+       -e 's/^max_candidates = 3/max_candidates = 4/' -e 's/^crossover_p = .*/&\ninitial_drafts = 2/' campaign.toml
+printf '\n[resources.worker_model_by_operator]\ndraft = "claude-opus-5"\n' >> campaign.toml
+assert_ok   "campaign with two opening drafts and a per-operator model completes" timeout 200 "$LABM" run --poll-sec 1
+assert_eq   "both opening drafts came before the first improve" \
+  "$(python3 -c "import json;p=json.load(open('population.json'));print([p['candidates'][c]['operator'] for c in ('c0001','c0002','c0003')])")" \
+  "['draft', 'draft', 'improve']"
+assert_grep "a draft was requested on the per-operator model"  '"requested": "claude-opus-5"' candidates/c0001/config.json
+assert_grep "and its provenance names the table key"           '"requested_source": "campaign.toml worker_model_by_operator.draft"' candidates/c0001/config.json
+assert_grep "the improve fell back to worker_model"            '"requested": "claude-sonnet-5"' candidates/c0003/config.json
+assert_grep "and says so"                                      '"requested_source": "campaign.toml worker_model"' candidates/c0003/config.json
+assert_grep "the baseline requested no model at all"           '"requested": null' candidates/c0000/config.json
+assert_grep "REPORT lists the requested model per operator"    "| worker model requested | claude-sonnet-5; draft claude-opus-5 |" REPORT.md
+
 WORKP="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-sync.XXXXXX")"
 mkdir -p "$WORKP/tools" "$WORKP/candidates/c0000" && echo old > "$WORKP/tools/lab" && echo evidence > "$WORKP/candidates/c0000/summary.md" && echo '[campaign]' > "$WORKP/campaign.toml"
 assert_ok   "sync-project refreshes tooling"                   bash "$SRC/scripts/sync-project.sh" "$WORKP"
@@ -75,4 +135,4 @@ assert_ok   "synced tools/lab is the current one"              cmp -s "$SRC/tool
 assert_file "synced hooks"                                     "$WORKP/.claude/hooks/guard.sh"
 assert_grep "evidence untouched"                               evidence "$WORKP/candidates/c0000/summary.md"
 assert_grep "campaign.toml untouched"                          '[campaign]' "$WORKP/campaign.toml"
-[ "${KEEP:-0}" = "1" ] || rm -rf "$WORKS" "$WORKP"
+[ "${KEEP:-0}" = "1" ] || rm -rf "$WORKS" "$WORKP" "$WORKM"

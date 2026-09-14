@@ -379,6 +379,11 @@ def format_manifest() -> dict:
                           "requested_source, served, served_source}"),
             "sources": {
                 "campaign.toml": "requested: [resources] worker_model",
+                "campaign.toml worker_model": ("requested: [resources] worker_model, for an "
+                                              "operator the per-operator table does not name"),
+                "campaign.toml worker_model_by_operator.<operator>": (
+                    "requested: [resources.worker_model_by_operator] names a model for this "
+                    "operator (e.g. a stronger model for `draft`)"),
                 "session.json modelUsage": "served: the models that answered the session",
                 "none": "no session ran (the baseline) or no result was stored",
             },
