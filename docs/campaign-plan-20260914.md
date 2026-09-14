@@ -103,8 +103,8 @@ empty) and every launch line holds it.
 |---|---|---|---|---|---|
 | `../labloop-mem2-20260914` | `../labloop-mem2-legacy-20260914` | `engram-mem2-legacy-w0` | `7365686` | pass (no-`window_budget` warning) | no draw — legacy first, fixed |
 | `../labloop-mem2-20260914` | `../labloop-mem2-findings-20260914` | `engram-mem2-findings-w0` | `c3154b9` | pass (no-`window_budget` warning) | second |
-| `../labloop-drafts-20260914` | `../labloop-drafts-1-20260914` | `engram-drafts1-w0` | `4c80456` | pass (no-`window_budget` warning) | `secrets.randbits(1)` = **0** at 2026-09-14T11:39:02Z → first |
-| `../labloop-drafts-20260914` | `../labloop-drafts-4-20260914` | `engram-drafts4-w0` | `ecd2147` | pass (no-`window_budget` warning) | second |
+| `../labloop-drafts-20260914` | `../labloop-drafts-1-20260914` | `engram-drafts1-w0` | `35a303e` (was `4c80456`; two GPUs, armed governor, tools `e464135`) | pass, **no warnings** | `secrets.randbits(1)` = **0** at 2026-09-14T11:39:02Z → first |
+| `../labloop-drafts-20260914` | `../labloop-drafts-4-20260914` | `engram-drafts4-w0` | `666e3c9` (was `ecd2147`; same) | pass, **no warnings** | second |
 | `../labloop-opus-20260914` | `../labloop-opus-20260914-arm` | `engram-opus-w0` | `0c1dd93` | pass, **no warnings** | none (single arm) |
 | `../labloop-mixed-20260914` | `../labloop-mixed-20260914-arm` | `engram-mixed-w0` | `ce9fa4c` | pass, **no warnings** | none (single arm) |
 
@@ -137,3 +137,47 @@ into the bundles' `PREREG.md`:
 8. For the opus arm only: check `/usage` in an interactive session first, so the
    governor's first read is not of someone else's spending; and run it after `mem2`,
    whose findings arm is its control. The mixed arm runs last, after `drafts` and `opus`.
+
+## Amended after the mem2 pair (2026-09-14, evening)
+
+**mem2 ran.** Legacy arm finished 16:45Z: claim supported, best c0014 final 0.699 vs 0.50,
+20/20 settled, 4.72 settled candidates per GPU-hour, one live deferral (c0008: usage-limit
+message, deferred not failed, re-dispatched after 30.5 min, 0 failed). Findings arm
+followed on the same GPU: finished 20:46Z: claim supported, best c0016 final .873 vs .50, 20/20 settled, 5.45 settled candidates per GPU-hour, 3.70 h wall, no deferral (the memory read itself waits for the blinded rating). The rating pack and the blinded read are
+still to do (`PREREG.md` in the bundle; pack with `--keep-finding`).
+
+**The order changes: two GPUs from the drafts pair on, and the Opus arm is shelved.**
+
+- **Why two GPUs now.** GPU 1 (RTX PRO 4000 Blackwell, 24 GB) has been idle through every
+  campaign; a candidate is ≈ 9 min of training in ≈ 11.5 min of wall clock, so the arm is
+  GPU-bound and two slots should roughly halve it. The tooling already leases per GPU
+  (`[resources] gpus = [0, 1]`, `max_parallel_jobs`, `CUDA_VISIBLE_DEVICES` per job, VRAM
+  check, no duplicate `(operator, parents)` across free slots). What it did not do right:
+  with two slots and `initial_drafts = 1` the idle slot drafted again while the first draft
+  ran, which would have turned D1 into a two-draft arm. Fixed in labloop `e464135`
+  (the second-slot draft rule; acceptance cases in `scripts/acceptance_slots.sh`).
+- **How.** Two slots inside one arm; never two arms at once (no cross-campaign GPU
+  arbitration, per-campaign governors blind to each other, one shared usage window). The
+  drafts bundle's `PREREG.md` carries the amendment: both arms on both GPUs, GPU recorded
+  per candidate and reported as a covariate, the M4 read (settled per GPU-hour vs mem2's
+  single-GPU 4.72, M4's kill criterion), `[usage] window_budget = 20.0` armed with
+  `session_cost` 0.48 from the 37 mem2 sessions. The hardware confound (two different cards
+  under a 10-minute wall-clock training cap) is gated by a reference run of c0014's code on
+  both cards at once: GPU 1 is the *faster* card (4115 vs 3228 steps in 540 s, 127 %; concurrency costs the
+  3090 ≈ 1 %). The one-sided gate passes; mirrored it would fail at 78 %, and that is
+  disclosed in the amendment. Decision: two GPUs, GPU as a recorded covariate. Evidence in
+  `../labloop-drafts-20260914/gpu-reference/`.
+- **Why the Opus arm is shelved.** Its two purposes were the governor at Opus prices and
+  all-Opus quality against cost. The deferral path the M3 evidence needed was exercised
+  live in mem2-legacy (reactive path: limit message → deferred → re-dispatched, 0 failed);
+  the predictive gate is now armed in the drafts arms at a calibrated budget and will fire
+  only on an overrun, which is what it is for. The quality-versus-cost question is the
+  most expensive in this plan and the mixed arm answers its cheaper half (Opus at the draft
+  only). The Opus bundle stays scaffolded, unlaunched, as data; it is reconsidered only if
+  the mixed arm shows draft quality matters.
+- **Order now:** drafts (D1 then D4, two GPUs) → mixed (two GPUs; amend its `PREREG.md` the
+  same way before launch, including its own `[usage]` numbers) → Opus only if warranted.
+- **Not two campaigns at once.** Tempting with two GPUs, and wrong for a matched pair: it
+  confounds the arm with the card, and each governor would see half the spend on one
+  window. If it is ever done, it needs cross-campaign GPU leasing and a shared usage ledger
+  in `tools/lab` first, plus a port per `lab serve`.

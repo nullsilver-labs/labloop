@@ -15,12 +15,12 @@ revised here after the fact.
 | M0 | Loop and synthetic acceptance implemented | No real OS-isolation proof in the reviewed evidence | Restricted evaluation boundary; fault-injection tests for settlement and final evaluation |
 | M1 | Worker contract implemented and tested | MNIST probe: 5 completed, final 0.9875 ≥ 0.985 | Probe demonstrates feasibility, not full-window reliability or superiority over interactive work |
 | M2 | Full operators and selection implemented; bounded worker lifecycle live-validated | Frozen matched pair 2026-09-13: search 40/40 completed, final .9464; greedy 40/40 completed, final .9406; lease-matched D = +.0044 at B = 26334 s (one sd, over the .004 band by a hair) | One pair, one order; label separation OFF in both; the 24 h criterion not run |
-| M3 | Governor and fake-CLI tests implemented; live rate-limit enforcement by the watcher (2026-09-12, section E2b) | M2 had pacing OFF; no observed deferrals | Calibrate budget, then unattended validation |
-| M4 | Slots, VRAM checks and fake-GPU tests implemented | Reviewed campaigns used one GPU | Real two-GPU throughput comparison |
+| M3 | Governor and fake-CLI tests implemented; live rate-limit enforcement by the watcher (2026-09-12, section E2b) | First live deferral 2026-09-14 (mem2-legacy c0008: limit message → deferred, not failed → re-dispatched after 30.5 min; 0 failed); the predictive gate never fired (no `window_budget`) | Predictive gate armed at a calibrated budget in the drafts arms (`window_budget` 20.0, `session_cost` 0.48 from 37 sessions); expected to fire only on an overrun, so unattended validation is still pending |
+| M4 | Slots, VRAM checks and fake-GPU tests implemented; second-slot draft rule fixed 2026-09-14 (`e464135`) | Every campaign so far used one GPU; GPU speed reference 2026-09-14: GPU 1 (RTX PRO 4000 Blackwell) is the faster card, 4115 vs 3228 steps in 540 s (127 %; the one-sided gate passes, its mirror would fail at 78 %; disclosed in the drafts PREREG amendment; evidence in `../labloop-drafts-20260914/gpu-reference/`) | The drafts pair runs on both GPUs (bundle PREREG amendment); its REPORT lines give settled per GPU-hour against mem2-legacy 4.72 |
 | M5 | Phase removal and format 2.0 complete locally | Site renderer completion recorded historically | External deployment not independently audited in this review |
 | Finding cards | Implemented and tested (opt-in `[memory]`, format 2.1, section G); prompt-size pilot run 2026-09-12 (`docs/finding-cards-pilot.md`); comparison preregistered 2026-09-13 and run 2026-09-13/14 (`docs/memory-comparison-20260913/`, engram w0, 20 candidates per arm, findings first) | Both arms 20/20 completed; blinded rating 2026-09-14: fraction_bad findings .017 (2/115) vs legacy .047 (9/191), ratio .37 ≤ .50 → **supported** (feasibility, one seed); prompt ratio 1.74 ≤ 2.0; coverage NOT full (8/16 jobs under two cross-branch cards) | Human spot-check (`spot-check.md`); fix the selector's eviction order and cross-branch floor before any second comparison; superiority needs more seeds (`RESULT.md`, `opus-review.md`) |
 
-Current no-LLM acceptance: **410 passed, 0 failed** (2026-09-14, merged main with findings-v2, initial_drafts and per-operator models; 2026-09-12: 388 including the
+Current no-LLM acceptance: **413 passed, 0 failed** (2026-09-14 evening, e464135: second-slot draft rule, +3 slot cases; earlier that day 410 with findings-v2, initial_drafts and per-operator models; 2026-09-12: 388 including the
 new bounded-lifecycle section H). Focused lifecycle tests: **9 passed** (27.4 s).
 Counts in dated entries below describe historical suites, not today's coverage.
 Passing synthetic tests does not establish OS isolation, exact crash recovery or live
@@ -196,6 +196,36 @@ cards. Both defects are in `opus-review.md` with ranked fixes; a second comparis
 uses fixed tools and a rubric that reads the Finding section as prose about others.
 The human spot-check of 10 statements per arm (`spot-check.md`) is still to be done.
 
+### mem2 pair and the two-GPU preparation (2026-09-14, evening)
+
+The second memory pair (`../labloop-mem2-20260914`, seed 2, legacy first) ran on GPU 0:
+legacy 20/20 settled, final .699 vs .50 (supported), 4.72 settled per GPU-hour, one live
+deferral handled as designed (above, M3); findings arm finished 20:46Z: claim supported, best c0016 final .873 vs .50, 20/20 settled, 5.45 settled candidates per GPU-hour, 3.70 h wall, no deferral (the memory read itself waits for the blinded rating). The blinded
+rating (pack with `--keep-finding`) is still to do; nothing about the mechanism is read
+until it is. The mechanical pass is done (`docs/mem2-comparison-20260914/`): coverage
+18 of 19, the miss being c0004, for which a second out-of-lineage card did not yet exist
+(single-draft opening, not the selector); `mem_mechanical.py` must learn to ignore the
+deferred session that never ran before the read.
+
+Before the drafts pair, the machine changes, not the question (`docs/campaign-plan-20260914.md`,
+"Amended after the mem2 pair"): both drafts arms run on GPU 0 and GPU 1 with two slots
+inside one arm, never two arms at once. Two things were found while preparing it and are
+worth remembering:
+
+- **A second free slot re-drafted.** With `initial_drafts = 1` and two slots the idle
+  slot took the old "nothing evaluated yet, so draft" rule and dispatched a second draft
+  while the first ran: a one-draft arm on two GPUs was silently a two-draft arm. Fixed in
+  `e464135` (the slot waits until a draft is evaluated; a fresh draft goes out only
+  when nothing at all is in flight); cases in `scripts/acceptance_slots.sh`.
+- **The two cards differ under a wall-clock cap.** GPU 1 is an RTX PRO 4000 Blackwell and
+  the task caps training at 10 minutes, so steps per candidate depend on the card. The
+  gate written into the drafts `PREREG.md` (GPU 1 ≥ 85 % of GPU 0's steps in 540 s, same
+  code, same seed, both cards at once) read: GPU 1 (RTX PRO 4000 Blackwell) is the faster card, 4115 vs 3228 steps in 540 s (127 %; the one-sided gate passes, its mirror would fail at 78 %; disclosed in the drafts PREREG amendment; evidence in `../labloop-drafts-20260914/gpu-reference/`). GPU is recorded per
+  candidate and reported as a covariate.
+
+The all-Opus arm is shelved (reasons in the plan amendment); the mixed arm follows the
+drafts pair, on two GPUs, after its own PREREG amendment.
+
 ### Next work, in priority order
 
 1. Harden the evaluation boundary (the documented unrestricted sudo Python rule is
@@ -212,9 +242,11 @@ The human spot-check of 10 statements per arm (`spot-check.md`) is still to be d
    The wording of the real headless CLI is still to be confirmed on the first live
    deferral (docs/campaign-setup.md).
 3. ~~Complete the greedy comparison~~ (done 2026-09-13, "Matched pair settled"); the
-   calibrated unattended governor evidence is still pending. A Sonnet-vs-Opus
-   `worker_model` pair on the engram task would exercise it: run the Sonnet arm first
-   and calibrate `usage.window_budget` from its cost before the Opus arm.
+   calibrated unattended governor evidence is still pending. First live deferral seen
+   2026-09-14 (reactive path); the predictive gate is armed in the drafts arms at
+   `window_budget` 20.0 and fires only on an overrun. The all-Opus arm that was to
+   exercise it at Opus prices is shelved; if a deliberate exercise is wanted, a tight
+   budget on a cheap Sonnet arm is the way, accepting the idle time it costs.
 4. ~~Implement finding cards as a separate opt-in change~~ (done 2026-09-12), ~~run the
    prompt-size pilot~~ (done 2026-09-12: facts-only cards +26 %, cards at their limits
    +79 % over the legacy job card on M2's 39 jobs; `docs/finding-cards-pilot.md`), ~~then
@@ -223,7 +255,8 @@ The human spot-check of 10 statements per arm (`spot-check.md`) is still to be d
    comparison settled"). Next for memory: fix the selector (eviction order,
    cross-branch floor, the baseline in the strongest-outside slot) and add a
    machine-readable knob ledger per `opus-review.md`, each behind its own small
-   preregistered campaign; then more seeds. Run the real two-GPU comparison separately.
+   preregistered campaign; then more seeds. The two-GPU throughput read comes with
+   the drafts pair (M4 above), not as a separate campaign.
 
 The missing comparative and unattended evidence is **pending**, not a pass, tie or
 failed kill criterion. Subscription renewal alone does not validate the governor.

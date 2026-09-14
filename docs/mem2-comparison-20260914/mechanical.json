@@ -1,0 +1,334 @@
+{
+ "arms": {
+  "findings": {
+   "campaign": "engram-mem2-findings-w0",
+   "memory": null,
+   "stop_reason": "max_candidates 20 reached",
+   "claim": "supported",
+   "settled": 20,
+   "settled_non_baseline": 19,
+   "exec": {
+    "completed": 20
+   },
+   "defers": 0,
+   "gpu_hours": 3.667,
+   "wall_hours": 3.698,
+   "valid_per_gpu_hour": 5.45,
+   "served_models": {
+    "claude-haiku-4-5-20251001|claude-sonnet-5": 19
+   },
+   "turns_median": 16,
+   "turns_max": 23,
+   "best_search_after_8": 0.7442626953125,
+   "best_search_after_20": 0.81103515625,
+   "frozen": "c0016",
+   "final_score": 0.8729248046875
+  },
+  "legacy": {
+   "campaign": "engram-mem2-legacy-w0",
+   "memory": null,
+   "stop_reason": "max_candidates 20 reached",
+   "claim": "supported",
+   "settled": 20,
+   "settled_non_baseline": 19,
+   "exec": {
+    "completed": 20,
+    "deferred": 1
+   },
+   "defers": 1,
+   "gpu_hours": 4.234,
+   "wall_hours": 4.794,
+   "valid_per_gpu_hour": 4.72,
+   "served_models": {
+    "claude-haiku-4-5-20251001|claude-sonnet-5": 19,
+    "": 1
+   },
+   "turns_median": 22.0,
+   "turns_max": 32,
+   "best_search_after_8": 0.3577880859375,
+   "best_search_after_20": 0.795166015625,
+   "frozen": "c0014",
+   "final_score": 0.699462890625
+  }
+ },
+ "coverage": {
+  "jobs": 19,
+  "parent_violations": [],
+  "cross_branch_violations_baseline_excluded": [
+   "c0004"
+  ],
+  "cross_branch_violations_baseline_counted": [
+   "c0004"
+  ],
+  "rows": [
+   {
+    "job": "c0001",
+    "parents": [],
+    "cards": [],
+    "outside_lineage": 0,
+    "outside_incl_baseline": 0
+   },
+   {
+    "job": "c0002",
+    "parents": [
+     "c0001"
+    ],
+    "cards": [
+     "c0001"
+    ],
+    "outside_lineage": 0,
+    "outside_incl_baseline": 0
+   },
+   {
+    "job": "c0003",
+    "parents": [
+     "c0001"
+    ],
+    "cards": [
+     "c0001",
+     "c0002"
+    ],
+    "outside_lineage": 1,
+    "outside_incl_baseline": 1
+   },
+   {
+    "job": "c0004",
+    "parents": [
+     "c0003"
+    ],
+    "cards": [
+     "c0003",
+     "c0001",
+     "c0002"
+    ],
+    "outside_lineage": 1,
+    "outside_incl_baseline": 1
+   },
+   {
+    "job": "c0005",
+    "parents": [
+     "c0003"
+    ],
+    "cards": [
+     "c0003",
+     "c0001",
+     "c0002",
+     "c0004"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0006",
+    "parents": [
+     "c0005"
+    ],
+    "cards": [
+     "c0005",
+     "c0003",
+     "c0001",
+     "c0002",
+     "c0004"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0007",
+    "parents": [
+     "c0006"
+    ],
+    "cards": [
+     "c0006",
+     "c0005",
+     "c0002",
+     "c0004"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0008",
+    "parents": [
+     "c0006"
+    ],
+    "cards": [
+     "c0006",
+     "c0005",
+     "c0007",
+     "c0004"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0009",
+    "parents": [
+     "c0003"
+    ],
+    "cards": [
+     "c0003",
+     "c0001",
+     "c0006",
+     "c0005",
+     "c0004"
+    ],
+    "outside_lineage": 3,
+    "outside_incl_baseline": 3
+   },
+   {
+    "job": "c0010",
+    "parents": [
+     "c0007"
+    ],
+    "cards": [
+     "c0007",
+     "c0006",
+     "c0008",
+     "c0004"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0011",
+    "parents": [
+     "c0004"
+    ],
+    "cards": [
+     "c0004",
+     "c0003",
+     "c0001",
+     "c0010",
+     "c0008"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0012",
+    "parents": [
+     "c0007"
+    ],
+    "cards": [
+     "c0007",
+     "c0006",
+     "c0010",
+     "c0008"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0013",
+    "parents": [
+     "c0006"
+    ],
+    "cards": [
+     "c0006",
+     "c0005",
+     "c0010",
+     "c0008"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0014",
+    "parents": [
+     "c0009"
+    ],
+    "cards": [
+     "c0009",
+     "c0003",
+     "c0001",
+     "c0010",
+     "c0008"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0015",
+    "parents": [
+     "c0010"
+    ],
+    "cards": [
+     "c0010",
+     "c0007",
+     "c0014",
+     "c0008"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0016",
+    "parents": [
+     "c0006"
+    ],
+    "cards": [
+     "c0006",
+     "c0005",
+     "c0010",
+     "c0013"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0017",
+    "parents": [
+     "c0010"
+    ],
+    "cards": [
+     "c0010",
+     "c0007",
+     "c0016",
+     "c0015"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0018",
+    "parents": [
+     "c0016"
+    ],
+    "cards": [
+     "c0016",
+     "c0006",
+     "c0010",
+     "c0017"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0019",
+    "parents": [
+     "c0018"
+    ],
+    "cards": [
+     "c0018",
+     "c0016",
+     "c0010",
+     "c0017"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   }
+  ]
+ },
+ "prompt_cost": {
+  "findings": null,
+  "legacy": null
+ },
+ "prompt_ratio_findings_over_legacy": null,
+ "prompt_bound": 2.2,
+ "prompt_within_bound": null,
+ "same_served_models": false,
+ "mechanical_pending_reasons": [
+  "served models differ between the arms"
+ ]
+}
