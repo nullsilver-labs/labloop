@@ -55,7 +55,7 @@ L: Any = None          # the `lab` module, injected by register()
 
 POP_FILE = "population.json"
 CARD_FILE = "finding.json"
-MEMORY_POLICIES = ["legacy", "findings-v1"]
+MEMORY_POLICIES = ["legacy", "findings-v1", "findings-v2"]
 CAND_DIR = "candidates"
 REPORT_FILE = "REPORT.md"
 OPERATORS = ["baseline", "draft", "improve", "crossover", "debug"]
@@ -281,7 +281,18 @@ def load_campaign(path: Path) -> dict:
     mode = mem.get("mode", "legacy") if isinstance(mem, dict) else None
     if mode not in MEMORY_POLICIES:
         L.die(f"{path.name}: [memory] mode must be one of {', '.join(MEMORY_POLICIES)} (got {mode!r})")
-    cfg["memory"] = {"mode": mode}
+    knobs = mem.get("knobs") if isinstance(mem, dict) else None
+    if knobs is not None:
+        # The candidate's own configuration file, read after it settles and diffed
+        # against its first parent's in the v2 knob ledger. Relative to the candidate
+        # dir, so it can never name the labels or anything outside the project.
+        if mode != F.POLICY_V2:
+            L.die(f"{path.name}: [memory] knobs needs mode = \"{F.POLICY_V2}\" (got {mode!r})")
+        if not isinstance(knobs, str) or not knobs or knobs.startswith("/") \
+                or ".." in Path(knobs).parts:
+            L.die(f"{path.name}: [memory] knobs must be a relative path inside the candidate "
+                  f"dir (got {knobs!r})")
+    cfg["memory"] = {"mode": mode, "knobs": knobs or None}
 
     ev = raw.get("eval", {})
     cfg["eval"] = {"user": ev.get("user") or None,
@@ -512,18 +523,29 @@ def init_pop(cfg: dict) -> dict:
 def memory_snapshot(cfg: dict) -> dict:
     """The effective memory policy and its limits, frozen into population.json when the
     campaign starts: a tooling update must not change a running campaign's memory."""
-    if cfg["memory"]["mode"] == "findings-v1":
-        return {"policy": F.POLICY, **findings_limits()}
+    mode = cfg["memory"]["mode"]
+    if F.is_findings(mode):
+        snap = {"policy": mode, **findings_limits(mode)}
+        if mode == F.POLICY_V2:
+            # the configured knobs path is part of the frozen policy too: it decides
+            # what every card records and what the ledger can diff
+            snap["knobs"] = cfg["memory"]["knobs"]
+        return snap
     return {"policy": "legacy"}
 
 
-def findings_limits() -> dict:
+def findings_limits(policy: str = F.POLICY) -> dict:
     """Every constant that shapes a card or a snapshot, as this lab implements it."""
-    return {"schema": F.SCHEMA, "max_cards": F.MAX_CARDS, "max_bytes": F.MAX_BYTES,
-            "field_bytes": dict(F.FIELD_BYTES), "topics_max": F.TOPICS_MAX,
-            "topic_max_bytes": F.TOPIC_MAX_BYTES, "reason_max_bytes": F.REASON_MAX_BYTES,
-            "max_warnings": F.MAX_WARNINGS, "warning_max_bytes": F.WARNING_MAX_BYTES,
-            "provenance_max_bytes": F.PROVENANCE_MAX_BYTES}
+    lim = {"schema": F.SCHEMAS[policy], "max_cards": F.MAX_CARDS, "max_bytes": F.MAX_BYTES,
+           "field_bytes": dict(F.FIELD_BYTES), "topics_max": F.TOPICS_MAX,
+           "topic_max_bytes": F.TOPIC_MAX_BYTES, "reason_max_bytes": F.REASON_MAX_BYTES,
+           "max_warnings": F.MAX_WARNINGS, "warning_max_bytes": F.WARNING_MAX_BYTES,
+           "provenance_max_bytes": F.PROVENANCE_MAX_BYTES}
+    if policy == F.POLICY_V2:
+        lim.update({"ledger_max_bytes": F.LEDGER_MAX_BYTES, "ledger_row_max_bytes": F.LEDGER_ROW_MAX_BYTES,
+                    "knobs_max": F.KNOBS_MAX, "knob_key_bytes": F.KNOB_KEY_BYTES,
+                    "knob_value_bytes": F.KNOB_VALUE_BYTES})
+    return lim
 
 
 def memory_policy(pop: dict) -> dict:
@@ -534,14 +556,14 @@ def memory_policy(pop: dict) -> dict:
         L.die(f"{POP_FILE} records memory policy {mem.get('policy')!r}, which this lab does not "
               f"implement (known: {', '.join(MEMORY_POLICIES)}). Refusing to run under a policy "
               "it cannot honour.")
-    if mem["policy"] == F.POLICY:
+    if F.is_findings(mem["policy"]):
         # The complete snapshot is required, and every value must be what this tool
         # implements: a campaign frozen under other limits is run by the tool version
         # that started it, never silently re-parsed under new constants.
-        for k, v in findings_limits().items():
+        for k, v in findings_limits(mem["policy"]).items():
             if k not in mem:
                 L.die(f"{POP_FILE} memory snapshot lacks {k}; this lab cannot honour an incomplete "
-                      f"{F.POLICY} policy")
+                      f"{mem['policy']} policy")
             if mem[k] != v:
                 L.die(f"{POP_FILE} froze memory {k}={mem[k]!r} but this lab implements {v!r}; "
                       "a tooling update must not change a running campaign's memory. Run it "
@@ -600,14 +622,17 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
     cdir = cand_dir(cid)
     mem = memory_policy(pop)
     findings = None
-    if mem["policy"] == F.POLICY:
+    if F.is_findings(mem["policy"]):
         # The versioned findings snapshot: selected deterministically now, from the
         # cards as they are, and stored whole so the job card is reproducible byte for
         # byte after later candidates end. Consumes no scheduler randomness. Selected
         # before the dir exists, so a tooling error here leaves no orphan.
+        extra = {"ledger_max_bytes": mem["ledger_max_bytes"], "knobs_file": mem.get("knobs")} \
+            if mem["policy"] == F.POLICY_V2 else {}
         try:
-            findings = F.select_context(load_cards(pop), parents, max_cards=mem["max_cards"],
-                                        max_bytes=mem["max_bytes"])
+            findings = F.select_context(load_cards(pop), parents, policy=mem["policy"],
+                                        max_cards=mem["max_cards"], max_bytes=mem["max_bytes"],
+                                        **extra)
         except F.ToolingError as e:
             L.die(f"cannot build the findings context for {cid}: {e}")
     cdir.mkdir(parents=True, exist_ok=False)
@@ -940,7 +965,7 @@ def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
     preds = cdir / "out" / "predictions-search.json"
     reason = None
     kill_reason = entry.get("kill_reason") or ""
-    forged = quarantine_worker_card(cid) if memory_policy(pop)["policy"] == F.POLICY else None
+    forged = quarantine_worker_card(cid) if F.is_findings(memory_policy(pop)["policy"]) else None
     if forged:
         # lab publishes a card only after settlement, so one that exists now was written
         # by the worker: a forged account of its own attempt. Kept, never adopted.
@@ -1103,6 +1128,10 @@ def _read_bytes(p: Path) -> bytes | None:
 def build_candidate_card(cfg: dict, pop: dict, cid: str) -> dict:
     c = pop["candidates"][cid]
     cdir = cand_dir(cid)
+    mem = pop.get("memory") or {"policy": "legacy"}
+    policy = mem["policy"] if F.is_findings(mem.get("policy")) else F.POLICY
+    # the path is the campaign's, frozen at start; the file is the worker's own output
+    knobs_file = mem.get("knobs") if policy == F.POLICY_V2 else None
     parents = []
     for p in c["parents"]:
         pc = pop["candidates"].get(p)
@@ -1125,6 +1154,9 @@ def build_candidate_card(cfg: dict, pop: dict, cid: str) -> dict:
         created_at=c.get("ended") or L.now_iso(),
         redact=lambda s: L.redact(s),
         private_paths=_private_paths(cfg),
+        policy=policy,
+        knobs=_read_json(cdir / knobs_file) if knobs_file else None,
+        knobs_file=knobs_file,
     )
 
 
@@ -1151,7 +1183,7 @@ def ensure_cards(cfg: dict, pop: dict) -> None:
     """Every settled candidate has a valid card that agrees with its sources; publish the
     missing ones. Dies — dispatch blocked, evidence untouched — on a corrupt or
     conflicting card, naming the card and the failed check."""
-    if memory_policy(pop)["policy"] != F.POLICY:
+    if not F.is_findings(memory_policy(pop)["policy"]):
         return
     for cid, c in pop["candidates"].items():
         if c.get("exec") not in F.EXEC_STATUSES:
@@ -1594,7 +1626,7 @@ def write_report(cfg: dict, pop: dict) -> None:
         f"| campaign.toml sha256 | `{pop['campaign_sha256'][:16]}` |",
         f"| memory | {memory_policy(pop)['policy']}"
         + (" — one finding card per settled candidate (candidates/cNNNN/finding.json); each job saw a "
-           "bounded snapshot of cards stored in its job.json" if memory_policy(pop)["policy"] == F.POLICY
+           "bounded snapshot of cards stored in its job.json" if F.is_findings(memory_policy(pop)["policy"])
            else " — first-parent lineage of clipped summaries") + " |",
         "",
         "## Population",

@@ -88,7 +88,7 @@ def search_record(score, n=20):
 def make_card(cid, parents=(), *, score=None, exec_="completed", seed=1, hib=True,
               parent_facts=None, summary=None, fail_reason=None, fitness=None,
               config=None, redact=F._identity, private_paths=(), operator="improve",
-              redispatch_of=None):
+              redispatch_of=None, policy=F.POLICY, knobs=None, knobs_file=None):
     """A card built the way `lab` builds one: evaluator facts apart from worker prose."""
     if fitness is None and score is not None:
         fitness = {"search": search_record(score)}
@@ -104,7 +104,8 @@ def make_card(cid, parents=(), *, score=None, exec_="completed", seed=1, hib=Tru
                    "redispatch_of": redispatch_of, "defers": 1 if redispatch_of else 0},
         config=config, fitness=fitness, parents=parent_facts,
         summary=section() if summary is None else summary,
-        created_at="2026-09-12T00:00:00Z", redact=redact, private_paths=private_paths)
+        created_at="2026-09-12T00:00:00Z", redact=redact, private_paths=private_paths,
+        policy=policy, knobs=knobs, knobs_file=knobs_file)
 
 
 # ---------------------------------------------------------------------------
@@ -866,6 +867,318 @@ check_eq("ancestors are breadth-first, ascending id within a distance",
 check_eq("the start set is excluded from its own ancestry",
          [a for a, _ in anc if a in ("c0003", "c0005")], [])
 check_eq("a parentless start has no ancestors", F.ancestors_bfs(CARDS, ["c0000"]), [])
+
+# ---------------------------------------------------------------------------
+# 4. findings-v2 — the selector fixes of docs/finding-cards-plan.md §3b
+# ---------------------------------------------------------------------------
+#
+# Every v1 check above stays as it was: v1 is frozen, and these cases only pin what v2
+# does differently. The three defects being fixed (opus-review.md §2): the baseline was
+# the only card the "strongest outside this lineage" slot ever admitted, topic matches
+# were ordered oldest-first and the byte cap evicted the newest, and lineage cards
+# pushed every cross-branch card out.
+
+KNOBS_FILE = "out/memory_config.json"
+KNOBS = {
+    "c0000": {"lr": 0.003, "table_size": 8192},
+    "c0001": {"lr": 0.003, "table_size": 8192},
+    "c0002": {"lr": 0.003, "table_size": 16384},
+    "c0003": {"lr": 0.001, "table_size": 16384},
+    "c0004": {"lr": 0.003, "table_size": 8192, "dropout": 0.1},
+    "c0005": {"lr": 0.003, "table_size": 8192, "dropout": 0.1},
+    "c0006": {"lr": 0.003, "table_size": 8192},
+    "c0007": None,                       # this attempt wrote no configuration file
+    "c0008": {"lr": 0.01, "table_size": 8192},
+    "c0009": {"lr": 0.01, "table_size": 8192},
+    "c0010": {"lr": 0.01, "table_size": 32768},
+    "c0011": {"lr": 0.01, "table_size": 32768},
+}
+
+
+def v2_cards(pop=POP, topics_of=None, knobs=None):
+    out = {}
+    for cid, parents, score, topics, ex in pop:
+        out[cid] = make_card(
+            cid, parents, score=score, exec_=ex,
+            fail_reason="exit 3" if ex == "failed" else None,
+            summary=section(change=LONG + cid, hypothesis=LONG + "hypothesis",
+                            local=LONG + "local", interpretation=LONG + "interpretation",
+                            limitations=LONG + "limitations",
+                            topics=(topics_of or {}).get(cid, topics)),
+            parent_facts=[{"id": p, "score": SCORES[p], "seed": 1} for p in parents],
+            operator="crossover" if len(parents) > 1 else "improve",
+            policy=F.POLICY_V2, knobs=(knobs if knobs is not None else KNOBS).get(cid),
+            knobs_file=KNOBS_FILE)
+    return out
+
+
+V2 = v2_cards()
+
+# --- the card: schema 2 and the knobs object ---------------------------------
+check_eq("a v2 card carries schema 2", V2["c0003"]["schema"], F.SCHEMA_V2)
+check_eq("a v1 card is untouched", CARDS["c0003"]["schema"], F.SCHEMA)
+check_eq("a v1 card has no knobs field", "knobs" in CARDS["c0003"], False)
+check_eq("a v2 card records the knobs it was given", V2["c0003"]["knobs"],
+         {"lr": 0.001, "table_size": 16384})
+check_eq("a v2 card with no knobs file records null", V2["c0007"]["knobs"], None)
+check("a missing knobs file is a card caveat, not a worker report warning",
+      "knobs file missing" in V2["c0007"]["caveats"])
+check("a present knobs file adds no such caveat",
+      "knobs file missing" not in V2["c0003"]["caveats"])
+check_eq("both schemas validate exhaustively",
+         (F.validate_card(V2["c0003"]), F.validate_card(CARDS["c0003"])), ([], []))
+bad_schema = copy.deepcopy(V2["c0003"])
+del bad_schema["knobs"]
+check("a schema-2 card without its knobs key is invalid", F.validate_card(bad_schema))
+extra = copy.deepcopy(CARDS["c0003"])
+extra["knobs"] = {"lr": 0.1}
+check("a schema-1 card with a knobs key is invalid", F.validate_card(extra))
+unsorted_knobs = copy.deepcopy(V2["c0003"])
+unsorted_knobs["knobs"] = {"table_size": 1, "lr": 2}
+check("knobs keys out of order are invalid (a card must be byte-stable)",
+      F.validate_card(unsorted_knobs))
+nested = copy.deepcopy(V2["c0003"])
+nested["knobs"] = {"lr": [1, 2]}
+check("a nested knob value is invalid", F.validate_card(nested))
+raises("knobs under findings-v1 are a tooling error",
+       lambda: make_card("c0002", ["c0001"], score=1.0, knobs={"lr": 1},
+                         parent_facts=[{"id": "c0001", "score": 2.0, "seed": 1}]))
+
+# --- what may enter the knobs object -----------------------------------------
+messy = make_card("c0002", ["c0001"], score=3.0, policy=F.POLICY_V2, knobs_file=KNOBS_FILE,
+                  parent_facts=[{"id": "c0001", "score": 2.0, "seed": 1}],
+                  knobs={"orders": [1, 2], "cfg": {"a": 1}, "lr": 0.003, "steps": 3231,
+                         "resume": True, "note": "short", "final": 1, "hypothesis": "x" * 300,
+                         "k" * 60: 1, "big": 10 ** 80, "nan": float("inf"),
+                         "token": "sk-ant-api03-DEADbeef1234567890"},
+                  redact=lambda s: s.replace("sk-ant-api03-DEADbeef1234567890", "[REDACTED]"))
+kn = messy["knobs"]
+check_eq("lists and objects are skipped", ("orders" in kn, "cfg" in kn), (False, False))
+check_eq("scalars are kept", (kn["lr"], kn["steps"], kn["resume"], kn["note"]),
+         (0.003, 3231, True, "short"))
+check_eq("a key about the final split can never enter a card", "final" in kn, False)
+check_eq("an over-long string value is skipped", "hypothesis" in kn, False)
+check_eq("an over-long key is skipped", ("k" * 60) in kn, False)
+check_eq("an unrepresentable number is skipped", ("big" in kn, "nan" in kn), (False, False))
+check_eq("string values go through the same redaction as worker prose",
+         kn["token"], "[REDACTED]")
+check_eq("the knobs object is sorted", list(kn), sorted(kn))
+many = make_card("c0002", ["c0001"], score=3.0, policy=F.POLICY_V2, knobs_file=KNOBS_FILE,
+                 parent_facts=[{"id": "c0001", "score": 2.0, "seed": 1}],
+                 knobs={f"k{i:03d}": i for i in range(80)})
+check_eq("at most 32 knobs are carried", len(many["knobs"]), F.KNOBS_MAX)
+check_eq("and they are the first 32 by name", list(many["knobs"])[:2], ["k000", "k001"])
+
+# --- the baseline is never an optional card ----------------------------------
+TINY_POP = [("c0000", [], 0.1, "baseline", "completed"),
+            ("c0001", [], 0.5, "alpha", "completed"),
+            ("c0002", ["c0001"], 0.4, "alpha", "completed")]
+TINY_SCORES = {c: s for c, _, s, _, _ in TINY_POP}
+TINY = {}
+TINY2 = {}
+for cid, parents, score, topics, ex in TINY_POP:
+    kw = dict(score=score, exec_=ex, summary=section(change=cid, topics=topics),
+              parent_facts=[{"id": p, "score": TINY_SCORES[p], "seed": 1} for p in parents])
+    TINY[cid] = make_card(cid, parents, **kw)
+    TINY2[cid] = make_card(cid, parents, policy=F.POLICY_V2, knobs=KNOBS[cid],
+                           knobs_file=KNOBS_FILE, **kw)
+check_eq("v1 gave the only off-lineage slot to the trivial baseline",
+         [c["id"] for c in F.select_context(TINY, ["c0002"])["cards"]], ["c0002", "c0001", "c0000"])
+check_eq("v2 shows the lineage rather than the baseline",
+         [c["id"] for c in F.select_context(TINY2, ["c0002"], policy=F.POLICY_V2)["cards"]],
+         ["c0002", "c0001"])
+check_eq("a v2 draft does not fall back to the baseline either",
+         [c["id"] for c in F.select_context(TINY2, [], policy=F.POLICY_V2)["cards"]],
+         ["c0001", "c0002"])
+check_eq("the baseline is still a card, and still shown when it is a parent",
+         F.select_context(TINY2, ["c0000"], policy=F.POLICY_V2)["cards"][0]["id"], "c0000")
+tiny_led = F.select_context(TINY2, ["c0002"], policy=F.POLICY_V2, knobs_file=KNOBS_FILE)
+check("a draft counts its knobs instead of diffing against a parent it has not got",
+      "c0001 · search 0.5 · 2 knob(s) (see its card)" in tiny_led["rendered"])
+
+# --- the strongest measured candidate outside the lineage goes first ---------
+v1res = F.select_context(CARDS, ["c0003", "c0005"])
+v2res = F.select_context(V2, ["c0003", "c0005"], policy=F.POLICY_V2, knobs_file=KNOBS_FILE)
+v1ids = [c["id"] for c in v1res["cards"]]
+v2ids = [c["id"] for c in v2res["cards"]]
+v2reasons = {c["id"]: c["reason"] for c in v2res["cards"]}
+check_eq("the v2 policy version is recorded", v2res["policy"], F.POLICY_V2)
+check_eq("v2 keeps the parents and ancestors of v1", v2ids[:4], v1ids[:4])
+check_eq("v1 spends its first optional slot on a topic match", v1ids[4], "c0006")
+check_eq("v2 spends it on the strongest candidate outside the lineage", v2ids[4], "c0008")
+check_eq("and says so", v2reasons["c0008"], "strongest measured candidate outside this lineage")
+check_eq("v2 records the tier of every card",
+         [c["tier"] for c in v2res["cards"]][:5], [0, 0, 1, 1, 2])
+check_eq("v1 records no tier (its snapshot shape is frozen)", "tier" in v1res["cards"][0], False)
+check_eq("v1 has no ledger", "ledger" in v1res, False)
+check_eq("selection is still deterministic under v2",
+         F.canonical_json(F.select_context(V2, ["c0005", "c0003"], policy=F.POLICY_V2,
+                                           knobs_file=KNOBS_FILE)),
+         F.canonical_json(v2res))
+rng = random.Random(99)
+st = rng.getstate()
+F.select_context(V2, ["c0003", "c0005"], policy=F.POLICY_V2, knobs_file=KNOBS_FILE)
+check_eq("v2 consumes no randomness either", rng.getstate(), st)
+raises("an unknown policy is a tooling error",
+       lambda: F.select_context(V2, ["c0003"], policy="findings-v9"))
+raises("a knobs file under v1 is a tooling error",
+       lambda: F.select_context(CARDS, ["c0003"], knobs_file=KNOBS_FILE))
+
+# --- siblings: the other children of this job's parents ----------------------
+SIB_POP = [("c0000", [], 0.1, "baseline", "completed"),
+           ("c0001", [], 0.5, "alpha", "completed"),
+           ("c0002", ["c0001"], 0.6, "beta", "completed"),
+           ("c0003", ["c0002"], 0.7, "gamma", "completed"),
+           ("c0004", ["c0002"], 0.4, "delta", "completed"),
+           ("c0005", ["c0002"], 0.3, "epsilon", "completed")]
+SIB_SCORES = {c: s for c, _, s, _, _ in SIB_POP}
+SIB = {}
+for cid, parents, score, topics, ex in SIB_POP:
+    SIB[cid] = make_card(cid, parents, score=score, exec_=ex,
+                         summary=section(change=cid, topics=topics),
+                         parent_facts=[{"id": p, "score": SIB_SCORES[p], "seed": 1} for p in parents],
+                         policy=F.POLICY_V2, knobs={"lr": 0.001 * SIB_SCORES[cid]},
+                         knobs_file=KNOBS_FILE)
+sib = F.select_context(SIB, ["c0002"], policy=F.POLICY_V2, knobs_file=KNOBS_FILE)
+sib_ids = [c["id"] for c in sib["cards"]]
+sib_reasons = {c["id"]: c["reason"] for c in sib["cards"]}
+check_eq("the parent and its lineage come first", sib_ids[:2], ["c0002", "c0001"])
+check_eq("then the strongest candidate outside the lineage", sib_ids[2], "c0003")
+check_eq("then two siblings, newest first", sib_ids[3:5], ["c0005", "c0004"])
+check("a sibling is named as one, with the parent it shares",
+      sib_reasons["c0005"] == "sibling: shares direct parent c0002")
+check_eq("at most two siblings",
+         sum(1 for r in sib_reasons.values() if r.startswith("sibling")), 2)
+SIB_V1 = {}
+for cid, parents, score, topics, ex in SIB_POP:
+    SIB_V1[cid] = make_card(cid, parents, score=score, exec_=ex,
+                            summary=section(change=cid, topics=topics),
+                            parent_facts=[{"id": p, "score": SIB_SCORES[p], "seed": 1} for p in parents])
+sib_v1 = [c["id"] for c in F.select_context(SIB_V1, ["c0002"])["cards"]]
+check_eq("v1 fills the same slots by strength and recency, the baseline eligible",
+         sib_v1[2:], ["c0003", "c0005", "c0004", "c0000"])
+check("v1 shows the trivial baseline as a cross-branch card; v2 never does",
+      "c0000" in sib_v1 and "c0000" not in sib_ids)
+check("v1 never calls a sibling a sibling",
+      not any(c["reason"].startswith("sibling")
+              for c in F.select_context(SIB_V1, ["c0002"])["cards"]))
+
+# --- topic matches are ordered newest first ----------------------------------
+SAME = {c: "alpha" for c, *_ in POP if c != "c0000"}
+V2_SAME = v2_cards(topics_of=SAME)
+V1_SAME = {}
+for cid, parents, score, topics, ex in POP:
+    V1_SAME[cid] = make_card(cid, parents, score=score, exec_=ex,
+                             fail_reason="exit 3" if ex == "failed" else None,
+                             summary=section(change=LONG + cid, hypothesis=LONG + "h",
+                                             local=LONG + "l", interpretation=LONG + "i",
+                                             limitations=LONG + "lim",
+                                             topics=SAME.get(cid, topics)),
+                             parent_facts=[{"id": p, "score": SCORES[p], "seed": 1} for p in parents],
+                             operator="crossover" if len(parents) > 1 else "improve")
+topical_v1 = [c["id"] for c in F.select_context(V1_SAME, ["c0003", "c0005"])["cards"]
+              if c["reason"].startswith("shares topics")]
+topical_v2 = [c["id"] for c in F.select_context(V2_SAME, ["c0003", "c0005"], policy=F.POLICY_V2,
+                                                knobs_file=KNOBS_FILE)["cards"]
+              if c["reason"].startswith("shares topics")]
+check("with equal topics v1 takes the oldest candidates",
+      topical_v1 == sorted(topical_v1))
+check("v2 takes the newest", topical_v2 == sorted(topical_v2, reverse=True))
+check("and v2's newest topic match is newer than v1's",
+      max(topical_v2) > max(topical_v1) if topical_v1 and topical_v2 else False)
+
+# --- the cross-branch floor --------------------------------------------------
+floor_states = []
+mb = v2res["bytes"]
+errored2 = False
+while mb > 0:
+    try:
+        r = F.select_context(V2, ["c0003", "c0005"], policy=F.POLICY_V2, knobs_file=KNOBS_FILE,
+                             max_bytes=mb)
+    except F.ToolingError:
+        errored2 = True
+        break
+    st = (tuple(c["id"] for c in r["cards"]), tuple(c["tier"] for c in r["cards"]),
+          tuple(r["cards"][0]["omitted_fields"]))
+    if not floor_states or floor_states[-1] != st:
+        floor_states.append(st)
+    mb -= 16
+check("an impossible byte budget is still a tooling error under v2", errored2)
+tier2_counts = [sum(1 for t in s[1] if t == 2) for s in floor_states]
+anc_counts = [sum(1 for t in s[1] if t == 1) for s in floor_states]
+check("cross-branch cards are shed down to two before any ancestor is",
+      all(a == 2 or c <= 2 for c, a in zip(tier2_counts, anc_counts)))
+with_floor = [s for c, a, s in zip(tier2_counts, anc_counts, floor_states) if a < 2]
+check("an ancestor is evicted while two cross-branch cards stand",
+      any(sum(1 for t in s[1] if t == 2) == 2 for s in with_floor))
+check("the floor holds until the parents are facts-only",
+      all(sum(1 for t in s[1] if t == 2) >= 2 for s in floor_states
+          if len(s[2]) < len(DROP_ALL)))
+check_eq("under the tightest budget only the parents are left",
+         [t for t in floor_states[-1][1]], [0, 0])
+tight, tight_mb = None, None
+mb = v2res["bytes"]
+while mb > 0:
+    try:
+        tight = F.select_context(V2, ["c0003", "c0005"], policy=F.POLICY_V2,
+                                 knobs_file=KNOBS_FILE, max_bytes=mb)
+        tight_mb = mb
+    except F.ToolingError:
+        break
+    mb -= 16
+check("a budget that cannot hold even the floor drops it, rather than failing",
+      tight is not None and all(c["tier"] == 0 for c in tight["cards"]))
+check("and says the floor yielded",
+      any("floor yielded" in o["why"] for o in tight["omitted"]))
+check("even then the ledger is rendered", "## Knob ledger" in tight["rendered"])
+check("the ledger's bytes are additional to the card budget",
+      tight["bytes"] > tight_mb
+      and len(tight["rendered"].split("\n## Knob ledger")[0].encode("utf-8")) <= tight_mb)
+
+# --- the knob ledger ---------------------------------------------------------
+led = v2res["ledger"]
+ledger_txt = v2res["rendered"].split("## Knob ledger")[1]
+check("the ledger names the file it was built from", KNOBS_FILE in v2res["rendered"])
+check_eq("the ledger holds one row per settled non-baseline candidate",
+         led["rows"], [f"c{i:04d}" for i in range(11, 0, -1)])
+check("the baseline has no ledger row of its own",
+      not any(l.startswith("c0000 ") for l in ledger_txt.split("\n")) and "c0000" not in led["rows"])
+check("a changed knob is shown as a transition",
+      "c0002 ← c0001 · search 3 (Δ +1) · table_size 8192→16384" in ledger_txt)
+check("an unchanged configuration says so",
+      "c0009 ← c0008 · search 1.5 (Δ -3.5) · no knob change vs c0008" in ledger_txt)
+check("a knob only one side has is marked unset",
+      "dropout (unset)→0.1" in ledger_txt)
+check("a missing knobs file is stated in the ledger",
+      "c0007 ← c0006 · failed · knobs file missing" in ledger_txt)
+check("a row for a candidate whose card is not shown is marked",
+      all(f"{c} " in ledger_txt for c in ("c0010", "c0009")) and "card not shown" in ledger_txt)
+shown_ids = {c["id"] for c in v2res["cards"]}
+for line in [l for l in ledger_txt.split("\n") if l.startswith("c")]:
+    cid_ = line.split(" ")[0]
+    check_eq(f"the marker on {cid_} matches whether its card is shown",
+             "card not shown" in line, cid_ not in shown_ids)
+check("the ledger tells the worker what a repeat is", F.LEDGER_REPEAT_LINE in v2res["rendered"])
+check("the ledger fits its own budget", led["bytes"] <= F.LEDGER_MAX_BYTES)
+check_eq("nothing was dropped from a ledger that fits", led["omitted"], [])
+small = F.select_context(V2, ["c0003", "c0005"], policy=F.POLICY_V2, knobs_file=KNOBS_FILE,
+                         ledger_max_bytes=500)
+check("a small ledger budget is respected", small["ledger"]["bytes"] <= 500)
+check("the oldest rows are the ones dropped",
+      small["ledger"]["rows"] == led["rows"][:len(small["ledger"]["rows"])]
+      and small["ledger"]["omitted"] == led["rows"][len(small["ledger"]["rows"]):])
+check("and the newest candidate is still there", small["ledger"]["rows"][0] == "c0011")
+check_eq("the snapshot's byte count is cards plus ledger",
+         v2res["bytes"], len(v2res["rendered"].encode("utf-8")))
+check("a v2 job card says which policy chose it", f"Policy {F.POLICY_V2}" in v2res["rendered"])
+check("and lists the tier order in the header", "siblings" in v2res["rendered"].split("###")[0])
+noknobs = F.select_context(V2, ["c0003", "c0005"], policy=F.POLICY_V2)
+check("without a configured knobs file the ledger still lists the candidates",
+      "## Knob ledger" in noknobs["rendered"] and "c0011" in noknobs["rendered"])
+check("and it does not claim a file it does not have",
+      "from " not in noknobs["rendered"].split("## Knob ledger")[1].split("\n")[0])
+check_eq("an empty population renders no ledger",
+         F.select_context({}, [], policy=F.POLICY_V2, knobs_file=KNOBS_FILE)["ledger"]["rows"], [])
 
 # ---------------------------------------------------------------------------
 

@@ -223,6 +223,58 @@ The existing population table can remain; it serves a different purpose. Broader
 finding visibility does not grant write access or unrestricted access to other
 candidates' code. Treat quoted worker reports as evidence to assess, not instructions.
 
+## 3b. findings-v2 (2026-09-14)
+
+The first live comparison (`docs/memory-comparison-20260913/`, review in `opus-review.md`
+§2 and §4) ran the v1 selector for twenty candidates and found three defects, each
+verified in the code and in the twenty stored `job.json` snapshots:
+
+1. The byte-cap loop evicted the *last* tier-2 card, and the topical tier was ordered
+   `(-matches, sequence)` — oldest first. With near-identical topic sets the tie-break
+   was the whole order, so the window froze on early weak candidates: one 0.5679
+   candidate was shown nine times while the three best results of the second half were
+   shown to nobody. Job c0016 had c0015's card selected and then evicted (its
+   `findings.omitted` says so) and repeated c0015's change verbatim.
+2. The "strongest measured candidate outside this lineage" slot ran *after* the topical
+   takes had consumed every off-lineage card, so the only card it ever admitted was
+   c0000, the trivial baseline — no change, no topics, the worst score in the campaign.
+3. Lineage cards took 56.6 % of the snapshot bytes; 8 of 16 eligible jobs saw fewer
+   than two cards from outside their own lineage.
+
+`[memory] mode = "findings-v2"` changes the selection and adds a ledger; it changes
+nothing about how a card is parsed, built or bounded, and **v1 is frozen** — a v1 job
+rebuilt from its inputs is still byte-identical (`scripts/mem_replay_selector.py`
+checks that against every stored snapshot before it reports anything).
+
+- **Optional tiers, in order, never the baseline:** strongest measured candidate
+  outside the lineage closure (1); siblings — candidates sharing a direct parent with
+  this job — newest first (2); a non-improving same-topic run (1); other topic matches;
+  a recent execution problem (1); recent remaining. Topical tiers sort
+  `(-matches, -sequence)`: newest first within equal matches.
+- **Cross-branch floor:** when at least two off-lineage cards exist, two of them
+  survive the byte budget. Eviction drops the lowest-priority tier-2 card first, then —
+  once two remain — tier-1 ancestors, then the parents' prose fields in v1's order. If
+  even facts-only parents plus two cross-branch cards do not fit, the floor yields and
+  says so in `omitted`; only parents-that-do-not-fit still raise.
+- **Knob ledger:** `[memory] knobs = "out/memory_config.json"` names a file the
+  candidate's own code writes. Each v2 card (schema `finding-card/2`) carries a `knobs`
+  object — top-level scalars only, at most 32 sorted keys, values ≤ 64 bytes, redacted
+  like any other worker text, `null` (and a `knobs file missing` caveat) when the file
+  is absent. Each job's context then ends with one mechanical line per settled
+  non-baseline candidate, newest first: id, first parent, search score and Δ, and the
+  keys whose value differs from the first parent's file. Rows are bounded at 240 bytes
+  and the ledger at 2 KiB, dropped oldest-first, **in addition to** the card budget: it
+  is the part a worker must see even when no card fits. Ids with no card in the
+  snapshot are marked `card not shown`. Nothing in it comes from worker prose.
+
+Replayed over the two arms (`replay-findings-v2.md`, `replay-legacy-v2.md`): jobs seeing
+≥ 2 off-lineage cards rise from 9/16 to 15/16 on the findings arm, cards shown to nobody
+fall from 8 to 5 (4 of them non-baseline, and only 2 of 20 are named by neither a card
+nor a ledger row), c0016 receives c0015's card, and the rendered memory grows 1.16×.
+Whether that changes what workers *write* is the open question: this is a selector fix
+measured by replay, not a result about research quality, and a new campaign is a new
+campaign.
+
 ## 4. Opt-in and compatibility
 
 Add `[memory] mode = "findings-v1"`; absence means the existing lineage behavior.

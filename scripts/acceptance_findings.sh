@@ -102,6 +102,31 @@ sed 's/mode = "findings-v1"/mode = "findings-v9"/' campaign.toml > bad-memory.to
 assert_fail "campaign check refuses an unknown memory mode"   "$LABF" campaign check bad-memory.toml
 rm -f bad-memory.toml
 
+# --- findings-v2: the same opt-in, plus the knob ledger's source file ---------
+sed 's|mode = "findings-v1"|mode = "findings-v2"\nknobs = "out/memory_config.json"|' campaign.toml > v2-memory.toml
+assert_ok   "campaign check accepts findings-v2 with a knobs file" "$LABF" campaign check v2-memory.toml
+assert_eq   "and reports the v2 mode" \
+  "$("$LABF" campaign check v2-memory.toml | python3 -c "import json,sys;print(json.load(sys.stdin)['memory'])")" "findings-v2"
+sed 's|mode = "findings-v1"|mode = "findings-v1"\nknobs = "out/memory_config.json"|' campaign.toml > v2-bad.toml
+assert_fail "a knobs file under findings-v1 is refused"       "$LABF" campaign check v2-bad.toml
+sed 's|mode = "findings-v1"|mode = "findings-v2"\nknobs = "../../etc/passwd"|' campaign.toml > v2-escape.toml
+assert_fail "a knobs path outside the candidate dir is refused" "$LABF" campaign check v2-escape.toml
+assert_ok   "the frozen v2 snapshot names the schema, the ledger budget and the knobs file" python3 -c "
+import importlib.machinery, importlib.util, pathlib, sys
+tools = sys.argv[1]
+loader = importlib.machinery.SourceFileLoader('lab', tools + '/lab')
+lab = importlib.util.module_from_spec(importlib.util.spec_from_loader('lab', loader))
+sys.modules['lab'] = lab; loader.exec_module(lab)
+sys.path.insert(0, tools)
+import lab_campaign as C, lab_findings as F
+C.L = lab
+m = C.memory_snapshot(C.load_campaign(pathlib.Path('v2-memory.toml')))
+assert m['policy'] == F.POLICY_V2 and m['schema'] == 'finding-card/2', m
+assert m['ledger_max_bytes'] == F.LEDGER_MAX_BYTES and m['knobs'] == 'out/memory_config.json', m
+assert C.memory_policy({'memory': m}) == m, 'the snapshot this lab freezes must be one it accepts'
+" "$WORKF/tools"
+rm -f v2-memory.toml v2-bad.toml v2-escape.toml
+
 export FAIL_ON=c0002
 export FINDING_BAD="c0003=malformed c0004=missing c0005=invented c0006=oversize c0007=secret c0008=twice c0009=forge"
 export FINDING_PRIVATE_PATH="$PRIVF/search"

@@ -392,14 +392,21 @@ def format_manifest() -> dict:
                      "summaries. `findings-v1` (campaign.toml [memory] mode) publishes one "
                      "immutable finding card per settled candidate and gives each job a "
                      "deterministic, bounded snapshot of cards from every branch, stored whole "
-                     "in job.json `findings`. The effective policy and its limits are frozen in "
+                     "in job.json `findings`. `findings-v2` keeps the cards and changes the "
+                     "selection: the trivial baseline is never a cross-branch card, topic "
+                     "matches are newest-first, two cross-branch cards survive the byte budget, "
+                     "and every job also gets a knob ledger — one mechanical line per settled "
+                     "candidate diffing the [memory] knobs file against its first parent's. The "
+                     "effective policy and its limits are frozen in "
                      "population.json `memory` when the campaign starts."),
             "policies": C.MEMORY_POLICIES,
             "card_schema": F.SCHEMA,
+            "card_schemas": {F.POLICY: F.SCHEMA, F.POLICY_V2: F.SCHEMA_V2},
             "card_keys": ["schema", "campaign", "campaign_sha256", "candidate", "sequence",
                           "operator", "parents", "execution", "search", "metric", "comparisons",
                           "comparison_note", "provenance", "report", "caveats", "evidence_limits",
                           "integrity", "created_at"],
+            "card_keys_v2": sorted(F.CARD_KEYS_V2),
             "card_note": ("Written once by `lab run` after settlement, never edited. `search` "
                           "is the search-split measurement only; `report` is the worker's own "
                           "Finding section (status ok | missing | malformed | undecodable), "
@@ -408,7 +415,9 @@ def format_manifest() -> dict:
             "report_statuses": list(F.REPORT_STATUSES),
             "limits": {"max_cards": F.MAX_CARDS, "max_bytes": F.MAX_BYTES,
                        "field_bytes": dict(F.FIELD_BYTES), "topics_max": F.TOPICS_MAX,
-                       "topic_max_bytes": F.TOPIC_MAX_BYTES},
+                       "topic_max_bytes": F.TOPIC_MAX_BYTES,
+                       "ledger_max_bytes": F.LEDGER_MAX_BYTES, "knobs_max": F.KNOBS_MAX,
+                       "knob_key_bytes": F.KNOB_KEY_BYTES, "knob_value_bytes": F.KNOB_VALUE_BYTES},
         },
         "ledger": {
             "columns": ["campaign", "operator", "candidate", "status", "claim", "path", "note"],
@@ -1147,14 +1156,14 @@ def cmd_validate(args) -> None:
             mem = pop.get("memory") or {"policy": "legacy"}
             if mem.get("policy") not in C.MEMORY_POLICIES:
                 err(f"population.json memory policy '{mem.get('policy')}' is unknown")
-            elif mem["policy"] == F.POLICY:
+            elif F.is_findings(mem["policy"]):
                 # cards are required only for settled attempts of an opted-in campaign
                 for cid, c in (pop.get("candidates") or {}).items():
                     if c.get("exec") not in F.EXEC_STATUSES:
                         continue
                     fp = ROOT / c.get("path", f"candidates/{cid}") / "finding.json"
                     if not fp.exists():
-                        err(f"{fp.relative_to(ROOT)} is missing for a settled candidate (memory {F.POLICY})")
+                        err(f"{fp.relative_to(ROOT)} is missing for a settled candidate (memory {mem['policy']})")
                         continue
                     try:
                         card = json.loads(fp.read_text())
@@ -1166,6 +1175,9 @@ def cmd_validate(args) -> None:
                     if not problems and (card.get("candidate") != cid or
                                          (card.get("execution") or {}).get("exec") != c.get("exec")):
                         err(f"{fp.relative_to(ROOT)} does not match population.json")
+                    if not problems and card.get("schema") != F.SCHEMAS[mem["policy"]]:
+                        err(f"{fp.relative_to(ROOT)} is a {card.get('schema')} card under "
+                            f"memory {mem['policy']}")
     else:
         notes.append("no population.json (no campaign has run here)")
 
