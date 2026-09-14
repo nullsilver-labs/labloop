@@ -89,3 +89,51 @@ launched by the human by hand as before (`LAUNCH.md` in its bundle), under its o
 `ORDER.json` where the order is drawn, `LAUNCH.md`, `SHA256SUMS`, and the arm
 projects beside them cloned from `../labloop-engram` at `c31d39b` with `tools/`
 synced from labloop main at the merge commit.
+
+## Scaffolded (2026-09-14)
+
+All four bundles exist; **nothing has been launched**. Each arm is a clone of
+`../labloop-engram` at `c31d39b` with `tools/`, `.claude/`, `templates/`, `CLAUDE.md` and
+`.lab-redact` synced from labloop `7af836c`, and a `.venv` symlink to labloop-engram's
+venv. Bundle dirs hold `PREREG.md`, `LAUNCH.md`, `SHA256SUMS` and, where applicable,
+`ORDER.json`; the shared GPU lock is `/mnt/data/projects/nullsilver/gpu0.lock` (created,
+empty) and every launch line holds it.
+
+| bundle | arm dir | campaign id | arm commit | `campaign check` | ORDER draw |
+|---|---|---|---|---|---|
+| `../labloop-mem2-20260914` | `../labloop-mem2-legacy-20260914` | `engram-mem2-legacy-w0` | `4e5be74` | pass (no-`window_budget` warning) | no draw — legacy first, fixed |
+| `../labloop-mem2-20260914` | `../labloop-mem2-findings-20260914` | `engram-mem2-findings-w0` | `a0ebc7e` | pass (no-`window_budget` warning) | second |
+| `../labloop-drafts-20260914` | `../labloop-drafts-1-20260914` | `engram-drafts1-w0` | `191a840` | pass (no-`window_budget` warning) | `secrets.randbits(1)` = **0** at 2026-09-14T11:39:02Z → first |
+| `../labloop-drafts-20260914` | `../labloop-drafts-4-20260914` | `engram-drafts4-w0` | `bba07d1` | pass (no-`window_budget` warning) | second |
+| `../labloop-opus-20260914` | `../labloop-opus-20260914-arm` | `engram-opus-w0` | `3173d7e` | pass, **no warnings** | none (single arm) |
+| `../labloop-mixed-20260914` | `../labloop-mixed-20260914-arm` | `engram-mixed-w0` | `5d6e6c1` | pass, **no warnings** | none (single arm) |
+
+Two settings were chosen here where §3 and §4 gave only an intent, and both are written
+into the bundles' `PREREG.md`:
+
+- **Usage calibration (opus and mixed).** `session_cost = 2.55` (5 × the Sonnet median of
+  $0.51, list-price equivalent), `window_budget = 48.0`, `soft = 0.70`, `hard = 0.90`.
+  The soft gate is $33.60, so `floor(33.60 / 2.55) = 13` sessions fit in a rolling 5 h
+  window and the remaining 8 of the 21 are deferred and re-dispatched. The mixed arm
+  keeps the same numbers on purpose (only 4 of its sessions are Opus, so the flat
+  reservation over-reserves and it will rarely gate; that is reported, not tuned).
+- **`[stop].wall_clock` 9h → 12h and watcher budget 600 → 720 min** for the opus and
+  mixed arms only, so a job deferred by the window waits for the window to roll instead
+  of expiring the campaign.
+
+### Prerequisites before launch (also at the end of each `PREREG.md`)
+
+1. **`scripts/mem_rating_pack.py --keep-finding`** — not implemented. The `mem2` rubric
+   rates the `## Finding` section as prose about earlier candidates instead of stripping
+   it (the 2026-09-13 pack's stripping removed 4 of the findings arm's 5 cross-branch
+   references). The flag is needed **before the rating**, not before the launch, and the
+   Opus bundle's accuracy read depends on it too.
+2. Each arm dir trusted in Claude Code once (open `claude` there, accept).
+3. `claude auth status` says loggedIn.
+4. GPU 0 idle (`nvidia-smi`).
+5. No running watchers in any sibling project (`tools/lab watch list` in each).
+6. `LAB_PRIVATE=/srv/labloop-private tools/lab campaign check` passing in the arm.
+7. `/mnt/data/projects/nullsilver/gpu0.lock` in place, held by every launch line.
+8. For the opus arm only: check `/usage` in an interactive session first, so the
+   governor's first read is not of someone else's spending; and run it after `mem2`,
+   whose findings arm is its control. The mixed arm runs last, after `drafts` and `opus`.
