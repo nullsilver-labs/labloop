@@ -35,6 +35,9 @@ job_wall_clock   = "3h"          # per job, enforced by `lab watch`
 stall_min        = 30            # kill a job with no output and no CPU for this long
 worker_model     = "claude-sonnet-5"
 worker_max_turns = 40
+# [resources.worker_model_by_operator]   # per-operator override of worker_model; keys are
+# draft = "claude-opus-5"                # draft | improve | crossover | debug (not baseline).
+                                         # A stronger model where the approach is chosen
 
 [worker]
 # M0: any command. M1: the Claude Code wrapper. It receives LAB_CANDIDATE_DIR, LAB_JOB,
@@ -47,6 +50,8 @@ temperature = 0.3                # over normalised rank in [0,1]; lower = greedi
 crossover_p = 0.15
 draft_p = 0.0                    # chance of a fresh approach instead of a child; drawn before
                                  # crossover. 0 = drafts only while the population is empty
+initial_drafts = 1               # independent first approaches after the baseline, before any
+                                 # improve or crossover; each extra one costs an improve slot
 max_debug_retries = 1
 # seed = 12345                   # default: derived from campaign.id
 

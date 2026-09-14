@@ -45,6 +45,33 @@ tools/lab serve                                  # read-only page for a phone on
 tools/lab campaign stop [--now]                  # stop dispatching (and kill running jobs)
 ```
 
+## Selection and worker models
+
+**`[selection] initial_drafts`** (default 1) is how many independent first approaches the
+loop dispatches after the baseline, before any `improve` or `crossover` is drawn. With
+the default the whole search hangs off one draft's luck: if that draft picks a weak
+approach, every later candidate is a tweak of it (`selection.draft_p` is the other, and
+weaker, remedy — it only sprinkles fresh drafts later). Three drafts buy three
+independent starts and cost two improve slots out of the campaign's candidate budget, so
+raise it on a task where the approach matters more than the tuning. Drafts still never
+outnumber `max_parallel_jobs` at once; a draft that failed or was deferred counts as
+dispatched (its re-dispatch counts with it, not again).
+
+**`[resources.worker_model_by_operator]`** names a model per operator, overriding
+`worker_model` for that operator only:
+
+```toml
+[resources.worker_model_by_operator]
+draft = "claude-opus-5"          # keys: draft | improve | crossover | debug (never baseline)
+```
+
+The approach choice happens in `draft`; `improve` executes one stated change on code it
+inherits. So the expensive model can be spent where it decides the search's ceiling and
+the cheap one on the many jobs that follow — which also makes the Max window go further.
+An unknown operator key is a `campaign.toml` error, never a silent fall back to the
+default. `config.json` records which key was used (`agent.requested_source`), REPORT.md's
+usage section lists the requested models, and `lab campaign check` prints them.
+
 ## Supervising the campaign controller
 
 Use a wall-clock-only outer watcher for `lab run`, for example:

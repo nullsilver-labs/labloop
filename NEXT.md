@@ -165,6 +165,10 @@ drawn before crossover, unit-tested; a config without the key consumes the same 
 stream as before) is on main since 2026-09-13; a campaign that wants approach
 exploration preregisters it. Not applied to engram-pilot-w0, whose tools are frozen.
 
+`selection.initial_drafts` (default 1: today's stream exactly) and
+`[resources.worker_model_by_operator]` (a per-operator model, e.g. Opus for `draft`)
+landed 2026-09-14, unit-tested only; neither has run in a live campaign yet.
+
 ### Next work, in priority order
 
 1. Harden the evaluation boundary (the documented unrestricted sudo Python rule is
