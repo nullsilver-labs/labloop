@@ -1528,15 +1528,21 @@ def choose_job(cfg: dict, pop: dict, rng: random.Random) -> tuple[str, list[str]
     # approaches before any improve or crossover is drawn, so the whole search does not
     # hang off one draft's luck — each extra draft costs one improve slot. Dispatched
     # drafts are counted whatever became of them (running, failed, deferred), and a
-    # re-dispatch counts with its original, not again. After them the old rule still
-    # holds: with nothing non-baseline evaluated there is nothing to improve on.
+    # re-dispatch counts with its original, not again.
     drafted = sum(1 for c in cands.values()
                   if c["operator"] == "draft" and not c.get("redispatch_of"))
-    if drafted < cfg["selection"].get("initial_drafts", 1) or not non_baseline:
+    if drafted < cfg["selection"].get("initial_drafts", 1):
         # don't stack more drafts than slots; the rest are dispatched on later ticks
         if len([c for c in running if c["operator"] == "draft"]) < cfg["resources"]["max_parallel_jobs"]:
             return ("draft", [], None)
         return None
+    if not non_baseline:
+        # The quota is spent and nothing non-baseline has been evaluated yet, so there is
+        # nothing to improve on. A free slot waits for what is in flight: drafting again
+        # here would quietly turn a one-draft campaign into a two-draft one on any machine
+        # with a second slot. Only when nothing is left running — every draft failed and
+        # its debug retries are spent — does a fresh draft rescue a dead campaign.
+        return None if running else ("draft", [], None)
     # a fresh approach, not a tweak: drawn before crossover, and only when draft_p > 0 so
     # a campaign without the key consumes exactly the random stream it always did
     if cfg["selection"].get("draft_p", 0.0) > 0 and rng.random() < cfg["selection"]["draft_p"]:

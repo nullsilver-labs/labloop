@@ -87,6 +87,61 @@ redis = m.choose_job(cfg(2, initial_drafts=3), pop(B, D, cand('c0002', 'draft', 
 cap = m.choose_job(cfg(2, initial_drafts=4), pop(B, D, cand('c0002', 'draft', 'running'), cand('c0003', 'draft', 'queued')), random.Random(5))
 print(legacy[0], legacy == one, second, done, redis, cap)")" "improve True draft improve draft None"
 
+assert_eq   "selection.initial_drafts is not doubled by a second slot: the other slot waits for the opening draft, then both fill" \
+  "$(python3 -c "
+import sys, random; sys.path.insert(0, 'tools'); import lab_campaign as m
+def cand(i, op, status, fit=None, parents=None):
+    return {'id': i, 'operator': op, 'parents': parents or [], 'status': status, 'fitness': fit, 'debugged': True}
+cfg = {'selection': {'temperature': 1.0, 'crossover_p': 0.0, 'max_debug_retries': 1, 'initial_drafts': 1},
+       'report': {'higher_is_better': True}, 'resources': {'max_parallel_jobs': 2}}
+def pop(*cs): return {'candidates': {c['id']: c for c in cs}, 'usage': m.usage_defaults()}
+B = cand('c0000', 'baseline', 'evaluated', 0.1)
+opening = pop(B)
+rng = random.Random(7)
+first = m.pick_job(cfg, opening, rng, set())
+opening['candidates']['c0001'] = cand('c0001', 'draft', 'running')
+idle = m.pick_job(cfg, opening, rng, {('draft', ())})
+opening['candidates']['c0001'] = cand('c0001', 'draft', 'evaluated', 0.9)
+a = m.pick_job(cfg, opening, rng, set())
+b = m.pick_job(cfg, opening, rng, {(a[0], tuple(a[1]))})
+print(first[0], idle, a[0], (a[0], a[1]) != (b[0], b[1]))")" "draft None improve True"
+
+assert_eq   "with initial_drafts 4 two slots draft at once, and the fourth draft still comes before the first improve" \
+  "$(python3 -c "
+import sys, random; sys.path.insert(0, 'tools'); import lab_campaign as m
+def cand(i, op, status, fit=None):
+    return {'id': i, 'operator': op, 'parents': [], 'status': status, 'fitness': fit, 'debugged': True}
+cfg = {'selection': {'temperature': 1.0, 'crossover_p': 0.0, 'max_debug_retries': 1, 'initial_drafts': 4},
+       'report': {'higher_is_better': True}, 'resources': {'max_parallel_jobs': 2}}
+def pop(*cs): return {'candidates': {c['id']: c for c in cs}, 'usage': m.usage_defaults()}
+B = cand('c0000', 'baseline', 'evaluated', 0.1)
+rng = random.Random(7)
+p = pop(B)
+first = m.pick_job(cfg, p, rng, set())
+p['candidates']['c0001'] = cand('c0001', 'draft', 'running')
+second = m.pick_job(cfg, p, rng, {('draft', ())})
+three = pop(B, cand('c0001', 'draft', 'evaluated', 0.9), cand('c0002', 'draft', 'evaluated', 0.8),
+            cand('c0003', 'draft', 'evaluated', 0.7))
+fourth = m.choose_job(cfg, three, random.Random(7))[0]
+four = pop(B, cand('c0001', 'draft', 'evaluated', 0.9), cand('c0002', 'draft', 'evaluated', 0.8),
+           cand('c0003', 'draft', 'evaluated', 0.7), cand('c0004', 'draft', 'evaluated', 0.6))
+after = m.choose_job(cfg, four, random.Random(7))[0]
+print(first[0], second[0], fourth, after)")" "draft draft draft improve"
+
+assert_eq   "the rescue draft only fires when nothing is left in flight: a dead campaign restarts, a live one waits" \
+  "$(python3 -c "
+import sys, random; sys.path.insert(0, 'tools'); import lab_campaign as m
+def cand(i, op, status, fit=None, parents=None):
+    return {'id': i, 'operator': op, 'parents': parents or [], 'status': status, 'fitness': fit, 'debugged': True}
+cfg = {'selection': {'temperature': 1.0, 'crossover_p': 0.0, 'max_debug_retries': 1, 'initial_drafts': 1},
+       'report': {'higher_is_better': True}, 'resources': {'max_parallel_jobs': 2}}
+def pop(*cs): return {'candidates': {c['id']: c for c in cs}, 'usage': m.usage_defaults()}
+B = cand('c0000', 'baseline', 'evaluated', 0.1)
+F = cand('c0001', 'draft', 'failed')
+waiting = m.pick_job(cfg, pop(B, F, cand('c0002', 'debug', 'running', parents=['c0001'])), random.Random(7), set())
+dead = m.pick_job(cfg, pop(B, F, cand('c0002', 'debug', 'failed', parents=['c0001'])), random.Random(7), set())
+print(waiting, dead[0], dead[1])")" "None draft []"
+
 assert_eq   "resources.worker_model_by_operator resolves per operator and names the key it came from" \
   "$(python3 -c "
 import sys; sys.path.insert(0, 'tools'); import lab_campaign as m

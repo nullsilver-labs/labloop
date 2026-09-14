@@ -157,6 +157,8 @@ unset FAKE_CLAUDE_HANG FAKE_CLAUDE_HANG_STYLE FAKE_CLAUDE_RESET
 # --- E3: at the hard threshold a running session is killed and its job deferred ---
 WORKH="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-hard.XXXXXX")"
 worker_repo "$WORKH" acc-usage-hard
+# two opening drafts, so both slots are legitimately busy when the hard threshold trips
+sed -i -e 's/^crossover_p = .*/&\ninitial_drafts = 2/' "$WORKH/campaign.toml"
 usage_toml "$WORKH" 3 2 'window = "10s"' 'window_budget = 1.0' 'soft = 0.5' 'hard = 0.7' 'session_cost = 0.1'
 cd "$WORKH" || return 1
 export LAB_ROOT="$WORKH"
