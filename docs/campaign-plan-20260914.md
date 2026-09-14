@@ -101,12 +101,12 @@ empty) and every launch line holds it.
 
 | bundle | arm dir | campaign id | arm commit | `campaign check` | ORDER draw |
 |---|---|---|---|---|---|
-| `../labloop-mem2-20260914` | `../labloop-mem2-legacy-20260914` | `engram-mem2-legacy-w0` | `4e5be74` | pass (no-`window_budget` warning) | no draw — legacy first, fixed |
-| `../labloop-mem2-20260914` | `../labloop-mem2-findings-20260914` | `engram-mem2-findings-w0` | `a0ebc7e` | pass (no-`window_budget` warning) | second |
-| `../labloop-drafts-20260914` | `../labloop-drafts-1-20260914` | `engram-drafts1-w0` | `191a840` | pass (no-`window_budget` warning) | `secrets.randbits(1)` = **0** at 2026-09-14T11:39:02Z → first |
-| `../labloop-drafts-20260914` | `../labloop-drafts-4-20260914` | `engram-drafts4-w0` | `bba07d1` | pass (no-`window_budget` warning) | second |
-| `../labloop-opus-20260914` | `../labloop-opus-20260914-arm` | `engram-opus-w0` | `3173d7e` | pass, **no warnings** | none (single arm) |
-| `../labloop-mixed-20260914` | `../labloop-mixed-20260914-arm` | `engram-mixed-w0` | `5d6e6c1` | pass, **no warnings** | none (single arm) |
+| `../labloop-mem2-20260914` | `../labloop-mem2-legacy-20260914` | `engram-mem2-legacy-w0` | `7365686` | pass (no-`window_budget` warning) | no draw — legacy first, fixed |
+| `../labloop-mem2-20260914` | `../labloop-mem2-findings-20260914` | `engram-mem2-findings-w0` | `c3154b9` | pass (no-`window_budget` warning) | second |
+| `../labloop-drafts-20260914` | `../labloop-drafts-1-20260914` | `engram-drafts1-w0` | `4c80456` | pass (no-`window_budget` warning) | `secrets.randbits(1)` = **0** at 2026-09-14T11:39:02Z → first |
+| `../labloop-drafts-20260914` | `../labloop-drafts-4-20260914` | `engram-drafts4-w0` | `ecd2147` | pass (no-`window_budget` warning) | second |
+| `../labloop-opus-20260914` | `../labloop-opus-20260914-arm` | `engram-opus-w0` | `0c1dd93` | pass, **no warnings** | none (single arm) |
+| `../labloop-mixed-20260914` | `../labloop-mixed-20260914-arm` | `engram-mixed-w0` | `ce9fa4c` | pass, **no warnings** | none (single arm) |
 
 Two settings were chosen here where §3 and §4 gave only an intent, and both are written
 into the bundles' `PREREG.md`:
@@ -123,11 +123,11 @@ into the bundles' `PREREG.md`:
 
 ### Prerequisites before launch (also at the end of each `PREREG.md`)
 
-1. **`scripts/mem_rating_pack.py --keep-finding`** — not implemented. The `mem2` rubric
-   rates the `## Finding` section as prose about earlier candidates instead of stripping
-   it (the 2026-09-13 pack's stripping removed 4 of the findings arm's 5 cross-branch
-   references). The flag is needed **before the rating**, not before the launch, and the
-   Opus bundle's accuracy read depends on it too.
+1. **`scripts/mem_rating_pack.py --keep-finding`** — landed in `fd6a298` (2026-09-14). The
+   `mem2` rubric rates the `## Finding` section as prose about earlier candidates instead
+   of stripping it (the 2026-09-13 pack's stripping removed 4 of the findings arm's 5
+   cross-branch references); build the pack with the flag. The Opus bundle's accuracy
+   read uses it too.
 2. Each arm dir trusted in Claude Code once (open `claude` there, accept).
 3. `claude auth status` says loggedIn.
 4. GPU 0 idle (`nvidia-smi`).

@@ -15,11 +15,16 @@ fi
 for d in tools .claude templates; do
   rm -rf "$DST/$d.sync-new"
   cp -R "$SRC/$d" "$DST/$d.sync-new"
+  # agent worktrees under .claude/ are this repo's scratch, not tooling (2026-09-14:
+  # they carried 2 MB of embedded git repos into every arm)
+  rm -rf "$DST/$d.sync-new/worktrees"
   rm -rf "$DST/$d.sync-old"
   [ -e "$DST/$d" ] && mv "$DST/$d" "$DST/$d.sync-old"
   mv "$DST/$d.sync-new" "$DST/$d"
   rm -rf "$DST/$d.sync-old"
 done
-cp "$SRC/CLAUDE.md" "$SRC/.lab-redact" "$DST/"
+# FORMAT.json is generated from the tools (`lab format sync`); an arm must carry the
+# contract of the tools it runs, so it is copied with them
+cp "$SRC/CLAUDE.md" "$SRC/.lab-redact" "$SRC/FORMAT.json" "$DST/"
 rev="$(git -C "$SRC" rev-parse --short HEAD 2>/dev/null || echo unknown)"
-echo "synced tools/ .claude/ templates/ CLAUDE.md .lab-redact into $DST from labloop $rev"
+echo "synced tools/ .claude/ templates/ CLAUDE.md .lab-redact FORMAT.json into $DST from labloop $rev"
