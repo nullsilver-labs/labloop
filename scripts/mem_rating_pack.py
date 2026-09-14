@@ -4,7 +4,11 @@
 Implements "Rating procedure and blinding" of the comparison's PREREG.md. Read-only on
 both arms; never reads labels, REPORT.md, finding.json or a final-split score.
 
-    scripts/mem_rating_pack.py --findings DIR --legacy DIR --prereg PREREG.md --out OUT
+    scripts/mem_rating_pack.py --findings DIR --legacy DIR --prereg PREREG.md --out OUT [--keep-finding]
+
+`--keep-finding` leaves the `## Finding` section in every summary (the 2026-09-14
+preregistrations rate it as prose about earlier candidates); without it the section
+is stripped, as the 2026-09-13 PREREG required.
 
 OUT/ gets
   README.md          instructions for the rater and the rubric, extracted verbatim
@@ -144,7 +148,7 @@ def reduced_config(cfg: dict) -> dict:
     return out
 
 
-def build_arm(arm_dir: Path, dest: Path, letter: str) -> dict:
+def build_arm(arm_dir: Path, dest: Path, letter: str, keep_finding: bool = False) -> dict:
     lab, C, F = load_modules(arm_dir)
     pop = C.load_pop()
     if pop is None:
@@ -170,7 +174,7 @@ def build_arm(arm_dir: Path, dest: Path, letter: str) -> dict:
         d.mkdir(exist_ok=True)
         sp = cdir / "summary.md"
         raw = sp.read_bytes().decode("utf-8", errors="replace") if sp.exists() else ""
-        stripped = strip_finding(raw, F)
+        stripped = raw if keep_finding else strip_finding(raw, F)
         if stripped != raw:
             stats["finding_sections_removed"] += 1
         (d / "summary.md").write_text(stripped)
@@ -224,9 +228,8 @@ sources named in the rubric only.
 - `pack/<arm>/records.json` — every candidate: operator, parents, execution status,
   search fitness (the lab's record), seed. This is the lab's record for type-M
   statements about scores, status, parents and operators.
-- `pack/<arm>/cNNNN/summary.md` — the worker's summary with its `## Finding` section
-  removed. The prose to extract statements from, and the source for type-R statements
-  about that candidate.
+- `pack/<arm>/cNNNN/summary.md` — the worker's summary{finding_note}. The prose to
+  extract statements from, and the source for type-R statements about that candidate.
 - `pack/<arm>/cNNNN/config.json`, `memory_config.json`, `code/` — that candidate's
   artifacts, sources for type-M statements about local numbers and code.
 - `pack/<arm>/cNNNN/verbatim.json` — sentences copied verbatim from the job card the
@@ -290,6 +293,8 @@ def main() -> None:
     ap.add_argument("--legacy", required=True, type=Path)
     ap.add_argument("--prereg", required=True, type=Path)
     ap.add_argument("--out", required=True, type=Path)
+    ap.add_argument("--keep-finding", action="store_true",
+                    help="keep the `## Finding` section in summaries (rated as prose about others)")
     args = ap.parse_args()
     out = args.out.resolve()
     if out.exists() and any(out.iterdir()):
@@ -300,16 +305,20 @@ def main() -> None:
     assignment = {"A": order[0], "B": order[1]}
     stats, tasks = {}, {}
     for letter, name in assignment.items():
-        st = build_arm(arms[name], out / "pack" / letter, letter)
+        st = build_arm(arms[name], out / "pack" / letter, letter, keep_finding=args.keep_finding)
         tasks[letter] = st.pop("task")
         stats[letter] = st
     if tasks["A"] != tasks["B"]:
         sys.exit("task.md differs between the arms; the comparison is not matched")
     (out / "task.md").write_text(tasks["A"])
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    (out / "README.md").write_text(README.format(ts=ts, rubric=rubric(args.prereg)))
+    note = (", `## Finding` section included: its lines are prose about earlier candidates and "
+            "are extracted and rated like any other" if args.keep_finding
+            else " with its `## Finding` section removed")
+    (out / "README.md").write_text(README.format(ts=ts, rubric=rubric(args.prereg), finding_note=note))
     (out / "SEAL.json").write_text(json.dumps(
         {"built": ts, "draw": "secrets.randbits(1)", "assignment": assignment,
+         "keep_finding": args.keep_finding,
          "projects": {k: str(v) for k, v in arms.items()},
          "rule": "read only after ratings/A.json and ratings/B.json exist"}, indent=1) + "\n")
     os.chmod(out / "SEAL.json", 0o600)
