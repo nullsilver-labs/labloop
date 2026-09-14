@@ -20,7 +20,7 @@ revised here after the fact.
 | M5 | Phase removal and format 2.0 complete locally | Site renderer completion recorded historically | External deployment not independently audited in this review |
 | Finding cards | Implemented and tested (opt-in `[memory]`, format 2.1, section G); prompt-size pilot run 2026-09-12 (`docs/finding-cards-pilot.md`); comparison preregistered 2026-09-13 and run 2026-09-13/14 (`docs/memory-comparison-20260913/`, engram w0, 20 candidates per arm, findings first) | Both arms 20/20 completed; blinded rating 2026-09-14: fraction_bad findings .017 (2/115) vs legacy .047 (9/191), ratio .37 ≤ .50 → **supported** (feasibility, one seed); prompt ratio 1.74 ≤ 2.0; coverage NOT full (8/16 jobs under two cross-branch cards) | Human spot-check (`spot-check.md`); fix the selector's eviction order and cross-branch floor before any second comparison; superiority needs more seeds (`RESULT.md`, `opus-review.md`) |
 
-Current no-LLM acceptance: **388 passed, 0 failed** (2026-09-12, including the
+Current no-LLM acceptance: **410 passed, 0 failed** (2026-09-14, merged main with findings-v2, initial_drafts and per-operator models; 2026-09-12: 388 including the
 new bounded-lifecycle section H). Focused lifecycle tests: **9 passed** (27.4 s).
 Counts in dated entries below describe historical suites, not today's coverage.
 Passing synthetic tests does not establish OS isolation, exact crash recovery or live
