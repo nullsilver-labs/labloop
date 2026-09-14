@@ -1,0 +1,13 @@
+{
+ "built": "2026-09-14T10:23:20Z",
+ "draw": "secrets.randbits(1)",
+ "assignment": {
+  "A": "legacy",
+  "B": "findings"
+ },
+ "projects": {
+  "findings": "/mnt/data/projects/nullsilver/labloop-engram-mem-findings-20260913",
+  "legacy": "/mnt/data/projects/nullsilver/labloop-engram-mem-legacy-20260913"
+ },
+ "rule": "read only after ratings/A.json and ratings/B.json exist"
+}

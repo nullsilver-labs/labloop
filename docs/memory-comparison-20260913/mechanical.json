@@ -1,0 +1,366 @@
+{
+ "arms": {
+  "findings": {
+   "campaign": "engram-mem-findings-w0",
+   "memory": null,
+   "stop_reason": "max_candidates 20 reached",
+   "claim": "supported",
+   "settled": 20,
+   "settled_non_baseline": 19,
+   "exec": {
+    "completed": 20
+   },
+   "defers": 0,
+   "gpu_hours": 3.695,
+   "wall_hours": 3.731,
+   "valid_per_gpu_hour": 5.41,
+   "served_models": {
+    "claude-haiku-4-5-20251001|claude-sonnet-5": 19
+   },
+   "turns_median": 18,
+   "turns_max": 23,
+   "best_search_after_8": 0.7337646484375,
+   "best_search_after_20": 0.8853759765625,
+   "frozen": "c0009",
+   "final_score": 0.8114013671875
+  },
+  "legacy": {
+   "campaign": "engram-mem-legacy-w0",
+   "memory": null,
+   "stop_reason": "max_candidates 20 reached",
+   "claim": "supported",
+   "settled": 20,
+   "settled_non_baseline": 19,
+   "exec": {
+    "completed": 20
+   },
+   "defers": 0,
+   "gpu_hours": 3.921,
+   "wall_hours": 3.972,
+   "valid_per_gpu_hour": 5.1,
+   "served_models": {
+    "claude-haiku-4-5-20251001|claude-sonnet-5": 19
+   },
+   "turns_median": 19,
+   "turns_max": 24,
+   "best_search_after_8": 0.4774169921875,
+   "best_search_after_20": 0.577880859375,
+   "frozen": "c0018",
+   "final_score": 0.6439208984375
+  }
+ },
+ "coverage": {
+  "jobs": 19,
+  "parent_violations": [],
+  "cross_branch_violations_baseline_excluded": [
+   "c0004",
+   "c0006",
+   "c0011",
+   "c0012",
+   "c0015",
+   "c0016",
+   "c0017",
+   "c0019"
+  ],
+  "cross_branch_violations_baseline_counted": [
+   "c0006",
+   "c0011",
+   "c0012",
+   "c0015",
+   "c0016",
+   "c0017",
+   "c0019"
+  ],
+  "rows": [
+   {
+    "job": "c0001",
+    "parents": [],
+    "cards": [
+     "c0000"
+    ],
+    "outside_lineage": 0,
+    "outside_incl_baseline": 1
+   },
+   {
+    "job": "c0002",
+    "parents": [
+     "c0001"
+    ],
+    "cards": [
+     "c0001",
+     "c0000"
+    ],
+    "outside_lineage": 0,
+    "outside_incl_baseline": 1
+   },
+   {
+    "job": "c0003",
+    "parents": [
+     "c0002"
+    ],
+    "cards": [
+     "c0002",
+     "c0001",
+     "c0000"
+    ],
+    "outside_lineage": 0,
+    "outside_incl_baseline": 1
+   },
+   {
+    "job": "c0004",
+    "parents": [
+     "c0002"
+    ],
+    "cards": [
+     "c0002",
+     "c0001",
+     "c0003",
+     "c0000"
+    ],
+    "outside_lineage": 1,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0005",
+    "parents": [
+     "c0002"
+    ],
+    "cards": [
+     "c0002",
+     "c0001",
+     "c0003",
+     "c0004",
+     "c0000"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 3
+   },
+   {
+    "job": "c0006",
+    "parents": [
+     "c0004"
+    ],
+    "cards": [
+     "c0004",
+     "c0002",
+     "c0001",
+     "c0005"
+    ],
+    "outside_lineage": 1,
+    "outside_incl_baseline": 1
+   },
+   {
+    "job": "c0007",
+    "parents": [
+     "c0002"
+    ],
+    "cards": [
+     "c0002",
+     "c0001",
+     "c0003",
+     "c0004"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0008",
+    "parents": [
+     "c0002"
+    ],
+    "cards": [
+     "c0002",
+     "c0001",
+     "c0003",
+     "c0004"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0009",
+    "parents": [
+     "c0002"
+    ],
+    "cards": [
+     "c0002",
+     "c0001",
+     "c0008",
+     "c0003"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0010",
+    "parents": [
+     "c0009",
+     "c0002"
+    ],
+    "cards": [
+     "c0002",
+     "c0009",
+     "c0001",
+     "c0008",
+     "c0003"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0011",
+    "parents": [
+     "c0007"
+    ],
+    "cards": [
+     "c0007",
+     "c0002",
+     "c0001",
+     "c0004"
+    ],
+    "outside_lineage": 1,
+    "outside_incl_baseline": 1
+   },
+   {
+    "job": "c0012",
+    "parents": [
+     "c0007"
+    ],
+    "cards": [
+     "c0007",
+     "c0002",
+     "c0001",
+     "c0004"
+    ],
+    "outside_lineage": 1,
+    "outside_incl_baseline": 1
+   },
+   {
+    "job": "c0013",
+    "parents": [
+     "c0009"
+    ],
+    "cards": [
+     "c0009",
+     "c0002",
+     "c0001",
+     "c0008",
+     "c0010"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0014",
+    "parents": [
+     "c0009"
+    ],
+    "cards": [
+     "c0009",
+     "c0002",
+     "c0001",
+     "c0008",
+     "c0010"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0015",
+    "parents": [
+     "c0010"
+    ],
+    "cards": [
+     "c0010",
+     "c0002",
+     "c0009",
+     "c0008"
+    ],
+    "outside_lineage": 1,
+    "outside_incl_baseline": 1
+   },
+   {
+    "job": "c0016",
+    "parents": [
+     "c0010"
+    ],
+    "cards": [
+     "c0010",
+     "c0002",
+     "c0009",
+     "c0008"
+    ],
+    "outside_lineage": 1,
+    "outside_incl_baseline": 1
+   },
+   {
+    "job": "c0017",
+    "parents": [
+     "c0013"
+    ],
+    "cards": [
+     "c0013",
+     "c0009",
+     "c0002",
+     "c0008"
+    ],
+    "outside_lineage": 1,
+    "outside_incl_baseline": 1
+   },
+   {
+    "job": "c0018",
+    "parents": [
+     "c0009"
+    ],
+    "cards": [
+     "c0009",
+     "c0002",
+     "c0001",
+     "c0008",
+     "c0010"
+    ],
+    "outside_lineage": 2,
+    "outside_incl_baseline": 2
+   },
+   {
+    "job": "c0019",
+    "parents": [
+     "c0009",
+     "c0018"
+    ],
+    "cards": [
+     "c0009",
+     "c0018",
+     "c0002",
+     "c0001",
+     "c0008"
+    ],
+    "outside_lineage": 1,
+    "outside_incl_baseline": 1
+   }
+  ]
+ },
+ "prompt_cost": {
+  "findings": {
+   "tokenizer": "tiktoken 0.14.0, encoding cl100k_base (a proxy: Claude's tokenizer is not public)",
+   "jobs": 19,
+   "mean": 4639.5,
+   "median": 4859,
+   "max": 5467,
+   "total": 88150
+  },
+  "legacy": {
+   "tokenizer": "tiktoken 0.14.0, encoding cl100k_base (a proxy: Claude's tokenizer is not public)",
+   "jobs": 19,
+   "mean": 2666.8,
+   "median": 2644,
+   "max": 3425,
+   "total": 50669
+  }
+ },
+ "prompt_ratio_findings_over_legacy": 1.74,
+ "prompt_bound": 2.0,
+ "prompt_within_bound": true,
+ "same_served_models": true,
+ "mechanical_pending_reasons": []
+}

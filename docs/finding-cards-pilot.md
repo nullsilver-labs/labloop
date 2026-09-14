@@ -133,3 +133,16 @@ revised after seeing comparative outcomes. From the figures above, a proposal:
 
 These are proposals. The comparison starts only after the human writes the chosen
 values into the two `campaign.toml`s and this document, in that order.
+
+## Fixed values (2026-09-13)
+
+The human fixed the open choice on 2026-09-13: **keep `max_bytes` 12288 and
+`max_cards` 8**; a larger cap is a later comparison if this one shows the cap as the
+limitation. The other proposals above were adopted as proposed, with one substitution:
+the testbed is the engram world w0 (`../labloop-engram`, ~12 min and ~$0.5 per
+candidate) instead of the M2 CIFAR-10 configuration, `max_candidates` 20 per arm.
+The frozen preregistration, rubric and order are `docs/memory-comparison-20260913/`
+(copies of `../labloop-engram-mem-20260913/{PREREG.md,ORDER.json}`); the arms are
+`../labloop-engram-mem-findings-20260913` (first) and
+`../labloop-engram-mem-legacy-20260913` (second), neither launched at the time of
+writing.

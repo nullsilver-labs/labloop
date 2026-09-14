@@ -1,0 +1,10 @@
+{
+ "draw": "secrets.randbits(1)",
+ "bit": 1,
+ "ts": "2026-09-13T16:25:49.088975+00:00",
+ "order": [
+  "findings",
+  "legacy"
+ ],
+ "rule": "bit 0 = legacy first, bit 1 = findings first; drawn once, before either arm was launched; no redraw"
+}

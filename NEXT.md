@@ -18,7 +18,7 @@ revised here after the fact.
 | M3 | Governor and fake-CLI tests implemented; live rate-limit enforcement by the watcher (2026-09-12, section E2b) | M2 had pacing OFF; no observed deferrals | Calibrate budget, then unattended validation |
 | M4 | Slots, VRAM checks and fake-GPU tests implemented | Reviewed campaigns used one GPU | Real two-GPU throughput comparison |
 | M5 | Phase removal and format 2.0 complete locally | Site renderer completion recorded historically | External deployment not independently audited in this review |
-| Finding cards | Implemented and tested (opt-in `[memory]`, format 2.1, section G); prompt-size pilot run 2026-09-12 (`docs/finding-cards-pilot.md`) | None | Fix the preregistration values from the pilot, then the legacy-vs-findings comparison (plan §7) |
+| Finding cards | Implemented and tested (opt-in `[memory]`, format 2.1, section G); prompt-size pilot run 2026-09-12 (`docs/finding-cards-pilot.md`); comparison preregistered 2026-09-13 and run 2026-09-13/14 (`docs/memory-comparison-20260913/`, engram w0, 20 candidates per arm, findings first) | Both arms 20/20 completed; blinded rating 2026-09-14: fraction_bad findings .017 (2/115) vs legacy .047 (9/191), ratio .37 ≤ .50 → **supported** (feasibility, one seed); prompt ratio 1.74 ≤ 2.0; coverage NOT full (8/16 jobs under two cross-branch cards) | Human spot-check (`spot-check.md`); fix the selector's eviction order and cross-branch floor before any second comparison; superiority needs more seeds (`RESULT.md`, `opus-review.md`) |
 
 Current no-LLM acceptance: **388 passed, 0 failed** (2026-09-12, including the
 new bounded-lifecycle section H). Focused lifecycle tests: **9 passed** (27.4 s).
@@ -165,6 +165,33 @@ drawn before crossover, unit-tested; a config without the key consumes the same 
 stream as before) is on main since 2026-09-13; a campaign that wants approach
 exploration preregisters it. Not applied to engram-pilot-w0, whose tools are frozen.
 
+### Memory comparison settled (2026-09-14)
+
+Both arms of the preregistered legacy-vs-findings comparison
+(`docs/memory-comparison-20260913/PREREG.md`, findings first by `ORDER.json`) ran to
+their 20-candidate cap on 2026-09-13/14 with no deferral, kill or usage pause;
+every session served Sonnet 5; no child inherited weights; the final split was read
+once per arm under `labeval`. Preregistered read (`RESULT.md`): a fresh blinded
+session rated every statement about prior attempts (pack from
+`scripts/mem_rating_pack.py`, decision from `scripts/mem_decide.py`): **findings
+fraction_bad .017 (2 of 115 M+R) vs legacy .047 (9 of 191), ratio .37 ≤ .50 →
+supported** as a feasibility result on one seed, one world, one order. Secondary:
+unacknowledged repeats 3 vs 6 (the Opus review counts 1–2 vs 6 wasted candidates),
+prompt cost ratio 1.74 (bound 2.0), 5.41 vs 5.10 valid candidates per GPU-hour,
+final .811 vs .644 (not evidence about memory; the drafts differed sharply).
+
+What weakens it: the findings arm's cross-branch coverage was **not full** (8 of 16
+eligible jobs saw fewer than two out-of-lineage cards), because the selector fills
+parent plus two ancestors first and the byte-cap loop evicts the newest cross-branch
+card, so the window froze on old weak candidates and 8 of 20 cards were shown to
+nobody; the "strongest outside this lineage" slot only ever picked the baseline. The
+preregistered stripping of `## Finding` removed 4 of the findings arm's 5
+out-of-lineage references and most of its type-R statements (2 rated vs 40), so the
+arms' statement mixes differ and the acknowledgment measure is de-powered against the
+cards. Both defects are in `opus-review.md` with ranked fixes; a second comparison
+uses fixed tools and a rubric that reads the Finding section as prose about others.
+The human spot-check of 10 statements per arm (`spot-check.md`) is still to be done.
+
 ### Next work, in priority order
 
 1. Harden the evaluation boundary (the documented unrestricted sudo Python rule is
@@ -186,9 +213,13 @@ exploration preregisters it. Not applied to engram-pilot-w0, whose tools are fro
    and calibrate `usage.window_budget` from its cost before the Opus arm.
 4. ~~Implement finding cards as a separate opt-in change~~ (done 2026-09-12), ~~run the
    prompt-size pilot~~ (done 2026-09-12: facts-only cards +26 %, cards at their limits
-   +79 % over the legacy job card on M2's 39 jobs; `docs/finding-cards-pilot.md`), then
+   +79 % over the legacy job card on M2's 39 jobs; `docs/finding-cards-pilot.md`), ~~then
    fix the preregistration values and compare memory policies without changing
-   scheduler/model/budgets. Run the real two-GPU comparison separately.
+   scheduler/model/budgets~~ (done 2026-09-14: supported on one seed, "Memory
+   comparison settled"). Next for memory: fix the selector (eviction order,
+   cross-branch floor, the baseline in the strongest-outside slot) and add a
+   machine-readable knob ledger per `opus-review.md`, each behind its own small
+   preregistered campaign; then more seeds. Run the real two-GPU comparison separately.
 
 The missing comparative and unattended evidence is **pending**, not a pass, tie or
 failed kill criterion. Subscription renewal alone does not validate the governor.

@@ -1,0 +1,1486 @@
+{
+ "arm": "B",
+ "statements": [
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "Only `ORDERS` in `code/train_predict.py` changed, from `(1, 2, 3)` to `(1,)`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "This drops 8 of the parent's 12 hash-head embedding tables (the 4 order-2 heads and 4 order-3 heads), shrinking the memory's `out_dim` from 576 to 192 and the total trainable parameter count from 6,359,040 to 2,820,096 (tables + the now-smaller `Linear(192→1024)` projection + the unchanged `Linear(1024→1024)` gate)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/train_predict.py; pack/B/c0001/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "Canonicalisation (lower-casing token surface forms before hashing), the attach point (forward hook after decoder block 2), the multi-head hashing scheme, the training loop, batching, prompt format (`Question: …\\nAnswer:`), and greedy prediction (max 4 new tokens, cut at first whitespace) are all unchanged from `candidates/c0001/code`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/train_predict.py; pack/B/c0001/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "different from the parent's seed, as expected since seeds are per-job",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "same assertions as the parent, unmodified",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Only `ATTACH_LAYER` in `code/train_predict.py` changed, from `2` to `14`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Trainable parameter count is unchanged (2,820,096) since only the attach point moved",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Order-1-only hashing, table size 8192, 4 heads, head dim 48, canonicalisation (lower-casing token surface forms before hashing), the training loop, batching, prompt format (`Question: …\\nAnswer:`), and greedy prediction (max 4 new tokens, cut at first whitespace) are all unchanged from `candidates/c0002/code`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py; pack/B/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "hit the 480s `--train-seconds` cap mid-epoch-10, same cap value as the parent",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/run.sh",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "reached the same near-zero floor as the parent, actually one step ahead of it thanks to slightly more steps/epochs in the same wall clock",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json",
+   "note": "c0002 final loss 0.0011 vs 0.00078; 3245 vs 4111 steps; 'one step ahead' is figurative"
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "0.7688 — well below the parent's 0.9988, despite near-identical (lower, even) training loss",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "unlike the parent's one empty prediction",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "same assertions as the parent, unmodified",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Only `Engram.gate` in `code/train_predict.py` changed, from `nn.Linear(hidden_size, hidden_size)` to `nn.Linear(hidden_size, 1)`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "This drops the gate's parameter count from `1024*1024+1024 = 1,049,600` to `1024+1 = 1,025`, while the memory bank (4 order-1 heads × 8192 × 48) and projection `Linear(192, 1024)` are byte-for-byte identical to the parent",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py; pack/B/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Everything else — canonicalisation, attach point (forward hook after decoder block 2), training loop, batching, prompt format (`Question: ...\\nAnswer:`), greedy prediction (max 4 tokens, cut at first whitespace) — is unchanged from `candidates/c0002/code`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py; pack/B/c0002/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "different from the parent's seed (884166427)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "same assertions as the parent, unmodified",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Trainable parameter count: 1,771,521 (down from the parent's ~2,820,096, entirely from the gate shrinking",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json",
+   "note": "2,820,096 - 1,049,600 + 1,025 = 1,771,521"
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "0 malformed, versus 1 malformed in the parent's run",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Only the training loop in `code/train_predict.py` changed relative to `candidates/c0002/code`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0002"
+   ],
+   "quote": "No architecture, attach point, table size, n-gram order, optimizer, lr, batch size or prompt format changed from `candidates/c0002/code`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py; pack/B/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0002"
+   ],
+   "quote": "same assertions as the parent, unmodified",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0002"
+   ],
+   "quote": "491.5s wall clock (... slightly higher than c0002's 480.1s because per-epoch held-out evaluation now runs inside the same timed loop",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0002"
+   ],
+   "quote": "no malformed predictions this run, unlike c0002's one empty answer",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004"
+   ],
+   "quote": "from the parent's (c0004) `self.gate = nn.Linear(hidden_size, 1)`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004"
+   ],
+   "quote": "This adds 1024 trainable parameters over the parent (gate params: 1,025 -> 2,049)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/code/train_predict.py; pack/B/c0004/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004",
+    "c0002"
+   ],
+   "quote": "the memory bank (4 order-1 heads x 8192 x 48) and projection `Linear(192, 1024)` are byte-for-byte identical to c0004/c0002",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/code/train_predict.py; pack/B/c0002/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004"
+   ],
+   "quote": "Canonicalisation, attach point (forward hook after decoder block 2), training loop, batching, prompt format (`Question: ...\\nAnswer:`), and greedy prediction (max 4 tokens, cut at first whitespace) are unchanged from the parent",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/code/train_predict.py; pack/B/c0004/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004"
+   ],
+   "quote": "(same assertions as the parent, unmodified)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004"
+   ],
+   "quote": "Trainable parameter count: 1,772,545 (parent: 1,771,521; +1,024 from `channel_scale`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Only `WEIGHT_DECAY` in `code/train_predict.py` changed, from an implicit `0.0` (parent hardcoded `weight_decay=0.0` in the `AdamW` call) to an explicit constant `0.01`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py",
+   "note": "c0002 line 243: weight_decay=0.0"
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Architecture (`ORDERS=(1,)`, 4 heads, table size 8192, head dim 48, attach after decoder block 2, full `Linear(hidden,hidden)` gate), canonicalisation (lower-casing token surface forms before hashing), the training loop, batching, prompt format (`Question: …\\nAnswer:`), and greedy prediction (max 4 new tokens, cut at first whitespace) are all unchanged from `candidates/c0002/code`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py; pack/B/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0002"
+   ],
+   "quote": "same assertions as the parent, unmodified",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0002"
+   ],
+   "quote": "better than the parent's one empty answer (index 2869)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0002"
+   ],
+   "quote": "the gap between c0002's held-out-wording accuracy (0.9988) and its hidden search score (0.7338)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json; pack/B/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0002"
+   ],
+   "quote": "instead of the parent's `g = torch.sigmoid(self.gate(hidden))`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0002"
+   ],
+   "quote": "The gate module itself stays `nn.Linear(hidden_size, hidden_size)` (same shape and parameter count as c0002, ~1.05M params)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Canonicalisation, ORDERS=(1,), attach layer 2, table size 8192, 4 heads, head dim 48, the training loop, batching, prompt format (`Question: …\\nAnswer:`), and greedy prediction (max 4 new tokens, cut at first whitespace) are all unchanged from `candidates/c0002/code`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py; pack/B/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0002"
+   ],
+   "quote": "instead of the parent's `hidden + g * mem`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Everything else — canonicalisation (lower-casing before hashing), n-gram order (order-1 only), 4 heads, table size 8192, head dim 48, attach point (forward hook after decoder block 2), the AdamW optimizer over only the added parameters, batch size 64, prompt format (`Question: …\\nAnswer:`), and greedy prediction (max 4 new tokens, cut at first whitespace) — is unchanged from `candidates/c0002/code`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py; pack/B/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0002"
+   ],
+   "quote": "same assertions as the parent, unmodified",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Trainable parameter count: 2,820,096 (identical to c0002's, since the mask adds no parameters, only a forward-time multiply)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0002"
+   ],
+   "quote": "noticeably higher and noisier than c0002's near-zero (0.0011) floor",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0009"
+   ],
+   "quote": "c0009's `Engram.compute` used a hard structural mask: `hidden + fire * g * mem` where `fire` is a 0/1 flag for whether a token's canonicalised id is a known entity-name (sub)token, and `g = sigmoid(gate(hidden))`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0002"
+   ],
+   "quote": "At initialisation (`name_bias = 0`) this is mathematically identical to parent B's (c0002) unrestricted gate — no positions are masked out",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0009"
+   ],
+   "quote": "in a form that cannot hard-zero useful signal at non-name positions the way c0009's version did",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0009",
+    "c0002"
+   ],
+   "quote": "Everything else — ORDERS=(1,) (single canonical-token hash key, from c0002's earlier ablation), 4 heads, table size 8192, head dim 48, ATTACH_LAYER=2, the canonicalisation (lower-casing token surface forms before hashing), the training loop (AdamW, lr 3e-3, batch 64, up to 480s wall clock, 1-of-8-wordings held out), and the prompt format (`Question: …\\nAnswer:`) — is unchanged from both parents, which already agreed on all of it",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/train_predict.py; pack/B/c0002/code/train_predict.py; pack/B/c0009/code/run.sh; pack/B/c0002/code/run.sh",
+   "note": ""
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0009"
+   ],
+   "quote": "From c0009 (parent A, code base inherited): the entity-name token mask construction (`build_name_mask`, covering both leading-space and no-leading-space tokenisations of each name word)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/train_predict.py; pack/B/c0009/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0002"
+   ],
+   "quote": "From c0002 (parent B, read-only): the unrestricted gate mechanism itself (`sigmoid(gate(hidden))` applied without hard positional gating), which had the best local held-out-wording result and training-loss floor in the lineage",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py; pack/B/c0002/memory_config.json; pack/B/c0009/memory_config.json",
+   "note": "read as c0010's lineage (c0001, c0002, c0009): c0002 0.9988 / 0.0011 vs c0009 0.8726 / 0.065; c0001's local numbers are not in the pack. Population-wide, c0005 (0.000574) and c0003 (0.00078) had lower final losses"
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0009"
+   ],
+   "quote": "The inherited `code/run.sh` (copied from c0009) had `--seed 923966384` hardcoded, which was c0009's own job-card seed, not this job's",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/run.sh; pack/B/c0009/config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0007"
+   ],
+   "quote": "`WEIGHT_DECAY` changed from the parent's `0.01` back to `0.0`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0007"
+   ],
+   "quote": "Architecture (`ORDERS=(1,)`, 4 heads, table size 8192, head dim 48, attach after decoder block 2, full `Linear(hidden,hidden)` gate), canonicalisation, the training loop, batching, prompt format (`Question: …\\nAnswer:`), and greedy prediction (max 4 new tokens, cut at first whitespace) are all unchanged from `candidates/c0007/code`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/code/train_predict.py; pack/B/c0007/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0007"
+   ],
+   "quote": "same assertions as the parent, unmodified",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0007"
+   ],
+   "quote": "a higher, noisier floor than the parent's near-zero 0.0015",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/memory_config.json; pack/B/c0007/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0007"
+   ],
+   "quote": "instead of one param group `torch.optim.AdamW(trainable, lr=a.lr, weight_decay=WEIGHT_DECAY)` covering every `Engram` parameter (parent c0007)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/code/train_predict.py",
+   "note": "c0007 line 246"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0007"
+   ],
+   "quote": "`weight_decay=WEIGHT_DECAY` (still 0.01, the parent's value)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/code/train_predict.py; pack/B/c0007/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0007"
+   ],
+   "quote": "`WEIGHT_DECAY` itself, architecture (`ORDERS=(1,)`, 4 heads, table size 8192, head dim 48, attach after decoder block 2, full `Linear(hidden,hidden)` gate), canonicalisation, the training loop, batching, prompt format (`Question: …\\nAnswer:`), and greedy prediction (max 4 new tokens, cut at first whitespace) are all unchanged from `candidates/c0007/code`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/code/train_predict.py; pack/B/c0007/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0007"
+   ],
+   "quote": "the inherited copy still had c0007's seed, 2016182924, hardcoded",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/code/run.sh; pack/B/c0007/config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0007"
+   ],
+   "quote": "same assertions as the parent, unmodified",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "Inherited c0009's code (hashed order-1 n-gram memory bank, 4 heads x 8192 rows x 48-dim, keyed on the canonicalised token id at each position; a structural mask that zeroes the additive term everywhere except positions whose canonical token id is a known entity-name (sub)token; a sigmoid gate conditioned on the hidden state; injection after decoder block 2 of a frozen Qwen3-0.6B via forward hooks)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/train_predict.py; pack/B/c0009/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "`Engram.proj` went from a single `nn.Linear(192, 1024)`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "`run.sh` asserts `requires_grad_(False)` on every model parameter before training and asserts none of the trainable (engram) parameter ids appear among the model's parameters, matching the parent",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "capped by the same 480s/8-min internal budget as the parent",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/run.sh",
+   "note": ""
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "same `Question: …\\nAnswer:` prompt format as training and as the parent",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0009"
+   ],
+   "quote": "replaced: `self.gate = nn.Linear(hidden_size, hidden_size)` ... `g = torch.sigmoid(self.gate(hidden))`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0009"
+   ],
+   "quote": "matching the parent's initial scale (a freshly-initialised `nn.Linear` also starts near output 0 before bias, giving `sigmoid(0) ≈ 0.5`)",
+   "type": "M",
+   "rating": "unsupported",
+   "source": "pack/B/c0009/code/train_predict.py",
+   "note": "the parent's initial gate output is not recorded in any artifact; nn.Linear default init is not zero"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0004"
+   ],
+   "quote": "unlike the \"scalar gate\" mentioned as a regression for an earlier, unmasked candidate in this lineage",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/code/train_predict.py; pack/B/records.json",
+   "note": "c0004 (unnamed): gate nn.Linear(hidden_size, 1), no mask, fitness 0.6687 < parent c0002's 0.7338; c0004 is not in c0014's ancestry, so 'in this lineage' is loose"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0009"
+   ],
+   "quote": "`Engram.compute()` still multiplies by the parent's hard `name_mask`-derived `fire` term before adding to the residual: `hidden + fire * g * mem`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0009"
+   ],
+   "quote": "`build_canon_map`, `build_name_mask`, `MemoryBank`, `attach`, n-gram order (1 only), 4 heads, table size 8192, head dim 48, attach point (forward hook after decoder block 2), AdamW over only the added parameters, batch size 64, prompt format (`Question: …\\nAnswer:`), and greedy prediction (max 4 new tokens, cut at first whitespace) are all unchanged from `candidates/c0009/code`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/train_predict.py; pack/B/c0009/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0009"
+   ],
+   "quote": "same assertions as the parent, unmodified",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0009"
+   ],
+   "quote": "lower than c0009's 2,820,096, since `gate_param` is a `hidden_size`-length vector (1024) instead of a `hidden_size x hidden_size` + bias `Linear` (1024*1024+1024 = 1,049,600 fewer params)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json; pack/B/c0009/code/train_predict.py",
+   "note": "2,820,096 - 1,771,520 = 1,048,576 = 1,049,600 - 1,024"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0009",
+    "c0002",
+    "c0010"
+   ],
+   "quote": "higher and noisier than c0009's 0.065 floor and much higher than c0002/c0010's near-zero floors",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/summary.md; pack/B/c0002/memory_config.json; pack/B/c0010/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010"
+   ],
+   "quote": "c0010's `Engram.compute` used `bias = name_bias * fire` (a zero-initialised learned parameter added to the gate's pre-sigmoid logit, but only at name-token positions; identically 0 at non-name positions, by construction, for all of training)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010",
+    "c0009"
+   ],
+   "quote": "fire = name_mask (0/1 per position, unchanged from c0010/c0009)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/code/train_predict.py; pack/B/c0009/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010",
+    "c0002"
+   ],
+   "quote": "At initialisation (`name_bias = off_bias = 0`) this is identical to the parent's and to c0002's unrestricted gate",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/code/train_predict.py; pack/B/c0002/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010"
+   ],
+   "quote": "something c0010's mechanism structurally could not do regardless of what training found useful",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/code/train_predict.py",
+   "note": "c0010's bias term is name_bias*fire, identically zero at non-name positions"
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010"
+   ],
+   "quote": "Everything else — ORDERS=(1,), 4 heads, table size 8192, head dim 48, ATTACH_LAYER=2, canonicalisation, training loop (AdamW, lr 3e-3, batch 64, up to 480s wall clock, 1-of-8-wordings held out), and prompt format (`Question: …\\nAnswer:`) — is unchanged from the parent",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/code/train_predict.py; pack/B/c0010/memory_config.json; pack/B/c0010/code/run.sh",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0002"
+   ],
+   "quote": "c0002 (no positional signal at all): search 0.734",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010"
+   ],
+   "quote": "c0010, this candidate's direct parent (learned boost-only bias at name positions, structurally 0 elsewhere): search 0.786",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json; pack/B/c0015/config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0009"
+   ],
+   "quote": "c0009 (hard multiplicative mask, zeroing the memory entirely away from name tokens): search 0.885",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0002",
+    "c0010",
+    "c0009"
+   ],
+   "quote": "Search fitness rose monotonically with how much non-name positions were suppressed, while the local held-out-wording proxy moved the opposite direction (c0002 0.9988 > c0010 0.9937 > c0009 0.8726)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json; pack/B/c0002/memory_config.json; pack/B/c0010/memory_config.json; pack/B/c0009/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0002",
+    "c0010",
+    "c0009"
+   ],
+   "quote": "the proxy has previously disagreed with actual search fitness on this exact topic",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json; pack/B/c0002/memory_config.json; pack/B/c0010/memory_config.json; pack/B/c0009/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010"
+   ],
+   "quote": "The inherited `code/run.sh` (copied from c0010) had `--seed 1778441043` hardcoded, which was c0010's own job-card seed, not this job's",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/code/run.sh; pack/B/c0010/config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010"
+   ],
+   "quote": "`run.sh` (via `train_predict.py`, unchanged from the parent) sets every base-model parameter's `requires_grad_(False)`, asserts ..., and separately asserts no trainable parameter's `id()` appears among the base model's parameters",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010"
+   ],
+   "quote": "1,024 more than the parent's 2,821,120 for the new `off_bias`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0010",
+    "c0002"
+   ],
+   "quote": "c0010's `Engram.compute` added one learned bias, `name_bias` (zero-initialised, per-hidden-dim), to the gate's pre-sigmoid logit only at name-token positions, leaving the gate fully unrestricted (identical to c0002) away from name positions",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/code/train_predict.py; pack/B/c0002/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0010",
+    "c0002"
+   ],
+   "quote": "At initialisation (`name_bias = non_name_bias = 0`) this is identical to the parent (and to c0002) — no positions are biased",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/code/train_predict.py; pack/B/c0002/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0009"
+   ],
+   "quote": "approximating c0009's hard multiplicative mask there",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0010"
+   ],
+   "quote": "Everything else — ORDERS=(1,), 4 heads, table size 8192, head dim 48, ATTACH_LAYER=2, the canonicalisation (lower-casing token surface forms before hashing), the training loop (AdamW, lr 3e-3, batch 64, up to 480s wall clock, 1-of-8-wordings held out), and the prompt format (`Question: …\\nAnswer:`) — is unchanged from the parent",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/code/train_predict.py; pack/B/c0010/memory_config.json; pack/B/c0010/code/run.sh",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0010"
+   ],
+   "quote": "`run.sh` (inherited unmodified from the parent) asserts `all(not p.requires_grad for p in model.parameters())` ..., and separately asserts no trainable parameter's `id()` appears among the base model's parameters",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/summary.md",
+   "note": "the assertion description matches c0010; 'inherited unmodified' is contradicted by the same summary's seed fix, which concerns c0016's own file"
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0010"
+   ],
+   "quote": "The inherited `code/run.sh` (copied from c0010) had `--seed 1778441043` hardcoded, which was c0010's own job-card seed, not this job's",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/code/run.sh; pack/B/c0010/config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0013"
+   ],
+   "quote": "Inherited c0013's code unchanged except for the one addition: `nn.Dropout(0.1)` inserted into `Engram.proj` between the GELU and the second Linear of the 2-layer projection MLP",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0013/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0013"
+   ],
+   "quote": "Trainable parameter count is unchanged at 2,935,040 (dropout adds no parameters)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0013/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0013"
+   ],
+   "quote": "`run.sh` asserts `requires_grad_(False)` on every model parameter before training and asserts none of the trainable (engram) parameter ids appear among the model's parameters, unchanged from the parent",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0013/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0013"
+   ],
+   "quote": "differs from c0013's seed 1609282576, so training runs are not matched",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0013/config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0013"
+   ],
+   "quote": "same 480s/8-min internal budget as the parent",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0013/code/run.sh",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0013"
+   ],
+   "quote": "same `Question: …\\nAnswer:` prompt format as training and as the parent",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0013/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0009"
+   ],
+   "quote": "`TABLE_SIZE = 32768` in place of c0009's `8192` (all other hyperparameters — `ORDERS=(1,)`, `HEADS_PER_ORDER=4`, `HEAD_DIM=48`, `ATTACH_LAYER=2`, the hard name-token mask from `build_name_mask()`, the AdamW optimizer over only the added Engram parameters, batch size 64, lr 3e-3, prompt format `Question: …\\nAnswer:`, greedy prediction with max 4 new tokens cut at first whitespace — unchanged)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/train_predict.py; pack/B/c0009/memory_config.json; pack/B/c0009/code/run.sh",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0009"
+   ],
+   "quote": "updated the hardcoded `--seed` in `run.sh` from c0009's `923966384`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/run.sh",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0009",
+    "c0002"
+   ],
+   "quote": "the hard mask (c0009's own change from c0002) restricts memory injection to ~1183 distinct name-(sub)token vocab ids",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json; pack/B/c0009/config.json; pack/B/c0009/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0009"
+   ],
+   "quote": "same assertions as the parent, unmodified",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0009"
+   ],
+   "quote": "Trainable parameter count: 7,538,688 (up from c0009's 2,820,096, entirely from the larger embedding tables",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json",
+   "note": "difference 4,718,592 = 3*8192*48*4"
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0009"
+   ],
+   "quote": "higher and noisier floor than c0009's 0.065",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0009"
+   ],
+   "quote": "From parent A (c0009, ..., search 0.885376, this lineage's best)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": "0.8853759765625, the population maximum"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0009"
+   ],
+   "quote": "the hard name-token structural mask (`build_name_mask()`, firing only at the ~1183 canonical vocab ids that are entity-name (sub)tokens, both leading-space and no-leading-space variants), `ORDERS=(1,)`, `HEADS_PER_ORDER=4`, `HEAD_DIM=48`, `ATTACH_LAYER=2`, the gate conditioned on hidden state (`sigmoid(gate(hidden))`), the AdamW optimizer over only the Engram parameters, batch size 64, lr 3e-3, prompt format `Question: …\\nAnswer:`, and greedy prediction (max 4 new tokens, cut at first whitespace)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/train_predict.py; pack/B/c0009/memory_config.json; pack/B/c0009/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0018",
+    "c0009"
+   ],
+   "quote": "From parent B (c0018, read-only, search 0.870239): the stated hypothesis and its single structural change — `TABLE_SIZE` raised from A's 8192 — motivated by cutting hash-bucket collisions among the ~1183 name tokens the mask restricts firing to",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/records.json; pack/B/c0018/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0018",
+    "c0009"
+   ],
+   "quote": "B raised it 4x to 32768 and regressed on the hidden search split despite a better local proxy (0.9014 vs A's 0.8726)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json; pack/B/c0018/memory_config.json; pack/B/c0009/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0018"
+   ],
+   "quote": "B's own Limitations named 16384 as an untested intermediate value",
+   "type": "R",
+   "rating": "unsupported",
+   "source": "pack/B/c0018/summary.md",
+   "note": "c0018's summary in the pack has no Limitations section and does not mention 16384; the stripped Finding section is not a rating source"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0009",
+    "c0018"
+   ],
+   "quote": "from A's 2,820,096 ...; well below B's 7,538,688 at 32768",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json; pack/B/c0018/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0009",
+    "c0018"
+   ],
+   "quote": "Differs from both A's 923966384 and B's 1339887242",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/config.json; pack/B/c0018/config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0009",
+    "c0018"
+   ],
+   "quote": "same assertions as both parents, unmodified",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/summary.md; pack/B/c0018/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0009",
+    "c0018"
+   ],
+   "quote": "the lowest final-loss floor of the three (A 0.065, B 0.0967, this one 0.042)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/summary.md; pack/B/c0018/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0009",
+    "c0018"
+   ],
+   "quote": "(A: 0.8726, B: 0.9014 — this candidate lands between them",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/summary.md; pack/B/c0018/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0009",
+    "c0018"
+   ],
+   "quote": "the proxy has previously mismatched hidden search-score direction in this lineage",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json; pack/B/c0009/summary.md; pack/B/c0018/memory_config.json",
+   "note": "c0018 vs c0009: proxy up, search fitness down"
+  }
+ ],
+ "unrated": [
+  {
+   "candidate": "c0001",
+   "quote": "the same way the LoRA reference does for its fp32 adapter weights over a bf16 base",
+   "reason": "about an operator reference script, not a candidate"
+  }
+ ],
+ "acknowledgment": [
+  {
+   "candidate": "c0001",
+   "names": [],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0002",
+   "names": [
+    "c0001"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0003",
+   "names": [
+    "c0002"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0004",
+   "names": [
+    "c0002"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0005",
+   "names": [
+    "c0002"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0006",
+   "names": [
+    "c0004",
+    "c0002"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0007",
+   "names": [
+    "c0002"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0008",
+   "names": [
+    "c0002"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0009",
+   "names": [
+    "c0002"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0010",
+   "names": [
+    "c0009",
+    "c0002"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0011",
+   "names": [
+    "c0007"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0012",
+   "names": [
+    "c0007"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0013",
+   "names": [
+    "c0009"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0014",
+   "names": [
+    "c0009",
+    "c0002",
+    "c0010",
+    "c0004"
+   ],
+   "cross_branch": [
+    "c0010",
+    "c0004"
+   ],
+   "note": "c0004 referenced without id as the 'scalar gate' regression candidate"
+  },
+  {
+   "candidate": "c0015",
+   "names": [
+    "c0010",
+    "c0009",
+    "c0002"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0016",
+   "names": [
+    "c0010",
+    "c0009",
+    "c0002"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0017",
+   "names": [
+    "c0013"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0018",
+   "names": [
+    "c0009",
+    "c0002"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0019",
+   "names": [
+    "c0009",
+    "c0018"
+   ],
+   "cross_branch": []
+  }
+ ],
+ "repeats": [
+  {
+   "candidate": "c0016",
+   "earlier": "c0015",
+   "knob": "add a second zero-initialised learned gate-logit bias at non-name positions (non_name_bias / off_bias), from c0010",
+   "acknowledged": false
+  },
+  {
+   "candidate": "c0017",
+   "earlier": "c0011",
+   "knob": "dropout 0.1 on the memory path (c0017: inside the projection MLP; c0011: on the projected memory vector)",
+   "acknowledged": false
+  },
+  {
+   "candidate": "c0014",
+   "earlier": "c0006",
+   "knob": "a learned per-channel constant sigmoid gate parameter (c0006's channel_scale, which c0006 combined with a hidden-dependent scalar gate) — partial repeat",
+   "acknowledged": false
+  }
+ ],
+ "totals": {
+  "M": {
+   "correct": 112,
+   "incorrect": 0,
+   "unsupported": 1
+  },
+  "R": {
+   "correct": 1,
+   "incorrect": 0,
+   "unsupported": 1
+  },
+  "C": {
+   "correct": 0,
+   "incorrect": 0,
+   "unsupported": 0
+  },
+  "rated_MR": 115,
+  "bad_MR": 2,
+  "fraction_bad": 0.0174
+ }
+}
