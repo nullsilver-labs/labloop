@@ -93,3 +93,13 @@ for two of them:
 
 Nothing in either arm's directory was modified; the arms' results are still
 untracked in their own git repositories.
+
+## Second-rater check (2026-09-14, not the human check)
+
+A fresh Opus session re-rated the seeded sample of 10 statements per arm blind
+(`spot-check-second-rater.md`, verdicts in `ratings/spot-check-second.json`):
+**19 of 20 agree**. The one disagreement is legacy c0012's ordering claim about
+c0005/c0009/c0006 (first rater: incorrect, the proxy and loss do not move opposite to
+fitness; second rater: correct, "opposite" read loosely). Counting it correct gives
+legacy 8 / 191 = 0.042 and a ratio of 0.41, still ≤ 0.50. The human spot-check
+in `spot-check.md` remains open; the decision does not depend on it.
