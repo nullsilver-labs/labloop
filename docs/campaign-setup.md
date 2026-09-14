@@ -233,8 +233,40 @@ check. Nothing is repaired, overwritten or superseded automatically and the cand
 is not marked failed: inspect the candidate dir and decide. v1 has no supersession
 mechanism.
 
+**`mode = "findings-v2"`** (the plan's §3b) keeps all of that and changes what is
+selected, after the first live comparison showed the v1 window freezing on old weak
+candidates: the trivial baseline is never a cross-branch card, the strongest candidate
+outside the lineage is chosen before the topic matches, other children of this job's
+parents get two slots of their own, topic matches are ordered newest-first, and at least
+two cross-branch cards survive the byte budget (ancestors are dropped for them). Cards
+are schema `finding-card/2`.
+
+```toml
+[memory]
+mode  = "findings-v2"
+knobs = "out/memory_config.json"   # optional; relative to the candidate dir
+```
+
+**`knobs`** names a small JSON object the candidate's own code writes — whatever it
+configured for this attempt. Each card then carries a `knobs` field (top-level scalars
+only: at most 32 sorted keys, values ≤ 64 bytes, redacted like any other worker text;
+`null` and a `knobs file missing` caveat when the file is absent or unreadable), and
+every job card ends with a **knob ledger**: one line per settled non-baseline candidate,
+newest first, with its search score, its Δ to its first parent and the keys whose value
+differs from that parent's file, plus a `card not shown` marker where the snapshot has
+no card for it. It is bounded at 2 KiB on top of the card budget and dropped
+oldest-first, because its point is that a worker can see *that* a knob was already moved
+in this direction even when the card that moved it did not fit. Nothing in it is parsed
+from prose; a campaign whose workers write no such file simply gets a ledger of ids,
+scores and deltas. The path is frozen into `population.json` with the rest of the
+policy, and `knobs` under `findings-v1` is refused — v1 is frozen so its jobs stay
+reproducible byte for byte.
+
 Passing the acceptance suite shows that the plumbing is correct, not that the memory
 is useful; the comparison that would show that is `docs/finding-cards-plan.md` §7.
+`scripts/mem_replay_selector.py <project>` replays a finished campaign's dispatches
+under both policies and reports cross-branch coverage, cards shown to nobody and
+whether a repeated idea was visible to the job that repeated it — read-only, no LLM.
 
 ## The read-only page
 

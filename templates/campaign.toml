@@ -56,11 +56,22 @@ max_debug_retries = 1
 # seed = 12345                   # default: derived from campaign.id
 
 [memory]                         # what a worker is told about earlier candidates
-# mode = "findings-v1"           # one immutable finding.json per settled candidate and a
+# mode = "findings-v2"           # one immutable finding.json per settled candidate and a
                                  # bounded, deterministic snapshot of cards from every branch
-                                 # in each job card (docs/finding-cards-plan.md). Default
-                                 # "legacy": the first-parent lineage of clipped summaries.
+                                 # in each job card (docs/finding-cards-plan.md §3, §3b).
+                                 # "findings-v1" is the original selection, kept frozen;
+                                 # v2 never shows the trivial baseline as a cross-branch
+                                 # card, orders topic matches newest-first, gives siblings
+                                 # their own slots and keeps two cross-branch cards under
+                                 # the byte budget. Default "legacy": the first-parent
+                                 # lineage of clipped summaries.
                                  # Frozen into population.json when the campaign starts.
+# knobs = "out/memory_config.json"   # findings-v2 only: a small JSON object your code
+                                 # writes (relative to the candidate dir). Each card
+                                 # carries its scalars, and every job card ends with a
+                                 # ledger of one line per settled candidate diffing them
+                                 # against its first parent's — so a knob already moved
+                                 # in this direction is visible even when its card is not.
 
 [usage]                          # the Claude Max window is the second scarce resource
 # window_budget = 12.0           # list-price USD per window the plan tolerates (as `claude -p`
