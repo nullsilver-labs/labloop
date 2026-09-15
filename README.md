@@ -45,7 +45,7 @@ without an LLM, and has run live on MNIST and CIFAR-10. Status is in NEXT.md, de
 ```
 campaign.toml ──► lab run ──► [ select parent → worker → evaluate → add to population ] ──► REPORT.md
                     ▲                                                                       │
-                    └──────────────── until a stop condition ────────────────────────────────┘
+                    └──────────────── until a stop condition ───────────────────────────────┘
 ```
 
 Every tick, `lab run` reaps finished jobs (reads `fitness.json`, writes the LEDGER row),
