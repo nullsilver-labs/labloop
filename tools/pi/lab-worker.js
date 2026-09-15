@@ -8,7 +8,9 @@
 //      call is blocked with a terminating reason, which ends the agent run; from five
 //      turns before that, every tool result carries a countdown so the model writes
 //      summary.md in time.
-//   2. the evidence guard — the same .claude/hooks/guard.sh Claude Code runs as a
+//   2. a continuation when a response is cut at the output token limit (Pi ends the
+//      run on stopReason "length"; up to LAB_LENGTH_NUDGES follow-ups, default 2).
+//   3. the evidence guard — the same .claude/hooks/guard.sh Claude Code runs as a
 //      PreToolUse hook, fed the same JSON it expects (tool_name Bash/Write/Edit,
 //      tool_input, cwd). Exit 2 blocks the call with the guard's message. One guard,
 //      two harnesses. Reads of the hidden labels are refused here as well.
@@ -39,6 +41,12 @@ export default function (pi) {
   const guard = env.LAB_GUARD || path.join(cwd, ".claude", "hooks", "guard.sh");
   const haveGuard = existsSync(guard);
   let turns = 0;
+  let lastStop = null;
+  let nudges = 0;
+  // A response cut at the output token limit ends a Pi run (stopReason "length");
+  // Claude Code continues past its own. Up to this many times the session is nudged
+  // on with a follow-up message instead of ending with the work undone.
+  const MAX_NUDGES = Math.max(0, parseInt(env.LAB_LENGTH_NUDGES || "2", 10) || 0);
 
   const remainingSec = () => Math.max(1, Math.floor(wallSec - (Date.now() - startedAt) / 1000));
 
@@ -51,6 +59,24 @@ export default function (pi) {
   };
 
   pi.on("turn_start", () => { turns += 1; });
+
+  pi.on("message_end", (event) => {
+    const m = event.message;
+    if (m && m.role === "assistant") lastStop = m.stopReason || null;
+    return undefined;
+  });
+
+  pi.on("agent_end", () => {
+    if (lastStop !== "length" || turns >= maxTurns || nudges >= MAX_NUDGES) return undefined;
+    nudges += 1;
+    pi.sendMessage({
+      customType: "lab-nudge", display: true,
+      content: `[lab] Your last response was cut off at the output token limit (continuation ${nudges} of ${MAX_NUDGES}). ` +
+               `Do not repeat it. Continue in short steps: small tool calls, brief reasoning, no long file dumps. ` +
+               `Run code/run.sh, check the predictions, write summary.md, then stop.`,
+    }, { deliverAs: "followUp", triggerTurn: true });
+    return undefined;
+  });
 
   pi.on("tool_call", (event) => {
     if (turns > maxTurns) {

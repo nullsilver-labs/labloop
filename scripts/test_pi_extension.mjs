@@ -15,7 +15,8 @@ process.env.LAB_GUARD = path.join(SRC, ".claude", "hooks", "guard.sh");
 
 const { default: ext } = await import(path.join(SRC, "tools", "pi", "lab-worker.js"));
 const handlers = {};
-ext({ on: (name, fn) => (handlers[name] ??= []).push(fn) });
+const sent = [];
+ext({ on: (name, fn) => (handlers[name] ??= []).push(fn), sendMessage: (m, o) => sent.push({ m, o }) });
 const fire = async (name, event) => {
   let out;
   for (const h of handlers[name] || []) out = (await h(event, {})) ?? out;
@@ -60,6 +61,16 @@ r = await fire("tool_result", { toolName: "bash", content: [{ type: "text", text
 check("a huge tool result is clipped with a marker", r?.content?.[0]?.text.length < 17000 && /characters elided/.test(r.content[0].text), String(r?.content?.[0]?.text?.length));
 r = await fire("tool_result", { toolName: "bash", content: [{ type: "text", text: "small" }] });
 check("a small result is not clipped", r?.content?.[0]?.text === "small" && !/elided/.test(JSON.stringify(r)), JSON.stringify(r));
+await fire("message_end", { message: { role: "assistant", stopReason: "length", content: [] } });
+await fire("agent_end", { messages: [] });
+check("a run ended at the output limit gets a follow-up", sent.length === 1 && sent[0].o.deliverAs === "followUp" && sent[0].o.triggerTurn === true && /cut off/.test(sent[0].m.content), JSON.stringify(sent));
+await fire("agent_end", { messages: [] });
+await fire("message_end", { message: { role: "assistant", stopReason: "stop", content: [] } });
+await fire("agent_end", { messages: [] });
+check("a normal stop gets none, and the nudge count is bounded", sent.length === 2, String(sent.length));
+await fire("message_end", { message: { role: "assistant", stopReason: "length", content: [] } });
+await fire("agent_end", { messages: [] });
+check("… at LAB_LENGTH_NUDGES", sent.length === 2, String(sent.length));
 await fire("turn_start", { turnIndex: 1 });
 r = await fire("tool_result", { toolName: "bash", content: [{ type: "text", text: "out" }] });
 check("a countdown note is appended near the turn budget", Array.isArray(r?.content) && /\[lab\] 1 turn of 3 left/.test(r.content.at(-1).text), JSON.stringify(r));
