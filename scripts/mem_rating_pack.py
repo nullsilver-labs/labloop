@@ -204,11 +204,49 @@ def build_arm(arm_dir: Path, dest: Path, letter: str, keep_finding: bool = False
     return {"letter": letter, "task": task, **stats}
 
 
-def rubric(prereg: Path) -> str:
+CARRIED = re.compile(r"rubric of `([^`]+PREREG\.md)` is carried forward")
+
+
+def carried_rubric(prereg: Path, t: str) -> str:
+    """A PREREG that carries the rubric forward by reference ("The rubric of `X` is carried
+    forward verbatim ... with one change") names X; the rater must still read the unit,
+    types and ratings, so X's paragraphs from **Unit.** to just before **Decision.** are
+    inlined, as the referenced text, before the PREREG's own primary-endpoint section.
+    The mem2 pack of 2026-09-15 was first built without this and the rater had to guess
+    the types (`docs/mem2-comparison-20260914/RESULT.md`)."""
+    m = CARRIED.search(t)
+    if not m:
+        return ""
+    ref = Path(m.group(1))
+    for base in (prereg.parent, Path(__file__).resolve().parent.parent, Path.cwd()):
+        if (base / ref).exists():
+            ref = base / ref
+            break
+    else:
+        raise SystemExit(f"rubric carried forward from {m.group(1)}, which was not found; pass it via --rubric-from")
+    rt = ref.read_text()
+    a, b = rt.index("**Unit.**"), rt.index("**Decision.**")
+    return (f"### Carried forward verbatim from `{m.group(1)}` (unit, types, ratings, endpoint)\n\n"
+            + rt[a:b].rstrip() + "\n\n### This preregistration's primary endpoint\n\n")
+
+
+def rubric(prereg: Path, rubric_from: Path | None = None) -> str:
     t = prereg.read_text()
     a = t.index("## Primary endpoint")
     b = t.index("## Secondary measures")
     primary = t[a:b].rstrip()
+    if rubric_from is not None:
+        rt = rubric_from.read_text()
+        ra, rb = rt.index("**Unit.**"), rt.index("**Decision.**")
+        head = (f"### Carried forward verbatim from `{rubric_from}` (unit, types, ratings, endpoint)\n\n"
+                + rt[ra:rb].rstrip() + "\n\n### This preregistration's primary endpoint\n\n")
+    else:
+        head = carried_rubric(prereg, t)
+    if "**Types.**" not in primary and "**Types.**" not in head:
+        raise SystemExit("the rubric has no **Types.** paragraph: the rater would have to guess M/R/C; "
+                         "pass --rubric-from <PREREG that defines them>")
+    primary = primary.replace("## Primary endpoint", "## Primary endpoint", 1)
+    primary = primary.split("\n", 1)[0] + "\n\n" + head + primary.split("\n", 1)[1].lstrip("\n")
     m = re.search(r"- \*\*Unacknowledged repeats\*\*:.*?(?=\n- \*\*|\n\n)", t[b:], re.S)
     repeats = m.group(0) if m else "(Unacknowledged repeats bullet not found in PREREG.md)"
     return primary + "\n\n## Secondary measure rated from the same pack\n\n" + repeats + "\n"
@@ -295,6 +333,9 @@ def main() -> None:
     ap.add_argument("--out", required=True, type=Path)
     ap.add_argument("--keep-finding", action="store_true",
                     help="keep the `## Finding` section in summaries (rated as prose about others)")
+    ap.add_argument("--rubric-from", type=Path,
+                    help="PREREG.md whose unit/types/ratings paragraphs are inlined when --prereg "
+                         "carries the rubric forward by reference (auto-detected when the reference resolves)")
     args = ap.parse_args()
     out = args.out.resolve()
     if out.exists() and any(out.iterdir()):
@@ -315,7 +356,7 @@ def main() -> None:
     note = (", `## Finding` section included: its lines are prose about earlier candidates and "
             "are extracted and rated like any other" if args.keep_finding
             else " with its `## Finding` section removed")
-    (out / "README.md").write_text(README.format(ts=ts, rubric=rubric(args.prereg), finding_note=note))
+    (out / "README.md").write_text(README.format(ts=ts, rubric=rubric(args.prereg, args.rubric_from), finding_note=note))
     (out / "SEAL.json").write_text(json.dumps(
         {"built": ts, "draw": "secrets.randbits(1)", "assignment": assignment,
          "keep_finding": args.keep_finding,

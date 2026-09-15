@@ -183,6 +183,56 @@ assert_grep "and says so"                                      '"requested_sourc
 assert_grep "the baseline requested no model at all"           '"requested": null' candidates/c0000/config.json
 assert_grep "REPORT lists the requested model per operator"    "| worker model requested | claude-sonnet-5; draft claude-opus-5 |" REPORT.md
 
+# stop.max_candidates is read once a tick: a second free slot must not dispatch past it.
+assert_eq   "a free slot stops dispatching when settled + in flight reaches max_candidates" \
+  "$(python3 -c "
+import sys, pathlib, types; sys.path.insert(0, 'tools'); import lab_campaign as m
+m.L = types.SimpleNamespace(LAB_DIR=pathlib.Path('no-such-lab'), now_iso=lambda: '2026-01-01T00:00:00Z',
+                            emit=lambda *a, **k: None)
+m.save_pop = lambda pop: None
+m.reap = m.ensure_cards = m.govern = lambda cfg, pop: None
+launched = []
+m.launch = lambda cfg, pop, cid: launched.append(cid)
+def new_candidate(cfg, pop, op, parents, gpu, rng, origin=None):
+    cid = 'c%04d' % len(pop['candidates'])
+    pop['candidates'][cid] = cand(cid, op, 'running', gpu=gpu)
+    return cid
+m.new_candidate = new_candidate
+def cand(i, op, status, fit=None, gpu=None):
+    return {'id': i, 'operator': op, 'parents': [], 'status': status, 'fitness': fit,
+            'debugged': True, 'gpu': gpu}
+cfg = {'selection': {'temperature': 1.0, 'crossover_p': 0.0, 'max_debug_retries': 1},
+       'report': {'higher_is_better': True},
+       'resources': {'max_parallel_jobs': 2, 'gpus': [], 'min_free_vram_mb': 0, 'gpu_hours_total': 0},
+       'stop': {'max_candidates': 4, 'no_improvement_for': 0, 'wall_clock_sec': 0}}
+def pop(settled, *cs):
+    return {'campaign': 'acc-cap', 'seed': 7, 'tick': 0, 'status': 'running', 'settled': settled,
+            'settled_at_best': 0, 'gpu_seconds': 0.0, 'best': None, 'started': '2026-01-01T00:00:00Z',
+            'candidates': {c['id']: c for c in cs}, 'usage': m.usage_defaults()}
+done = [cand('c%04d' % i, 'draft', 'evaluated', 0.9 - i / 10) for i in range(3)]
+done[0]['operator'] = 'baseline'
+full = pop(3, *done, cand('c0003', 'draft', 'running', gpu=None))
+m.tick(cfg, full)
+at_cap = len(launched)
+room = pop(2, *done[:2], cand('c0002', 'draft', 'running', gpu=None))
+m.tick(cfg, room)
+in_flight = [c for c in room['candidates'].values() if c['status'] in ('queued', 'running')]
+print(at_cap, len(launched), room['settled'] + len(in_flight))")" "0 1 4"
+
+# End to end on two slots: the campaign settles exactly max_candidates, never one more.
+WORKC="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-cap.XXXXXX")"
+worker_repo "$WORKC" acc-cap
+cd "$WORKC" || return 1
+export LAB_ROOT="$WORKC"
+LABC="$WORKC/tools/lab"
+sed -i -e 's#^command = .*#command = "bash scripts/fixtures/campaign/worker.sh"#' \
+       -e 's/^max_candidates = 3/max_candidates = 4/' campaign.toml
+assert_ok   "campaign with two slots and max_candidates 4 completes"  timeout 200 "$LABC" run --poll-sec 1
+assert_eq   "it settled exactly 4, not a fifth from the second slot" \
+  "$(python3 -c "import json;p=json.load(open('population.json'));print(p['settled'], len(p['candidates']))")" "4 4"
+assert_grep "and stopped for the reason it was given"          "max_candidates 4 reached" REPORT.md
+
+
 WORKP="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-sync.XXXXXX")"
 mkdir -p "$WORKP/tools" "$WORKP/candidates/c0000" && echo old > "$WORKP/tools/lab" && echo evidence > "$WORKP/candidates/c0000/summary.md" && echo '[campaign]' > "$WORKP/campaign.toml"
 assert_ok   "sync-project refreshes tooling"                   bash "$SRC/scripts/sync-project.sh" "$WORKP"
@@ -190,4 +240,4 @@ assert_ok   "synced tools/lab is the current one"              cmp -s "$SRC/tool
 assert_file "synced hooks"                                     "$WORKP/.claude/hooks/guard.sh"
 assert_grep "evidence untouched"                               evidence "$WORKP/candidates/c0000/summary.md"
 assert_grep "campaign.toml untouched"                          '[campaign]' "$WORKP/campaign.toml"
-[ "${KEEP:-0}" = "1" ] || rm -rf "$WORKS" "$WORKP" "$WORKM"
+[ "${KEEP:-0}" = "1" ] || rm -rf "$WORKS" "$WORKP" "$WORKM" "$WORKC"

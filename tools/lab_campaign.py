@@ -1841,7 +1841,13 @@ def tick(cfg: dict, pop: dict) -> None:
     if pop["status"] == "running":
         in_flight = {(c["operator"], tuple(c["parents"])) for c in pop["candidates"].values()
                      if c["status"] in ("queued", "running")}
+        cap = cfg["stop"]["max_candidates"]
         for gpu in free_slots(cfg, pop):
+            # stop_reason is read once a tick: without this a second free slot dispatches
+            # past max_candidates and the campaign settles more than it was asked for.
+            if cap and pop["settled"] + sum(1 for c in pop["candidates"].values()
+                                            if c["status"] in ("queued", "running")) >= cap:
+                break
             job = pick_job(cfg, pop, rng, in_flight)
             if job is None:
                 break

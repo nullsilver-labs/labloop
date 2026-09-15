@@ -556,8 +556,8 @@ assert_ok   "a campaign whose worker writes unreadable bytes runs to completion"
 assert_eq   "the campaign finished"  \
   "$(python3 -c "import json;print(json.load(open('population.json'))['status'])")" finished
 assert_eq   "an unreadable summary is not a failed candidate" \
-  "$(python3 -c "import json;c=json.load(open('population.json'))['candidates']['c0001'];print(c['exec'], c['status'])")" \
-  "completed evaluated"
+  "$(python3 -c "import json;c=json.load(open('population.json'))['candidates']['c0001'];print(c['exec'], c['status'] in ('evaluated', 'frozen'))")" \
+  "completed True"
 assert_file "it still gets a card"                            candidates/c0001/finding.json
 assert_eq   "the card says the report could not be decoded" \
   "$(python3 -c "import json;print(json.load(open('candidates/c0001/finding.json'))['report']['status'])")" undecodable

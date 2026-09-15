@@ -1,0 +1,3855 @@
+{
+ "generated_by": "scripts/drafts_mechanical.py",
+ "generated_at": "2026-09-15T08:20:05Z",
+ "threshold": 0.5,
+ "kill_margin": 0.05,
+ "arms": {
+  "D1": {
+   "dir": "/mnt/data/projects/nullsilver/labloop-drafts-1-20260914",
+   "campaign": "engram-drafts1-w0",
+   "seed": 3,
+   "status": "finished",
+   "stop_reason": "max_candidates 20 reached",
+   "started": "2026-09-14T21:17:26Z",
+   "finished": "2026-09-15T00:07:12Z",
+   "candidates_total": 21,
+   "settled": 21,
+   "settled_non_baseline": 20,
+   "exec_counts": {
+    "completed": 21
+   },
+   "defers": 0,
+   "redispatches": [],
+   "gpu_seconds": 18059.0,
+   "gpu_hours": 5.016,
+   "wall_hours": 2.829,
+   "settled_per_gpu_hour": 4.19,
+   "cost_total_usd": 14.1,
+   "cost_mean_per_candidate_usd": 0.705,
+   "cost_median_usd": 0.658,
+   "served_models": {
+    "claude-haiku-4-5-20251001 + claude-sonnet-5": 20
+   },
+   "sessions_never_ran": [],
+   "sessions_with_errors": [],
+   "turns_median": 21.5,
+   "turns_mean": 23.1,
+   "turns_max": 45,
+   "frozen": "c0016",
+   "frozen_search_fitness": 0.9979248046875,
+   "final_score": 0.997802734375,
+   "claim_recorded": "supported",
+   "usage": {
+    "pauses": 1,
+    "waiting_seconds": 281.7902178764343,
+    "rate_limits": 0,
+    "deferred": 0,
+    "hard_kills": 0,
+    "peak_fraction": 0.7086,
+    "waiting_reason": "window estimate 71% of budget $20 ($12.86 spent in the last 5h00m + $1.32 reserved for 2 running) \u2265 soft 70%"
+   }
+  },
+  "D4": {
+   "dir": "/mnt/data/projects/nullsilver/labloop-drafts-4-20260914",
+   "campaign": "engram-drafts4-w0",
+   "seed": 3,
+   "status": "finished",
+   "stop_reason": "max_candidates 20 reached",
+   "started": "2026-09-15T05:45:49Z",
+   "finished": "2026-09-15T08:02:50Z",
+   "candidates_total": 20,
+   "settled": 20,
+   "settled_non_baseline": 19,
+   "exec_counts": {
+    "completed": 20
+   },
+   "defers": 0,
+   "redispatches": [],
+   "gpu_seconds": 15661.0,
+   "gpu_hours": 4.35,
+   "wall_hours": 2.284,
+   "settled_per_gpu_hour": 4.6,
+   "cost_total_usd": 13.77,
+   "cost_mean_per_candidate_usd": 0.725,
+   "cost_median_usd": 0.669,
+   "served_models": {
+    "claude-haiku-4-5-20251001 + claude-sonnet-5": 19
+   },
+   "sessions_never_ran": [],
+   "sessions_with_errors": [],
+   "turns_median": 19,
+   "turns_mean": 21.4,
+   "turns_max": 32,
+   "frozen": "c0017",
+   "frozen_search_fitness": 0.8038330078125,
+   "final_score": 0.8455810546875,
+   "claim_recorded": "supported",
+   "usage": {
+    "pauses": 1,
+    "waiting_seconds": 642.9367399215698,
+    "rate_limits": 0,
+    "deferred": 0,
+    "hard_kills": 0,
+    "peak_fraction": 0.7076,
+    "waiting_reason": "window estimate 70% of budget $20 ($13.34 spent in the last 5h00m + $0.68 reserved for 1 running) \u2265 soft 70%"
+   }
+  }
+ },
+ "references": [
+  {
+   "dir": "/mnt/data/projects/nullsilver/labloop-mem2-legacy-20260914",
+   "campaign": "engram-mem2-legacy-w0",
+   "seed": 2,
+   "status": "finished",
+   "stop_reason": "max_candidates 20 reached",
+   "started": "2026-09-14T11:57:50Z",
+   "finished": "2026-09-14T16:45:30Z",
+   "candidates_total": 21,
+   "settled": 20,
+   "settled_non_baseline": 19,
+   "exec_counts": {
+    "completed": 20,
+    "deferred": 1
+   },
+   "defers": 1,
+   "redispatches": [
+    "c0009"
+   ],
+   "gpu_seconds": 15242.0,
+   "gpu_hours": 4.234,
+   "wall_hours": 4.794,
+   "settled_per_gpu_hour": 4.72,
+   "cost_total_usd": 11.55,
+   "cost_mean_per_candidate_usd": 0.608,
+   "cost_median_usd": 0.577,
+   "served_models": {
+    "claude-haiku-4-5-20251001 + claude-sonnet-5": 19
+   },
+   "sessions_never_ran": [
+    "c0008"
+   ],
+   "sessions_with_errors": [
+    {
+     "id": "c0007",
+     "subtype": "success",
+     "is_error": true,
+     "api_error_status": 429,
+     "rate_limited": true,
+     "message": "You've hit your session limit \u00b7 resets 2pm (UTC) success 429 api_error"
+    }
+   ],
+   "turns_median": 22,
+   "turns_mean": 21.9,
+   "turns_max": 32,
+   "frozen": "c0014",
+   "frozen_search_fitness": 0.795166015625,
+   "final_score": 0.699462890625,
+   "claim_recorded": "supported",
+   "usage": {
+    "pauses": 1,
+    "waiting_seconds": 1831.4371531009674,
+    "rate_limits": 1,
+    "deferred": 1,
+    "hard_kills": 0,
+    "peak_fraction": 0.0,
+    "waiting_reason": null
+   }
+  },
+  {
+   "dir": "/mnt/data/projects/nullsilver/labloop-mem2-findings-20260914",
+   "campaign": "engram-mem2-findings-w0",
+   "seed": 2,
+   "status": "finished",
+   "stop_reason": "max_candidates 20 reached",
+   "started": "2026-09-14T17:04:43Z",
+   "finished": "2026-09-14T20:46:35Z",
+   "candidates_total": 20,
+   "settled": 20,
+   "settled_non_baseline": 19,
+   "exec_counts": {
+    "completed": 20
+   },
+   "defers": 0,
+   "redispatches": [],
+   "gpu_seconds": 13200.0,
+   "gpu_hours": 3.667,
+   "wall_hours": 3.698,
+   "settled_per_gpu_hour": 5.45,
+   "cost_total_usd": 9.26,
+   "cost_mean_per_candidate_usd": 0.487,
+   "cost_median_usd": 0.472,
+   "served_models": {
+    "claude-haiku-4-5-20251001 + claude-sonnet-5": 19
+   },
+   "sessions_never_ran": [],
+   "sessions_with_errors": [],
+   "turns_median": 16,
+   "turns_mean": 16.1,
+   "turns_max": 23,
+   "frozen": "c0016",
+   "frozen_search_fitness": 0.81103515625,
+   "final_score": 0.8729248046875,
+   "claim_recorded": "supported",
+   "usage": {
+    "pauses": 0,
+    "waiting_seconds": 0.0,
+    "rate_limits": 0,
+    "deferred": 0,
+    "hard_kills": 0,
+    "peak_fraction": 0.0,
+    "waiting_reason": null
+   }
+  }
+ ],
+ "same_served_models": true,
+ "endpoint": {
+  "D1": {
+   "claim": "supported",
+   "reasons": [],
+   "final_score": 0.997802734375,
+   "threshold": 0.5
+  },
+  "D4": {
+   "claim": "supported",
+   "reasons": [],
+   "final_score": 0.8455810546875,
+   "threshold": 0.5
+  }
+ },
+ "final_gap_d4_minus_d1": -0.1522216796875,
+ "kill_criterion": {
+  "d1_final": 0.997802734375,
+  "d4_final": 0.8455810546875,
+  "gap": -0.1522216796875,
+  "margin": 0.05,
+  "half_a_final_gap": true,
+  "first_draft": "c0001",
+  "first_draft_fitness": 0.587158203125,
+  "later_drafts": [
+   [
+    "c0002",
+    0.373291015625
+   ],
+   [
+    "c0003",
+    0.676513671875
+   ],
+   [
+    "c0004",
+    0.709716796875
+   ]
+  ],
+  "half_b_no_later_draft_beat_first": false,
+  "fires": false
+ },
+ "lineages": {
+  "D1": {
+   "baseline": "c0000",
+   "n_roots": 3,
+   "n_planned_drafts": 1,
+   "n_disguised_drafts": 2,
+   "draft_count_as_reported": "1 planned + 2 via the baseline",
+   "roots_that_ever_held_best": [
+    "c0001",
+    "c0003"
+   ],
+   "frozen": "c0016",
+   "frozen_lineage_root": "c0003",
+   "improve_crossover_slots": 17,
+   "slots_on_frozen_lineage": 12,
+   "slots_on_frozen_lineage_fraction": 0.706,
+   "unassigned_candidates": [],
+   "lineages": [
+    {
+     "root": "c0003",
+     "kind": "disguised draft (improve of the baseline)",
+     "operator": "improve",
+     "root_fitness": 0.9921875,
+     "members": [
+      "c0003",
+      "c0006",
+      "c0008",
+      "c0010",
+      "c0011",
+      "c0012",
+      "c0013",
+      "c0014",
+      "c0015",
+      "c0016",
+      "c0017",
+      "c0018",
+      "c0020"
+     ],
+     "size": 13,
+     "best_search_fitness": 0.9979248046875,
+     "best_member": "c0016",
+     "ever_held_running_best": true,
+     "approach": "built from scratch (parent c0000 is the trivial baseline, no memory code) \u2014 a 16-table hashed n-gram Engram memory (orders 1-4 x 4 hash heads), gated into the residual stream after decoder layer 2 of frozen Qwen3-0.6B, with the hashing input canonicalised to \u2026"
+    },
+    {
+     "root": "c0001",
+     "kind": "planned draft",
+     "operator": "draft",
+     "root_fitness": 0.3306884765625,
+     "members": [
+      "c0001",
+      "c0002",
+      "c0004",
+      "c0005",
+      "c0009",
+      "c0019"
+     ],
+     "size": 6,
+     "best_search_fitness": 0.8677978515625,
+     "best_member": "c0019",
+     "ever_held_running_best": true,
+     "approach": "built from scratch \u2014 a 16-table (orders 1-4 x 4 hash heads) hashed n-gram memory, projected and sigmoid-gated into the residual stream after decoder layer 2 of frozen Qwen3-0.6B."
+    },
+    {
+     "root": "c0007",
+     "kind": "disguised draft (crossover with the baseline)",
+     "operator": "crossover",
+     "root_fitness": 0.296875,
+     "members": [
+      "c0007"
+     ],
+     "size": 1,
+     "best_search_fitness": 0.296875,
+     "best_member": "c0007",
+     "ever_held_running_best": false,
+     "approach": "crossover \u2014 c0001's hashed n-gram Engram memory (architecture unchanged) plus a new fallback to c0000's per-attribute majority answer whenever the memory's word is off-vocabulary."
+    }
+   ]
+  },
+  "D4": {
+   "baseline": "c0000",
+   "n_roots": 4,
+   "n_planned_drafts": 4,
+   "n_disguised_drafts": 0,
+   "draft_count_as_reported": "4 planned + 0 via the baseline",
+   "roots_that_ever_held_best": [
+    "c0001",
+    "c0003",
+    "c0004"
+   ],
+   "frozen": "c0017",
+   "frozen_lineage_root": "c0004",
+   "improve_crossover_slots": 15,
+   "slots_on_frozen_lineage": 7,
+   "slots_on_frozen_lineage_fraction": 0.467,
+   "unassigned_candidates": [],
+   "lineages": [
+    {
+     "root": "c0004",
+     "kind": "planned draft",
+     "operator": "draft",
+     "root_fitness": 0.709716796875,
+     "members": [
+      "c0004",
+      "c0006",
+      "c0009",
+      "c0011",
+      "c0013",
+      "c0016",
+      "c0017",
+      "c0019"
+     ],
+     "size": 8,
+     "best_search_fitness": 0.8038330078125,
+     "best_member": "c0017",
+     "ever_held_running_best": true,
+     "approach": "built from scratch (no parent): hashed n-gram memory over *canonicalised* token text (not raw token ids), attached one block earlier (after decoder layer 0) with 0.1 dropout on the memory read."
+    },
+    {
+     "root": "c0003",
+     "kind": "planned draft",
+     "operator": "draft",
+     "root_fitness": 0.676513671875,
+     "members": [
+      "c0003",
+      "c0007",
+      "c0010",
+      "c0012",
+      "c0014",
+      "c0015",
+      "c0018"
+     ],
+     "size": 7,
+     "best_search_fitness": 0.7532958984375,
+     "best_member": "c0010",
+     "ever_held_running_best": true,
+     "approach": "built from scratch \u2014 a whole-prompt cumulative-mean bag of hashed n-grams (orders 1/2, 4 heads each, table 131072x128) with a content-dependent gate (sigmoid of a Linear applied to the local hidden state), injected after decoder layer 8, prompt lowercased bef\u2026"
+    },
+    {
+     "root": "c0001",
+     "kind": "planned draft",
+     "operator": "draft",
+     "root_fitness": 0.587158203125,
+     "members": [
+      "c0001"
+     ],
+     "size": 1,
+     "best_search_fitness": 0.587158203125,
+     "best_member": "c0001",
+     "ever_held_running_best": true,
+     "approach": "built from scratch (no parent): hashed n-gram memory (orders 1-4, 4 hash heads/order) gated into the residual stream after decoder block 2."
+    },
+    {
+     "root": "c0002",
+     "kind": "planned draft",
+     "operator": "draft",
+     "root_fitness": 0.373291015625,
+     "members": [
+      "c0002",
+      "c0005",
+      "c0008"
+     ],
+     "size": 3,
+     "best_search_fitness": 0.373291015625,
+     "best_member": "c0002",
+     "ever_held_running_best": false,
+     "approach": "built from scratch \u2014 a shared n-gram hashed table (orders 1/2/3, 4 heads each) gated into the residual after decoder layer 2."
+    }
+   ]
+  }
+ },
+ "progress": {
+  "D1": {
+   "best_after_4": 0.9921875,
+   "best_after_8": 0.993896484375,
+   "best_after_20": 0.9979248046875,
+   "best_after_all": 0.9979248046875,
+   "other_arm_final": 0.8455810546875,
+   "first_index_over_other_final": 3,
+   "first_candidate_over_other_final": "c0003"
+  },
+  "D4": {
+   "best_after_4": 0.676513671875,
+   "best_after_8": 0.7655029296875,
+   "best_after_20": 0.8038330078125,
+   "best_after_all": 0.8038330078125,
+   "other_arm_final": 0.997802734375,
+   "first_index_over_other_final": null,
+   "first_candidate_over_other_final": null
+  }
+ },
+ "coverage": {
+  "D1": {
+   "jobs": 20,
+   "parent_violations": [],
+   "cross_branch_violations_baseline_excluded": [],
+   "cross_branch_violations_baseline_counted": [],
+   "violation_detail": [],
+   "rows": [
+    {
+     "job": "c0001",
+     "parents": [],
+     "cards": [],
+     "cards_available_at_dispatch": 0,
+     "outside_lineage_cards": 0,
+     "outside_incl_baseline": 0,
+     "out_of_lineage_cards_available_at_dispatch": 0,
+     "second_out_of_lineage_card_existed": false,
+     "omitted": []
+    },
+    {
+     "job": "c0002",
+     "parents": [
+      "c0001"
+     ],
+     "cards": [
+      "c0001"
+     ],
+     "cards_available_at_dispatch": 2,
+     "outside_lineage_cards": 0,
+     "outside_incl_baseline": 0,
+     "out_of_lineage_cards_available_at_dispatch": 0,
+     "second_out_of_lineage_card_existed": false,
+     "omitted": []
+    },
+    {
+     "job": "c0003",
+     "parents": [
+      "c0000"
+     ],
+     "cards": [
+      "c0000",
+      "c0001"
+     ],
+     "cards_available_at_dispatch": 2,
+     "outside_lineage_cards": 1,
+     "outside_incl_baseline": 1,
+     "out_of_lineage_cards_available_at_dispatch": 1,
+     "second_out_of_lineage_card_existed": false,
+     "omitted": []
+    },
+    {
+     "job": "c0004",
+     "parents": [
+      "c0002"
+     ],
+     "cards": [
+      "c0002",
+      "c0001"
+     ],
+     "cards_available_at_dispatch": 3,
+     "outside_lineage_cards": 0,
+     "outside_incl_baseline": 0,
+     "out_of_lineage_cards_available_at_dispatch": 0,
+     "second_out_of_lineage_card_existed": false,
+     "omitted": []
+    },
+    {
+     "job": "c0005",
+     "parents": [
+      "c0001"
+     ],
+     "cards": [
+      "c0001",
+      "c0004",
+      "c0002"
+     ],
+     "cards_available_at_dispatch": 4,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 2,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": []
+    },
+    {
+     "job": "c0006",
+     "parents": [
+      "c0003"
+     ],
+     "cards": [
+      "c0003",
+      "c0000",
+      "c0001",
+      "c0002",
+      "c0004"
+     ],
+     "cards_available_at_dispatch": 5,
+     "outside_lineage_cards": 3,
+     "outside_incl_baseline": 3,
+     "out_of_lineage_cards_available_at_dispatch": 3,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": []
+    },
+    {
+     "job": "c0007",
+     "parents": [
+      "c0000",
+      "c0001"
+     ],
+     "cards": [
+      "c0000",
+      "c0001",
+      "c0003",
+      "c0005",
+      "c0002",
+      "c0004"
+     ],
+     "cards_available_at_dispatch": 6,
+     "outside_lineage_cards": 4,
+     "outside_incl_baseline": 4,
+     "out_of_lineage_cards_available_at_dispatch": 4,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": []
+    },
+    {
+     "job": "c0008",
+     "parents": [
+      "c0006",
+      "c0003"
+     ],
+     "cards": [
+      "c0003",
+      "c0006",
+      "c0000",
+      "c0001",
+      "c0002",
+      "c0004"
+     ],
+     "cards_available_at_dispatch": 7,
+     "outside_lineage_cards": 3,
+     "outside_incl_baseline": 3,
+     "out_of_lineage_cards_available_at_dispatch": 4,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0005"
+     ]
+    },
+    {
+     "job": "c0009",
+     "parents": [
+      "c0004"
+     ],
+     "cards": [
+      "c0004",
+      "c0002",
+      "c0001",
+      "c0006",
+      "c0007"
+     ],
+     "cards_available_at_dispatch": 8,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 4,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0005",
+      "c0003"
+     ]
+    },
+    {
+     "job": "c0010",
+     "parents": [
+      "c0003"
+     ],
+     "cards": [
+      "c0003",
+      "c0000",
+      "c0006",
+      "c0008",
+      "c0007"
+     ],
+     "cards_available_at_dispatch": 9,
+     "outside_lineage_cards": 3,
+     "outside_incl_baseline": 3,
+     "out_of_lineage_cards_available_at_dispatch": 7,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0001",
+      "c0002",
+      "c0004"
+     ]
+    },
+    {
+     "job": "c0011",
+     "parents": [
+      "c0006"
+     ],
+     "cards": [
+      "c0006",
+      "c0003",
+      "c0000",
+      "c0008",
+      "c0007"
+     ],
+     "cards_available_at_dispatch": 10,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 7,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0002",
+      "c0004",
+      "c0009"
+     ]
+    },
+    {
+     "job": "c0012",
+     "parents": [
+      "c0006",
+      "c0003"
+     ],
+     "cards": [
+      "c0003",
+      "c0006",
+      "c0000",
+      "c0010",
+      "c0008"
+     ],
+     "cards_available_at_dispatch": 11,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 8,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0004",
+      "c0009",
+      "c0007"
+     ]
+    },
+    {
+     "job": "c0013",
+     "parents": [
+      "c0006"
+     ],
+     "cards": [
+      "c0006",
+      "c0003",
+      "c0000",
+      "c0011",
+      "c0008"
+     ],
+     "cards_available_at_dispatch": 12,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 9,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0007",
+      "c0009",
+      "c0010"
+     ]
+    },
+    {
+     "job": "c0014",
+     "parents": [
+      "c0011"
+     ],
+     "cards": [
+      "c0011",
+      "c0006",
+      "c0010",
+      "c0012"
+     ],
+     "cards_available_at_dispatch": 13,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 9,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0007",
+      "c0009",
+      "c0008",
+      "c0003"
+     ]
+    },
+    {
+     "job": "c0015",
+     "parents": [
+      "c0006"
+     ],
+     "cards": [
+      "c0006",
+      "c0011",
+      "c0013"
+     ],
+     "cards_available_at_dispatch": 14,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 11,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0010",
+      "c0008",
+      "c0012",
+      "c0000",
+      "c0003"
+     ]
+    },
+    {
+     "job": "c0016",
+     "parents": [
+      "c0011"
+     ],
+     "cards": [
+      "c0011",
+      "c0006",
+      "c0014",
+      "c0013"
+     ],
+     "cards_available_at_dispatch": 15,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 11,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0010",
+      "c0008",
+      "c0012",
+      "c0003"
+     ]
+    },
+    {
+     "job": "c0017",
+     "parents": [
+      "c0006"
+     ],
+     "cards": [
+      "c0006",
+      "c0015",
+      "c0013"
+     ],
+     "cards_available_at_dispatch": 16,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 13,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0011",
+      "c0008",
+      "c0012",
+      "c0000",
+      "c0003"
+     ]
+    },
+    {
+     "job": "c0018",
+     "parents": [
+      "c0003"
+     ],
+     "cards": [
+      "c0003",
+      "c0000",
+      "c0016",
+      "c0012",
+      "c0010"
+     ],
+     "cards_available_at_dispatch": 17,
+     "outside_lineage_cards": 3,
+     "outside_incl_baseline": 3,
+     "out_of_lineage_cards_available_at_dispatch": 15,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0013",
+      "c0015",
+      "c0014"
+     ]
+    },
+    {
+     "job": "c0019",
+     "parents": [
+      "c0009"
+     ],
+     "cards": [
+      "c0009",
+      "c0004",
+      "c0016",
+      "c0017"
+     ],
+     "cards_available_at_dispatch": 18,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 13,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0013",
+      "c0014",
+      "c0015",
+      "c0002"
+     ]
+    },
+    {
+     "job": "c0020",
+     "parents": [
+      "c0013",
+      "c0008"
+     ],
+     "cards": [
+      "c0008",
+      "c0013",
+      "c0016",
+      "c0017"
+     ],
+     "cards_available_at_dispatch": 19,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 14,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0012",
+      "c0015",
+      "c0006",
+      "c0003"
+     ]
+    }
+   ]
+  },
+  "D4": {
+   "jobs": 19,
+   "parent_violations": [],
+   "cross_branch_violations_baseline_excluded": [],
+   "cross_branch_violations_baseline_counted": [],
+   "violation_detail": [],
+   "rows": [
+    {
+     "job": "c0001",
+     "parents": [],
+     "cards": [],
+     "cards_available_at_dispatch": 0,
+     "outside_lineage_cards": 0,
+     "outside_incl_baseline": 0,
+     "out_of_lineage_cards_available_at_dispatch": 0,
+     "second_out_of_lineage_card_existed": false,
+     "omitted": []
+    },
+    {
+     "job": "c0002",
+     "parents": [],
+     "cards": [],
+     "cards_available_at_dispatch": 1,
+     "outside_lineage_cards": 0,
+     "outside_incl_baseline": 0,
+     "out_of_lineage_cards_available_at_dispatch": 0,
+     "second_out_of_lineage_card_existed": false,
+     "omitted": []
+    },
+    {
+     "job": "c0003",
+     "parents": [],
+     "cards": [
+      "c0002"
+     ],
+     "cards_available_at_dispatch": 2,
+     "outside_lineage_cards": 1,
+     "outside_incl_baseline": 1,
+     "out_of_lineage_cards_available_at_dispatch": 1,
+     "second_out_of_lineage_card_existed": false,
+     "omitted": []
+    },
+    {
+     "job": "c0004",
+     "parents": [],
+     "cards": [
+      "c0001",
+      "c0002"
+     ],
+     "cards_available_at_dispatch": 3,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 2,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": []
+    },
+    {
+     "job": "c0005",
+     "parents": [
+      "c0002"
+     ],
+     "cards": [
+      "c0002",
+      "c0004",
+      "c0001"
+     ],
+     "cards_available_at_dispatch": 4,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 2,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": []
+    },
+    {
+     "job": "c0006",
+     "parents": [
+      "c0004"
+     ],
+     "cards": [
+      "c0004",
+      "c0003",
+      "c0001",
+      "c0002"
+     ],
+     "cards_available_at_dispatch": 5,
+     "outside_lineage_cards": 3,
+     "outside_incl_baseline": 3,
+     "out_of_lineage_cards_available_at_dispatch": 3,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": []
+    },
+    {
+     "job": "c0007",
+     "parents": [
+      "c0003"
+     ],
+     "cards": [
+      "c0003",
+      "c0004",
+      "c0005",
+      "c0002",
+      "c0001"
+     ],
+     "cards_available_at_dispatch": 6,
+     "outside_lineage_cards": 4,
+     "outside_incl_baseline": 4,
+     "out_of_lineage_cards_available_at_dispatch": 4,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": []
+    },
+    {
+     "job": "c0008",
+     "parents": [
+      "c0005"
+     ],
+     "cards": [
+      "c0005",
+      "c0002",
+      "c0006",
+      "c0004",
+      "c0001"
+     ],
+     "cards_available_at_dispatch": 7,
+     "outside_lineage_cards": 3,
+     "outside_incl_baseline": 3,
+     "out_of_lineage_cards_available_at_dispatch": 4,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0003"
+     ]
+    },
+    {
+     "job": "c0009",
+     "parents": [
+      "c0004"
+     ],
+     "cards": [
+      "c0004",
+      "c0006",
+      "c0008",
+      "c0005",
+      "c0001"
+     ],
+     "cards_available_at_dispatch": 8,
+     "outside_lineage_cards": 4,
+     "outside_incl_baseline": 4,
+     "out_of_lineage_cards_available_at_dispatch": 6,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0002",
+      "c0003"
+     ]
+    },
+    {
+     "job": "c0010",
+     "parents": [
+      "c0003"
+     ],
+     "cards": [
+      "c0003",
+      "c0006",
+      "c0007",
+      "c0008",
+      "c0002"
+     ],
+     "cards_available_at_dispatch": 9,
+     "outside_lineage_cards": 4,
+     "outside_incl_baseline": 4,
+     "out_of_lineage_cards_available_at_dispatch": 7,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0005",
+      "c0001",
+      "c0004"
+     ]
+    },
+    {
+     "job": "c0011",
+     "parents": [
+      "c0006"
+     ],
+     "cards": [
+      "c0006",
+      "c0004",
+      "c0010",
+      "c0008"
+     ],
+     "cards_available_at_dispatch": 10,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 7,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0003",
+      "c0007",
+      "c0001",
+      "c0005"
+     ]
+    },
+    {
+     "job": "c0012",
+     "parents": [
+      "c0003",
+      "c0006"
+     ],
+     "cards": [
+      "c0003",
+      "c0006",
+      "c0004",
+      "c0010",
+      "c0007"
+     ],
+     "cards_available_at_dispatch": 11,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 7,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0001",
+      "c0005",
+      "c0008"
+     ]
+    },
+    {
+     "job": "c0013",
+     "parents": [
+      "c0006"
+     ],
+     "cards": [
+      "c0006",
+      "c0004",
+      "c0010",
+      "c0011",
+      "c0008"
+     ],
+     "cards_available_at_dispatch": 12,
+     "outside_lineage_cards": 3,
+     "outside_incl_baseline": 3,
+     "out_of_lineage_cards_available_at_dispatch": 9,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0009",
+      "c0001",
+      "c0005"
+     ]
+    },
+    {
+     "job": "c0014",
+     "parents": [
+      "c0010"
+     ],
+     "cards": [
+      "c0010",
+      "c0003",
+      "c0006",
+      "c0012"
+     ],
+     "cards_available_at_dispatch": 13,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 10,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0001",
+      "c0002",
+      "c0004",
+      "c0007"
+     ]
+    },
+    {
+     "job": "c0015",
+     "parents": [
+      "c0007",
+      "c0013"
+     ],
+     "cards": [
+      "c0007",
+      "c0013",
+      "c0010",
+      "c0012"
+     ],
+     "cards_available_at_dispatch": 14,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 8,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0008",
+      "c0011",
+      "c0006",
+      "c0003"
+     ]
+    },
+    {
+     "job": "c0016",
+     "parents": [
+      "c0013"
+     ],
+     "cards": [
+      "c0013",
+      "c0006",
+      "c0004",
+      "c0010",
+      "c0011"
+     ],
+     "cards_available_at_dispatch": 15,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 11,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0001",
+      "c0005",
+      "c0008"
+     ]
+    },
+    {
+     "job": "c0017",
+     "parents": [
+      "c0004",
+      "c0010"
+     ],
+     "cards": [
+      "c0004",
+      "c0010",
+      "c0003",
+      "c0006",
+      "c0014"
+     ],
+     "cards_available_at_dispatch": 16,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 12,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0007",
+      "c0012",
+      "c0009"
+     ]
+    },
+    {
+     "job": "c0018",
+     "parents": [
+      "c0015"
+     ],
+     "cards": [
+      "c0015",
+      "c0007",
+      "c0010",
+      "c0014"
+     ],
+     "cards_available_at_dispatch": 17,
+     "outside_lineage_cards": 2,
+     "outside_incl_baseline": 2,
+     "out_of_lineage_cards_available_at_dispatch": 10,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0011",
+      "c0012",
+      "c0016",
+      "c0013"
+     ]
+    },
+    {
+     "job": "c0019",
+     "parents": [
+      "c0004"
+     ],
+     "cards": [
+      "c0004",
+      "c0017",
+      "c0009",
+      "c0006"
+     ],
+     "cards_available_at_dispatch": 18,
+     "outside_lineage_cards": 3,
+     "outside_incl_baseline": 3,
+     "out_of_lineage_cards_available_at_dispatch": 16,
+     "second_out_of_lineage_card_existed": true,
+     "omitted": [
+      "c0005",
+      "c0008",
+      "c0011",
+      "c0013"
+     ]
+    }
+   ]
+  }
+ },
+ "gpu": {
+  "D1": {
+   "per_gpu": {
+    "0": {
+     "candidates": [
+      "c0000",
+      "c0002",
+      "c0004",
+      "c0005",
+      "c0007",
+      "c0009",
+      "c0011",
+      "c0013",
+      "c0015",
+      "c0017",
+      "c0019"
+     ],
+     "n": 11,
+     "best_search_fitness": 0.995361328125,
+     "mean_lease_min": 12.08,
+     "median_lease_min": 13.0
+    },
+    "1": {
+     "candidates": [
+      "c0001",
+      "c0003",
+      "c0006",
+      "c0008",
+      "c0010",
+      "c0012",
+      "c0014",
+      "c0016",
+      "c0018",
+      "c0020"
+     ],
+     "n": 10,
+     "best_search_fitness": 0.9979248046875,
+     "mean_lease_min": 16.82,
+     "median_lease_min": 14.63
+    }
+   },
+   "gpu_of_each_lineage_root": {
+    "c0003": 1,
+    "c0001": 1,
+    "c0007": 0
+   },
+   "frozen": "c0016",
+   "frozen_gpu": 1
+  },
+  "D4": {
+   "per_gpu": {
+    "0": {
+     "candidates": [
+      "c0000",
+      "c0002",
+      "c0003",
+      "c0006",
+      "c0008",
+      "c0009",
+      "c0012",
+      "c0014",
+      "c0016",
+      "c0018"
+     ],
+     "n": 10,
+     "best_search_fitness": 0.7655029296875,
+     "mean_lease_min": 12.54,
+     "median_lease_min": 13.76
+    },
+    "1": {
+     "candidates": [
+      "c0001",
+      "c0004",
+      "c0005",
+      "c0007",
+      "c0010",
+      "c0011",
+      "c0013",
+      "c0015",
+      "c0017",
+      "c0019"
+     ],
+     "n": 10,
+     "best_search_fitness": 0.8038330078125,
+     "mean_lease_min": 13.56,
+     "median_lease_min": 14.02
+    }
+   },
+   "gpu_of_each_lineage_root": {
+    "c0004": 1,
+    "c0003": 0,
+    "c0001": 1,
+    "c0002": 0
+   },
+   "frozen": "c0017",
+   "frozen_gpu": 1
+  }
+ },
+ "timing": {
+  "D1": {
+   "rows": [
+    {
+     "id": "c0000",
+     "operator": "baseline",
+     "gpu": 0,
+     "lease_sec": 15.0,
+     "session_sec": null,
+     "session_over_lease": null,
+     "train_sec": null,
+     "run_wall_sec": null,
+     "loaded_existing_weights": null,
+     "turns": null,
+     "launched": "2026-09-14T21:17:26Z",
+     "ended": "2026-09-14T21:17:41Z",
+     "non_training_sec": null,
+     "overlap_fraction": 1.0
+    },
+    {
+     "id": "c0001",
+     "operator": "draft",
+     "gpu": 1,
+     "lease_sec": 1637.0,
+     "session_sec": 1621.7,
+     "session_over_lease": 0.991,
+     "train_sec": 480.1,
+     "run_wall_sec": 493.3,
+     "loaded_existing_weights": null,
+     "turns": 26,
+     "launched": "2026-09-14T21:17:26Z",
+     "ended": "2026-09-14T21:44:43Z",
+     "non_training_sec": 1156.9,
+     "overlap_fraction": 0.009
+    },
+    {
+     "id": "c0002",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 841.0,
+     "session_sec": 824.6,
+     "session_over_lease": 0.981,
+     "train_sec": 480.1,
+     "run_wall_sec": 497.3,
+     "loaded_existing_weights": null,
+     "turns": 23,
+     "launched": "2026-09-14T21:44:52Z",
+     "ended": "2026-09-14T21:58:53Z",
+     "non_training_sec": 360.9,
+     "overlap_fraction": 1.0
+    },
+    {
+     "id": "c0003",
+     "operator": "improve",
+     "gpu": 1,
+     "lease_sec": 1907.0,
+     "session_sec": 1893.9,
+     "session_over_lease": 0.993,
+     "train_sec": 480.1,
+     "run_wall_sec": 27.9,
+     "loaded_existing_weights": true,
+     "turns": 45,
+     "launched": "2026-09-14T21:44:52Z",
+     "ended": "2026-09-14T22:16:39Z",
+     "non_training_sec": 1426.9,
+     "overlap_fraction": 0.99
+    },
+    {
+     "id": "c0004",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 721.0,
+     "session_sec": 707.4,
+     "session_over_lease": 0.981,
+     "train_sec": 480.0,
+     "run_wall_sec": 497.2,
+     "loaded_existing_weights": null,
+     "turns": 16,
+     "launched": "2026-09-14T21:59:03Z",
+     "ended": "2026-09-14T22:11:04Z",
+     "non_training_sec": 241.0,
+     "overlap_fraction": 1.0
+    },
+    {
+     "id": "c0005",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 705.0,
+     "session_sec": 697.9,
+     "session_over_lease": 0.99,
+     "train_sec": 480.2,
+     "run_wall_sec": 498.0,
+     "loaded_existing_weights": null,
+     "turns": 21,
+     "launched": "2026-09-14T22:11:14Z",
+     "ended": "2026-09-14T22:22:59Z",
+     "non_training_sec": 224.8,
+     "overlap_fraction": 0.993
+    },
+    {
+     "id": "c0006",
+     "operator": "improve",
+     "gpu": 1,
+     "lease_sec": 721.0,
+     "session_sec": 716.7,
+     "session_over_lease": 0.994,
+     "train_sec": 480.3,
+     "run_wall_sec": 29.5,
+     "loaded_existing_weights": true,
+     "turns": 21,
+     "launched": "2026-09-14T22:16:44Z",
+     "ended": "2026-09-14T22:28:45Z",
+     "non_training_sec": 240.7,
+     "overlap_fraction": 0.992
+    },
+    {
+     "id": "c0007",
+     "operator": "crossover",
+     "gpu": 0,
+     "lease_sec": 780.0,
+     "session_sec": 767.3,
+     "session_over_lease": 0.984,
+     "train_sec": null,
+     "run_wall_sec": 12.6,
+     "loaded_existing_weights": null,
+     "turns": 22,
+     "launched": "2026-09-14T22:23:05Z",
+     "ended": "2026-09-14T22:36:05Z",
+     "non_training_sec": null,
+     "overlap_fraction": 1.0
+    },
+    {
+     "id": "c0008",
+     "operator": "crossover",
+     "gpu": 1,
+     "lease_sec": 871.0,
+     "session_sec": 863.6,
+     "session_over_lease": 0.992,
+     "train_sec": 480.0,
+     "run_wall_sec": 30.3,
+     "loaded_existing_weights": true,
+     "turns": 30,
+     "launched": "2026-09-14T22:28:45Z",
+     "ended": "2026-09-14T22:43:16Z",
+     "non_training_sec": 391.0,
+     "overlap_fraction": 0.999
+    },
+    {
+     "id": "c0009",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 781.0,
+     "session_sec": 775.4,
+     "session_over_lease": 0.993,
+     "train_sec": 480.2,
+     "run_wall_sec": 504.8,
+     "loaded_existing_weights": null,
+     "turns": 20,
+     "launched": "2026-09-14T22:36:06Z",
+     "ended": "2026-09-14T22:49:07Z",
+     "non_training_sec": 300.8,
+     "overlap_fraction": 0.999
+    },
+    {
+     "id": "c0010",
+     "operator": "improve",
+     "gpu": 1,
+     "lease_sec": 901.0,
+     "session_sec": 898.8,
+     "session_over_lease": 0.998,
+     "train_sec": 590.0,
+     "run_wall_sec": 27.7,
+     "loaded_existing_weights": true,
+     "turns": 18,
+     "launched": "2026-09-14T22:43:17Z",
+     "ended": "2026-09-14T22:58:18Z",
+     "non_training_sec": 311.0,
+     "overlap_fraction": 0.999
+    },
+    {
+     "id": "c0011",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 885.0,
+     "session_sec": 878.9,
+     "session_over_lease": 0.993,
+     "train_sec": 600.2,
+     "run_wall_sec": 40.8,
+     "loaded_existing_weights": true,
+     "turns": 19,
+     "launched": "2026-09-14T22:49:08Z",
+     "ended": "2026-09-14T23:03:53Z",
+     "non_training_sec": 284.8,
+     "overlap_fraction": 0.999
+    },
+    {
+     "id": "c0012",
+     "operator": "crossover",
+     "gpu": 1,
+     "lease_sec": 885.0,
+     "session_sec": 874.5,
+     "session_over_lease": 0.988,
+     "train_sec": 590.0,
+     "run_wall_sec": 29.5,
+     "loaded_existing_weights": true,
+     "turns": 25,
+     "launched": "2026-09-14T22:58:19Z",
+     "ended": "2026-09-14T23:13:04Z",
+     "non_training_sec": 295.0,
+     "overlap_fraction": 0.992
+    },
+    {
+     "id": "c0013",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 870.0,
+     "session_sec": 857.6,
+     "session_over_lease": 0.986,
+     "train_sec": 480.2,
+     "run_wall_sec": 40.8,
+     "loaded_existing_weights": true,
+     "turns": 25,
+     "launched": "2026-09-14T23:04:00Z",
+     "ended": "2026-09-14T23:18:30Z",
+     "non_training_sec": 389.8,
+     "overlap_fraction": 0.992
+    },
+    {
+     "id": "c0014",
+     "operator": "improve",
+     "gpu": 1,
+     "lease_sec": 841.0,
+     "session_sec": 824.6,
+     "session_over_lease": 0.98,
+     "train_sec": 600.1,
+     "run_wall_sec": 29.4,
+     "loaded_existing_weights": true,
+     "turns": 16,
+     "launched": "2026-09-14T23:13:11Z",
+     "ended": "2026-09-14T23:27:12Z",
+     "non_training_sec": 240.9,
+     "overlap_fraction": 0.998
+    },
+    {
+     "id": "c0015",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 721.0,
+     "session_sec": 715.6,
+     "session_over_lease": 0.992,
+     "train_sec": 480.1,
+     "run_wall_sec": 40.8,
+     "loaded_existing_weights": true,
+     "turns": 18,
+     "launched": "2026-09-14T23:18:32Z",
+     "ended": "2026-09-14T23:30:33Z",
+     "non_training_sec": 240.9,
+     "overlap_fraction": 0.997
+    },
+    {
+     "id": "c0016",
+     "operator": "improve",
+     "gpu": 1,
+     "lease_sec": 885.0,
+     "session_sec": 877.2,
+     "session_over_lease": 0.991,
+     "train_sec": 600.1,
+     "run_wall_sec": 30.5,
+     "loaded_existing_weights": true,
+     "turns": 24,
+     "launched": "2026-09-14T23:27:14Z",
+     "ended": "2026-09-14T23:41:59Z",
+     "non_training_sec": 284.9,
+     "overlap_fraction": 0.999
+    },
+    {
+     "id": "c0017",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 976.0,
+     "session_sec": 967.6,
+     "session_over_lease": 0.991,
+     "train_sec": 480.2,
+     "run_wall_sec": 41.7,
+     "loaded_existing_weights": true,
+     "turns": 28,
+     "launched": "2026-09-14T23:30:34Z",
+     "ended": "2026-09-14T23:46:50Z",
+     "non_training_sec": 495.8,
+     "overlap_fraction": 0.992
+    },
+    {
+     "id": "c0018",
+     "operator": "improve",
+     "gpu": 1,
+     "lease_sec": 675.0,
+     "session_sec": 661.1,
+     "session_over_lease": 0.979,
+     "train_sec": 480.0,
+     "run_wall_sec": 27.9,
+     "loaded_existing_weights": true,
+     "turns": 21,
+     "launched": "2026-09-14T23:42:07Z",
+     "ended": "2026-09-14T23:53:22Z",
+     "non_training_sec": 195.0,
+     "overlap_fraction": 0.988
+    },
+    {
+     "id": "c0019",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 675.0,
+     "session_sec": 660.4,
+     "session_over_lease": 0.978,
+     "train_sec": 480.3,
+     "run_wall_sec": 505.2,
+     "loaded_existing_weights": null,
+     "turns": 17,
+     "launched": "2026-09-14T23:46:58Z",
+     "ended": "2026-09-14T23:58:13Z",
+     "non_training_sec": 194.7,
+     "overlap_fraction": 0.99
+    },
+    {
+     "id": "c0020",
+     "operator": "crossover",
+     "gpu": 1,
+     "lease_sec": 766.0,
+     "session_sec": 762.7,
+     "session_over_lease": 0.996,
+     "train_sec": 480.2,
+     "run_wall_sec": 30.2,
+     "loaded_existing_weights": true,
+     "turns": 26,
+     "launched": "2026-09-14T23:53:29Z",
+     "ended": "2026-09-15T00:06:15Z",
+     "non_training_sec": 285.8,
+     "overlap_fraction": 0.371
+    }
+   ],
+   "lease_sec": {
+    "n": 20,
+    "median": 841.0,
+    "mean": 902.2,
+    "min": 675.0,
+    "max": 1907.0
+   },
+   "session_sec": {
+    "n": 20,
+    "median": 824.6,
+    "mean": 892.4,
+    "min": 660.4,
+    "max": 1893.9
+   },
+   "non_training_sec": {
+    "n": 19,
+    "median": 285.8,
+    "mean": 398.0,
+    "min": 194.7,
+    "max": 1426.9
+   },
+   "lease_sec_overlap_ge_90pct": {
+    "n": 18,
+    "median": 841.0,
+    "mean": 868.9,
+    "min": 675.0,
+    "max": 1907.0
+   },
+   "lease_sec_overlap_lt_50pct": {
+    "n": 2,
+    "median": 1201.5,
+    "mean": 1201.5,
+    "min": 766.0,
+    "max": 1637.0
+   },
+   "train_sec": {
+    "n": 19,
+    "median": 480.2,
+    "mean": 510.7,
+    "min": 480.0,
+    "max": 600.2
+   },
+   "run_wall_sec": {
+    "n": 20,
+    "median": 35.6,
+    "mean": 171.8,
+    "min": 12.6,
+    "max": 505.2
+   },
+   "turns": {
+    "n": 20,
+    "median": 21.5,
+    "mean": 23.1,
+    "min": 16,
+    "max": 45
+   },
+   "session_over_lease": {
+    "n": 20,
+    "median": 1.0,
+    "mean": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   },
+   "lease_seconds_sum": 18059.0,
+   "gpu_seconds_recorded": 18059.0,
+   "gpu_seconds_minus_lease_sum": 0.0,
+   "wall_seconds": 10186.0,
+   "lease_union_seconds": 10120.0,
+   "two_leases_open_seconds": 7939.0,
+   "two_leases_open_fraction_of_wall": 0.779,
+   "slot_occupancy_leases_over_2x_wall": 0.886,
+   "usage_waiting_seconds": 281.7902178764343,
+   "usage_pauses": 1,
+   "loaded_existing_weights_true": [
+    "c0003",
+    "c0006",
+    "c0008",
+    "c0010",
+    "c0011",
+    "c0012",
+    "c0013",
+    "c0014",
+    "c0015",
+    "c0016",
+    "c0017",
+    "c0018",
+    "c0020"
+   ]
+  },
+  "D4": {
+   "rows": [
+    {
+     "id": "c0000",
+     "operator": "baseline",
+     "gpu": 0,
+     "lease_sec": 15.0,
+     "session_sec": null,
+     "session_over_lease": null,
+     "train_sec": null,
+     "run_wall_sec": null,
+     "loaded_existing_weights": null,
+     "turns": null,
+     "launched": "2026-09-15T05:45:49Z",
+     "ended": "2026-09-15T05:46:04Z",
+     "non_training_sec": null,
+     "overlap_fraction": 0.933
+    },
+    {
+     "id": "c0001",
+     "operator": "draft",
+     "gpu": 1,
+     "lease_sec": 1081.0,
+     "session_sec": 1075.6,
+     "session_over_lease": 0.995,
+     "train_sec": null,
+     "run_wall_sec": 18.3,
+     "loaded_existing_weights": null,
+     "turns": 23,
+     "launched": "2026-09-15T05:45:50Z",
+     "ended": "2026-09-15T06:03:51Z",
+     "non_training_sec": null,
+     "overlap_fraction": 0.986
+    },
+    {
+     "id": "c0002",
+     "operator": "draft",
+     "gpu": 0,
+     "lease_sec": 1051.0,
+     "session_sec": 1044.2,
+     "session_over_lease": 0.993,
+     "train_sec": 480.0,
+     "run_wall_sec": null,
+     "loaded_existing_weights": null,
+     "turns": 19,
+     "launched": "2026-09-15T05:46:10Z",
+     "ended": "2026-09-15T06:03:41Z",
+     "non_training_sec": 571.0,
+     "overlap_fraction": 1.0
+    },
+    {
+     "id": "c0003",
+     "operator": "draft",
+     "gpu": 0,
+     "lease_sec": 886.0,
+     "session_sec": 881.0,
+     "session_over_lease": 0.994,
+     "train_sec": 480.2,
+     "run_wall_sec": null,
+     "loaded_existing_weights": null,
+     "turns": 22,
+     "launched": "2026-09-15T06:03:50Z",
+     "ended": "2026-09-15T06:18:36Z",
+     "non_training_sec": 405.8,
+     "overlap_fraction": 0.977
+    },
+    {
+     "id": "c0004",
+     "operator": "draft",
+     "gpu": 1,
+     "lease_sec": 841.0,
+     "session_sec": 835.4,
+     "session_over_lease": 0.993,
+     "train_sec": null,
+     "run_wall_sec": 19.2,
+     "loaded_existing_weights": null,
+     "turns": 19,
+     "launched": "2026-09-15T06:04:01Z",
+     "ended": "2026-09-15T06:18:02Z",
+     "non_training_sec": null,
+     "overlap_fraction": 1.0
+    },
+    {
+     "id": "c0005",
+     "operator": "improve",
+     "gpu": 1,
+     "lease_sec": 780.0,
+     "session_sec": 768.9,
+     "session_over_lease": 0.986,
+     "train_sec": 480.1,
+     "run_wall_sec": null,
+     "loaded_existing_weights": null,
+     "turns": 19,
+     "launched": "2026-09-15T06:18:12Z",
+     "ended": "2026-09-15T06:31:12Z",
+     "non_training_sec": 299.9,
+     "overlap_fraction": 0.992
+    },
+    {
+     "id": "c0006",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 856.0,
+     "session_sec": 844.6,
+     "session_over_lease": 0.987,
+     "train_sec": null,
+     "run_wall_sec": 20.8,
+     "loaded_existing_weights": null,
+     "turns": 29,
+     "launched": "2026-09-15T06:18:42Z",
+     "ended": "2026-09-15T06:32:58Z",
+     "non_training_sec": null,
+     "overlap_fraction": 0.999
+    },
+    {
+     "id": "c0007",
+     "operator": "improve",
+     "gpu": 1,
+     "lease_sec": 871.0,
+     "session_sec": 857.2,
+     "session_over_lease": 0.984,
+     "train_sec": 480.1,
+     "run_wall_sec": null,
+     "loaded_existing_weights": null,
+     "turns": 18,
+     "launched": "2026-09-15T06:31:13Z",
+     "ended": "2026-09-15T06:45:44Z",
+     "non_training_sec": 390.9,
+     "overlap_fraction": 0.993
+    },
+    {
+     "id": "c0008",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 721.0,
+     "session_sec": 709.7,
+     "session_over_lease": 0.984,
+     "train_sec": 480.1,
+     "run_wall_sec": null,
+     "loaded_existing_weights": null,
+     "turns": 19,
+     "launched": "2026-09-15T06:33:03Z",
+     "ended": "2026-09-15T06:45:04Z",
+     "non_training_sec": 240.9,
+     "overlap_fraction": 1.0
+    },
+    {
+     "id": "c0009",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 810.0,
+     "session_sec": 801.8,
+     "session_over_lease": 0.99,
+     "train_sec": null,
+     "run_wall_sec": 26.1,
+     "loaded_existing_weights": null,
+     "turns": 16,
+     "launched": "2026-09-15T06:45:05Z",
+     "ended": "2026-09-15T06:58:35Z",
+     "non_training_sec": null,
+     "overlap_fraction": 0.999
+    },
+    {
+     "id": "c0010",
+     "operator": "improve",
+     "gpu": 1,
+     "lease_sec": 661.0,
+     "session_sec": 658.7,
+     "session_over_lease": 0.997,
+     "train_sec": 480.1,
+     "run_wall_sec": null,
+     "loaded_existing_weights": null,
+     "turns": 17,
+     "launched": "2026-09-15T06:45:45Z",
+     "ended": "2026-09-15T06:56:46Z",
+     "non_training_sec": 180.9,
+     "overlap_fraction": 1.0
+    },
+    {
+     "id": "c0011",
+     "operator": "improve",
+     "gpu": 1,
+     "lease_sec": 661.0,
+     "session_sec": 652.2,
+     "session_over_lease": 0.987,
+     "train_sec": null,
+     "run_wall_sec": 20.9,
+     "loaded_existing_weights": null,
+     "turns": 17,
+     "launched": "2026-09-15T06:56:46Z",
+     "ended": "2026-09-15T07:07:47Z",
+     "non_training_sec": null,
+     "overlap_fraction": 0.997
+    },
+    {
+     "id": "c0012",
+     "operator": "crossover",
+     "gpu": 0,
+     "lease_sec": 901.0,
+     "session_sec": 896.6,
+     "session_over_lease": 0.995,
+     "train_sec": 480.1,
+     "run_wall_sec": null,
+     "loaded_existing_weights": null,
+     "turns": 32,
+     "launched": "2026-09-15T06:58:37Z",
+     "ended": "2026-09-15T07:13:38Z",
+     "non_training_sec": 420.9,
+     "overlap_fraction": 0.999
+    },
+    {
+     "id": "c0013",
+     "operator": "improve",
+     "gpu": 1,
+     "lease_sec": 841.0,
+     "session_sec": 837.1,
+     "session_over_lease": 0.995,
+     "train_sec": null,
+     "run_wall_sec": 20.8,
+     "loaded_existing_weights": null,
+     "turns": 19,
+     "launched": "2026-09-15T07:07:48Z",
+     "ended": "2026-09-15T07:21:49Z",
+     "non_training_sec": null,
+     "overlap_fraction": 0.999
+    },
+    {
+     "id": "c0014",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 691.0,
+     "session_sec": 678.1,
+     "session_over_lease": 0.981,
+     "train_sec": 480.2,
+     "run_wall_sec": null,
+     "loaded_existing_weights": null,
+     "turns": 19,
+     "launched": "2026-09-15T07:13:39Z",
+     "ended": "2026-09-15T07:25:10Z",
+     "non_training_sec": 210.8,
+     "overlap_fraction": 0.999
+    },
+    {
+     "id": "c0015",
+     "operator": "crossover",
+     "gpu": 1,
+     "lease_sec": 916.0,
+     "session_sec": 908.4,
+     "session_over_lease": 0.992,
+     "train_sec": 480.2,
+     "run_wall_sec": null,
+     "loaded_existing_weights": null,
+     "turns": 31,
+     "launched": "2026-09-15T07:21:50Z",
+     "ended": "2026-09-15T07:37:06Z",
+     "non_training_sec": 435.8,
+     "overlap_fraction": 0.999
+    },
+    {
+     "id": "c0016",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 841.0,
+     "session_sec": 830.2,
+     "session_over_lease": 0.987,
+     "train_sec": null,
+     "run_wall_sec": 27.2,
+     "loaded_existing_weights": null,
+     "turns": 24,
+     "launched": "2026-09-15T07:25:11Z",
+     "ended": "2026-09-15T07:39:12Z",
+     "non_training_sec": null,
+     "overlap_fraction": 0.992
+    },
+    {
+     "id": "c0017",
+     "operator": "crossover",
+     "gpu": 1,
+     "lease_sec": 841.0,
+     "session_sec": 832.9,
+     "session_over_lease": 0.99,
+     "train_sec": null,
+     "run_wall_sec": 18.9,
+     "loaded_existing_weights": null,
+     "turns": 28,
+     "launched": "2026-09-15T07:37:13Z",
+     "ended": "2026-09-15T07:51:14Z",
+     "non_training_sec": null,
+     "overlap_fraction": 0.998
+    },
+    {
+     "id": "c0018",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 751.0,
+     "session_sec": 738.2,
+     "session_over_lease": 0.983,
+     "train_sec": 480.2,
+     "run_wall_sec": null,
+     "loaded_existing_weights": null,
+     "turns": 20,
+     "launched": "2026-09-15T07:39:14Z",
+     "ended": "2026-09-15T07:51:45Z",
+     "non_training_sec": 270.8,
+     "overlap_fraction": 0.996
+    },
+    {
+     "id": "c0019",
+     "operator": "improve",
+     "gpu": 1,
+     "lease_sec": 645.0,
+     "session_sec": 639.2,
+     "session_over_lease": 0.991,
+     "train_sec": 480.0,
+     "run_wall_sec": 505.1,
+     "loaded_existing_weights": null,
+     "turns": 16,
+     "launched": "2026-09-15T07:51:17Z",
+     "ended": "2026-09-15T08:02:02Z",
+     "non_training_sec": 165.0,
+     "overlap_fraction": 0.043
+    }
+   ],
+   "lease_sec": {
+    "n": 19,
+    "median": 841.0,
+    "mean": 823.5,
+    "min": 645.0,
+    "max": 1081.0
+   },
+   "session_sec": {
+    "n": 19,
+    "median": 832.9,
+    "mean": 815.3,
+    "min": 639.2,
+    "max": 1075.6
+   },
+   "non_training_sec": {
+    "n": 11,
+    "median": 299.9,
+    "mean": 326.6,
+    "min": 165.0,
+    "max": 571.0
+   },
+   "lease_sec_overlap_ge_90pct": {
+    "n": 18,
+    "median": 841.0,
+    "mean": 833.4,
+    "min": 661.0,
+    "max": 1081.0
+   },
+   "lease_sec_overlap_lt_50pct": {
+    "n": 1,
+    "median": 645.0,
+    "mean": 645.0,
+    "min": 645.0,
+    "max": 645.0
+   },
+   "train_sec": {
+    "n": 11,
+    "median": 480.1,
+    "mean": 480.1,
+    "min": 480.0,
+    "max": 480.2
+   },
+   "run_wall_sec": {
+    "n": 9,
+    "median": 20.8,
+    "mean": 75.3,
+    "min": 18.3,
+    "max": 505.1
+   },
+   "turns": {
+    "n": 19,
+    "median": 19,
+    "mean": 21.4,
+    "min": 16,
+    "max": 32
+   },
+   "session_over_lease": {
+    "n": 19,
+    "median": 1.0,
+    "mean": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   },
+   "lease_seconds_sum": 15661.0,
+   "gpu_seconds_recorded": 15661.0,
+   "gpu_seconds_minus_lease_sum": 0.0,
+   "wall_seconds": 8221.0,
+   "lease_union_seconds": 8173.0,
+   "two_leases_open_seconds": 7488.0,
+   "two_leases_open_fraction_of_wall": 0.911,
+   "slot_occupancy_leases_over_2x_wall": 0.952,
+   "usage_waiting_seconds": 642.9367399215698,
+   "usage_pauses": 1,
+   "loaded_existing_weights_true": []
+  },
+  "engram-mem2-legacy-w0": {
+   "rows": [
+    {
+     "id": "c0000",
+     "operator": "baseline",
+     "gpu": 0,
+     "lease_sec": 15.0,
+     "session_sec": null,
+     "session_over_lease": null,
+     "train_sec": null,
+     "run_wall_sec": null,
+     "loaded_existing_weights": null,
+     "turns": null,
+     "launched": "2026-09-14T11:57:50Z",
+     "ended": "2026-09-14T11:58:05Z",
+     "non_training_sec": null,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0001",
+     "operator": "draft",
+     "gpu": 0,
+     "lease_sec": 1382.0,
+     "session_sec": 1373.8,
+     "session_over_lease": 0.994,
+     "train_sec": 480.1,
+     "run_wall_sec": 492.8,
+     "loaded_existing_weights": null,
+     "turns": 28,
+     "launched": "2026-09-14T11:58:10Z",
+     "ended": "2026-09-14T12:21:12Z",
+     "non_training_sec": 901.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0002",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 751.0,
+     "session_sec": 738.4,
+     "session_over_lease": 0.983,
+     "train_sec": 480.1,
+     "run_wall_sec": 492.8,
+     "loaded_existing_weights": null,
+     "turns": 26,
+     "launched": "2026-09-14T12:21:21Z",
+     "ended": "2026-09-14T12:33:52Z",
+     "non_training_sec": 270.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0003",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 631.0,
+     "session_sec": 627.3,
+     "session_over_lease": 0.994,
+     "train_sec": 480.0,
+     "run_wall_sec": 492.7,
+     "loaded_existing_weights": null,
+     "turns": 16,
+     "launched": "2026-09-14T12:34:01Z",
+     "ended": "2026-09-14T12:44:32Z",
+     "non_training_sec": 151.0,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0004",
+     "operator": "crossover",
+     "gpu": 0,
+     "lease_sec": 690.0,
+     "session_sec": 680.1,
+     "session_over_lease": 0.986,
+     "train_sec": 480.1,
+     "run_wall_sec": 492.8,
+     "loaded_existing_weights": null,
+     "turns": 29,
+     "launched": "2026-09-14T12:44:42Z",
+     "ended": "2026-09-14T12:56:12Z",
+     "non_training_sec": 209.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0005",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 631.0,
+     "session_sec": 614.7,
+     "session_over_lease": 0.974,
+     "train_sec": 480.1,
+     "run_wall_sec": 492.8,
+     "loaded_existing_weights": null,
+     "turns": 15,
+     "launched": "2026-09-14T12:56:22Z",
+     "ended": "2026-09-14T13:06:53Z",
+     "non_training_sec": 150.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0006",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 646.0,
+     "session_sec": 643.1,
+     "session_over_lease": 0.996,
+     "train_sec": 480.1,
+     "run_wall_sec": 492.8,
+     "loaded_existing_weights": null,
+     "turns": 24,
+     "launched": "2026-09-14T13:07:02Z",
+     "ended": "2026-09-14T13:17:48Z",
+     "non_training_sec": 165.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0007",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 675.0,
+     "session_sec": 663.3,
+     "session_over_lease": 0.983,
+     "train_sec": 480.2,
+     "run_wall_sec": 492.9,
+     "loaded_existing_weights": null,
+     "turns": 23,
+     "launched": "2026-09-14T13:17:53Z",
+     "ended": "2026-09-14T13:29:08Z",
+     "non_training_sec": 194.8,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0008",
+     "operator": "crossover",
+     "gpu": 0,
+     "lease_sec": 15.0,
+     "session_sec": 0.5,
+     "session_over_lease": 0.03,
+     "train_sec": null,
+     "run_wall_sec": null,
+     "loaded_existing_weights": null,
+     "turns": 1,
+     "launched": "2026-09-14T13:29:13Z",
+     "ended": "2026-09-14T13:29:28Z",
+     "non_training_sec": null,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0009",
+     "operator": "crossover",
+     "gpu": 0,
+     "lease_sec": 721.0,
+     "session_sec": 715.6,
+     "session_over_lease": 0.993,
+     "train_sec": 480.1,
+     "run_wall_sec": 492.8,
+     "loaded_existing_weights": null,
+     "turns": 19,
+     "launched": "2026-09-14T14:00:04Z",
+     "ended": "2026-09-14T14:12:05Z",
+     "non_training_sec": 240.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0010",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 1261.0,
+     "session_sec": 1251.8,
+     "session_over_lease": 0.993,
+     "train_sec": 540.1,
+     "run_wall_sec": 25.4,
+     "loaded_existing_weights": true,
+     "turns": 25,
+     "launched": "2026-09-14T14:12:15Z",
+     "ended": "2026-09-14T14:33:16Z",
+     "non_training_sec": 720.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0011",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 616.0,
+     "session_sec": 601.3,
+     "session_over_lease": 0.976,
+     "train_sec": 480.1,
+     "run_wall_sec": 492.8,
+     "loaded_existing_weights": null,
+     "turns": 19,
+     "launched": "2026-09-14T14:33:25Z",
+     "ended": "2026-09-14T14:43:41Z",
+     "non_training_sec": 135.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0012",
+     "operator": "crossover",
+     "gpu": 0,
+     "lease_sec": 885.0,
+     "session_sec": 875.1,
+     "session_over_lease": 0.989,
+     "train_sec": 540.0,
+     "run_wall_sec": 25.4,
+     "loaded_existing_weights": true,
+     "turns": 23,
+     "launched": "2026-09-14T14:43:46Z",
+     "ended": "2026-09-14T14:58:31Z",
+     "non_training_sec": 345.0,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0013",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 766.0,
+     "session_sec": 763.3,
+     "session_over_lease": 0.997,
+     "train_sec": 600.0,
+     "run_wall_sec": 612.7,
+     "loaded_existing_weights": null,
+     "turns": 15,
+     "launched": "2026-09-14T14:58:36Z",
+     "ended": "2026-09-14T15:11:22Z",
+     "non_training_sec": 166.0,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0014",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 796.0,
+     "session_sec": 790.5,
+     "session_over_lease": 0.993,
+     "train_sec": 540.1,
+     "run_wall_sec": 25.6,
+     "loaded_existing_weights": true,
+     "turns": 22,
+     "launched": "2026-09-14T15:11:26Z",
+     "ended": "2026-09-14T15:24:42Z",
+     "non_training_sec": 255.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0015",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 721.0,
+     "session_sec": 704.9,
+     "session_over_lease": 0.978,
+     "train_sec": 540.1,
+     "run_wall_sec": 25.4,
+     "loaded_existing_weights": true,
+     "turns": 15,
+     "launched": "2026-09-14T15:24:47Z",
+     "ended": "2026-09-14T15:36:48Z",
+     "non_training_sec": 180.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0016",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 856.0,
+     "session_sec": 844.8,
+     "session_over_lease": 0.987,
+     "train_sec": 540.1,
+     "run_wall_sec": 25.9,
+     "loaded_existing_weights": true,
+     "turns": 20,
+     "launched": "2026-09-14T15:36:57Z",
+     "ended": "2026-09-14T15:51:13Z",
+     "non_training_sec": 315.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0017",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 781.0,
+     "session_sec": 768.9,
+     "session_over_lease": 0.985,
+     "train_sec": 540.1,
+     "run_wall_sec": 25.8,
+     "loaded_existing_weights": true,
+     "turns": 24,
+     "launched": "2026-09-14T15:51:18Z",
+     "ended": "2026-09-14T16:04:19Z",
+     "non_training_sec": 240.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0018",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 766.0,
+     "session_sec": 756.8,
+     "session_over_lease": 0.988,
+     "train_sec": 540.1,
+     "run_wall_sec": 25.3,
+     "loaded_existing_weights": true,
+     "turns": 22,
+     "launched": "2026-09-14T16:04:28Z",
+     "ended": "2026-09-14T16:17:14Z",
+     "non_training_sec": 225.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0019",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 751.0,
+     "session_sec": 739.2,
+     "session_over_lease": 0.984,
+     "train_sec": 540.1,
+     "run_wall_sec": 25.3,
+     "loaded_existing_weights": true,
+     "turns": 19,
+     "launched": "2026-09-14T16:17:19Z",
+     "ended": "2026-09-14T16:29:50Z",
+     "non_training_sec": 210.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0020",
+     "operator": "crossover",
+     "gpu": 0,
+     "lease_sec": 886.0,
+     "session_sec": 879.4,
+     "session_over_lease": 0.993,
+     "train_sec": 540.0,
+     "run_wall_sec": 575.7,
+     "loaded_existing_weights": null,
+     "turns": 32,
+     "launched": "2026-09-14T16:29:59Z",
+     "ended": "2026-09-14T16:44:45Z",
+     "non_training_sec": 346.0,
+     "overlap_fraction": 0.0
+    }
+   ],
+   "lease_sec": {
+    "n": 20,
+    "median": 751.0,
+    "mean": 761.4,
+    "min": 15.0,
+    "max": 1382.0
+   },
+   "session_sec": {
+    "n": 20,
+    "median": 738.8,
+    "mean": 751.6,
+    "min": 0.5,
+    "max": 1373.8
+   },
+   "non_training_sec": {
+    "n": 19,
+    "median": 225.9,
+    "mean": 285.8,
+    "min": 135.9,
+    "max": 901.9
+   },
+   "lease_sec_overlap_ge_90pct": null,
+   "lease_sec_overlap_lt_50pct": {
+    "n": 20,
+    "median": 751.0,
+    "mean": 761.4,
+    "min": 15.0,
+    "max": 1382.0
+   },
+   "train_sec": {
+    "n": 19,
+    "median": 540.0,
+    "mean": 514.8,
+    "min": 480.0,
+    "max": 600.0
+   },
+   "run_wall_sec": {
+    "n": 19,
+    "median": 492.8,
+    "mean": 306.7,
+    "min": 25.3,
+    "max": 612.7
+   },
+   "turns": {
+    "n": 20,
+    "median": 22.0,
+    "mean": 20.9,
+    "min": 1,
+    "max": 32
+   },
+   "session_over_lease": {
+    "n": 20,
+    "median": 1.0,
+    "mean": 0.9,
+    "min": 0.0,
+    "max": 1.0
+   },
+   "lease_seconds_sum": 15242.0,
+   "gpu_seconds_recorded": 15242.0,
+   "gpu_seconds_minus_lease_sum": 0.0,
+   "wall_seconds": 17260.0,
+   "lease_union_seconds": 15242.0,
+   "two_leases_open_seconds": 0.0,
+   "two_leases_open_fraction_of_wall": 0.0,
+   "slot_occupancy_leases_over_2x_wall": 0.442,
+   "usage_waiting_seconds": 1831.4371531009674,
+   "usage_pauses": 1,
+   "loaded_existing_weights_true": [
+    "c0010",
+    "c0012",
+    "c0014",
+    "c0015",
+    "c0016",
+    "c0017",
+    "c0018",
+    "c0019"
+   ]
+  },
+  "engram-mem2-findings-w0": {
+   "rows": [
+    {
+     "id": "c0000",
+     "operator": "baseline",
+     "gpu": 0,
+     "lease_sec": 15.0,
+     "session_sec": null,
+     "session_over_lease": null,
+     "train_sec": null,
+     "run_wall_sec": null,
+     "loaded_existing_weights": null,
+     "turns": null,
+     "launched": "2026-09-14T17:04:43Z",
+     "ended": "2026-09-14T17:04:58Z",
+     "non_training_sec": null,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0001",
+     "operator": "draft",
+     "gpu": 0,
+     "lease_sec": 946.0,
+     "session_sec": 937.6,
+     "session_over_lease": 0.991,
+     "train_sec": null,
+     "run_wall_sec": 25.4,
+     "loaded_existing_weights": true,
+     "turns": 20,
+     "launched": "2026-09-14T17:05:03Z",
+     "ended": "2026-09-14T17:20:49Z",
+     "non_training_sec": null,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0002",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 585.0,
+     "session_sec": 570.0,
+     "session_over_lease": 0.974,
+     "train_sec": null,
+     "run_wall_sec": 25.4,
+     "loaded_existing_weights": true,
+     "turns": 17,
+     "launched": "2026-09-14T17:20:54Z",
+     "ended": "2026-09-14T17:30:39Z",
+     "non_training_sec": null,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0003",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 556.0,
+     "session_sec": 550.8,
+     "session_over_lease": 0.991,
+     "train_sec": 360.0,
+     "run_wall_sec": 395.8,
+     "loaded_existing_weights": false,
+     "turns": 15,
+     "launched": "2026-09-14T17:30:44Z",
+     "ended": "2026-09-14T17:40:00Z",
+     "non_training_sec": 196.0,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0004",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 556.0,
+     "session_sec": 546.2,
+     "session_over_lease": 0.982,
+     "train_sec": 360.0,
+     "run_wall_sec": 395.9,
+     "loaded_existing_weights": false,
+     "turns": 14,
+     "launched": "2026-09-14T17:40:05Z",
+     "ended": "2026-09-14T17:49:21Z",
+     "non_training_sec": 196.0,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0005",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 556.0,
+     "session_sec": 543.6,
+     "session_over_lease": 0.978,
+     "train_sec": 360.1,
+     "run_wall_sec": 395.8,
+     "loaded_existing_weights": false,
+     "turns": 12,
+     "launched": "2026-09-14T17:49:26Z",
+     "ended": "2026-09-14T17:58:42Z",
+     "non_training_sec": 195.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0006",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 751.0,
+     "session_sec": 743.8,
+     "session_over_lease": 0.99,
+     "train_sec": 540.0,
+     "run_wall_sec": 575.9,
+     "loaded_existing_weights": false,
+     "turns": 19,
+     "launched": "2026-09-14T17:58:47Z",
+     "ended": "2026-09-14T18:11:18Z",
+     "non_training_sec": 211.0,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0007",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 721.0,
+     "session_sec": 717.3,
+     "session_over_lease": 0.995,
+     "train_sec": 540.0,
+     "run_wall_sec": 575.9,
+     "loaded_existing_weights": false,
+     "turns": 13,
+     "launched": "2026-09-14T18:11:18Z",
+     "ended": "2026-09-14T18:23:19Z",
+     "non_training_sec": 181.0,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0008",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 750.0,
+     "session_sec": 739.0,
+     "session_over_lease": 0.985,
+     "train_sec": 540.1,
+     "run_wall_sec": 576.0,
+     "loaded_existing_weights": false,
+     "turns": 16,
+     "launched": "2026-09-14T18:23:20Z",
+     "ended": "2026-09-14T18:35:50Z",
+     "non_training_sec": 209.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0009",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 556.0,
+     "session_sec": 546.2,
+     "session_over_lease": 0.982,
+     "train_sec": 360.0,
+     "run_wall_sec": 395.7,
+     "loaded_existing_weights": false,
+     "turns": 18,
+     "launched": "2026-09-14T18:35:51Z",
+     "ended": "2026-09-14T18:45:07Z",
+     "non_training_sec": 196.0,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0010",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 691.0,
+     "session_sec": 684.9,
+     "session_over_lease": 0.991,
+     "train_sec": 540.0,
+     "run_wall_sec": 575.8,
+     "loaded_existing_weights": false,
+     "turns": 16,
+     "launched": "2026-09-14T18:45:12Z",
+     "ended": "2026-09-14T18:56:43Z",
+     "non_training_sec": 151.0,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0011",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 691.0,
+     "session_sec": 680.1,
+     "session_over_lease": 0.984,
+     "train_sec": 540.1,
+     "run_wall_sec": 575.9,
+     "loaded_existing_weights": false,
+     "turns": 15,
+     "launched": "2026-09-14T18:56:44Z",
+     "ended": "2026-09-14T19:08:15Z",
+     "non_training_sec": 150.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0012",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 750.0,
+     "session_sec": 736.3,
+     "session_over_lease": 0.982,
+     "train_sec": 540.0,
+     "run_wall_sec": 575.9,
+     "loaded_existing_weights": false,
+     "turns": 16,
+     "launched": "2026-09-14T19:08:16Z",
+     "ended": "2026-09-14T19:20:46Z",
+     "non_training_sec": 210.0,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0013",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 720.0,
+     "session_sec": 715.7,
+     "session_over_lease": 0.994,
+     "train_sec": 540.0,
+     "run_wall_sec": 575.8,
+     "loaded_existing_weights": false,
+     "turns": 13,
+     "launched": "2026-09-14T19:20:48Z",
+     "ended": "2026-09-14T19:32:48Z",
+     "non_training_sec": 180.0,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0014",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 706.0,
+     "session_sec": 696.6,
+     "session_over_lease": 0.987,
+     "train_sec": 540.0,
+     "run_wall_sec": 575.7,
+     "loaded_existing_weights": false,
+     "turns": 18,
+     "launched": "2026-09-14T19:32:50Z",
+     "ended": "2026-09-14T19:44:36Z",
+     "non_training_sec": 166.0,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0015",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 706.0,
+     "session_sec": 699.0,
+     "session_over_lease": 0.99,
+     "train_sec": 540.0,
+     "run_wall_sec": 575.9,
+     "loaded_existing_weights": false,
+     "turns": 16,
+     "launched": "2026-09-14T19:44:42Z",
+     "ended": "2026-09-14T19:56:28Z",
+     "non_training_sec": 166.0,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0016",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 826.0,
+     "session_sec": 823.6,
+     "session_over_lease": 0.997,
+     "train_sec": null,
+     "run_wall_sec": 25.1,
+     "loaded_existing_weights": true,
+     "turns": 23,
+     "launched": "2026-09-14T19:56:34Z",
+     "ended": "2026-09-14T20:10:20Z",
+     "non_training_sec": null,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0017",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 661.0,
+     "session_sec": 649.9,
+     "session_over_lease": 0.983,
+     "train_sec": 540.1,
+     "run_wall_sec": 575.9,
+     "loaded_existing_weights": false,
+     "turns": 10,
+     "launched": "2026-09-14T20:10:27Z",
+     "ended": "2026-09-14T20:21:28Z",
+     "non_training_sec": 120.9,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0018",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 751.0,
+     "session_sec": 737.4,
+     "session_over_lease": 0.982,
+     "train_sec": null,
+     "run_wall_sec": 25.4,
+     "loaded_existing_weights": true,
+     "turns": 16,
+     "launched": "2026-09-14T20:21:29Z",
+     "ended": "2026-09-14T20:34:00Z",
+     "non_training_sec": null,
+     "overlap_fraction": 0.0
+    },
+    {
+     "id": "c0019",
+     "operator": "improve",
+     "gpu": 0,
+     "lease_sec": 706.0,
+     "session_sec": 702.0,
+     "session_over_lease": 0.994,
+     "train_sec": 540.3,
+     "run_wall_sec": 576.0,
+     "loaded_existing_weights": false,
+     "turns": 19,
+     "launched": "2026-09-14T20:34:02Z",
+     "ended": "2026-09-14T20:45:48Z",
+     "non_training_sec": 165.7,
+     "overlap_fraction": 0.0
+    }
+   ],
+   "lease_sec": {
+    "n": 19,
+    "median": 706.0,
+    "mean": 693.9,
+    "min": 556.0,
+    "max": 946.0
+   },
+   "session_sec": {
+    "n": 19,
+    "median": 699.0,
+    "mean": 685.3,
+    "min": 543.6,
+    "max": 937.6
+   },
+   "non_training_sec": {
+    "n": 15,
+    "median": 181.0,
+    "mean": 179.8,
+    "min": 120.9,
+    "max": 211.0
+   },
+   "lease_sec_overlap_ge_90pct": null,
+   "lease_sec_overlap_lt_50pct": {
+    "n": 19,
+    "median": 706.0,
+    "mean": 693.9,
+    "min": 556.0,
+    "max": 946.0
+   },
+   "train_sec": {
+    "n": 15,
+    "median": 540.0,
+    "mean": 492.0,
+    "min": 360.0,
+    "max": 540.3
+   },
+   "run_wall_sec": {
+    "n": 19,
+    "median": 575.8,
+    "mean": 422.1,
+    "min": 25.1,
+    "max": 576.0
+   },
+   "turns": {
+    "n": 19,
+    "median": 16,
+    "mean": 16.1,
+    "min": 10,
+    "max": 23
+   },
+   "session_over_lease": {
+    "n": 19,
+    "median": 1.0,
+    "mean": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   },
+   "lease_seconds_sum": 13200.0,
+   "gpu_seconds_recorded": 13200.0,
+   "gpu_seconds_minus_lease_sum": 0.0,
+   "wall_seconds": 13312.0,
+   "lease_union_seconds": 13200.0,
+   "two_leases_open_seconds": 0.0,
+   "two_leases_open_fraction_of_wall": 0.0,
+   "slot_occupancy_leases_over_2x_wall": 0.496,
+   "usage_waiting_seconds": 0.0,
+   "usage_pauses": 0,
+   "loaded_existing_weights_true": [
+    "c0001",
+    "c0002",
+    "c0016",
+    "c0018"
+   ]
+  }
+ },
+ "session_anomalies": {
+  "D1": {
+   "worker_max_turns": 40,
+   "permission_denials_by_candidate": {
+    "c0001": [
+     "Bash",
+     "Bash"
+    ],
+    "c0003": [
+     "Bash",
+     "Bash"
+    ],
+    "c0004": [
+     "Bash"
+    ],
+    "c0006": [
+     "Bash"
+    ],
+    "c0007": [
+     "Bash"
+    ],
+    "c0011": [
+     "Bash"
+    ],
+    "c0012": [
+     "Bash"
+    ],
+    "c0016": [
+     "Bash"
+    ],
+    "c0017": [
+     "Bash"
+    ],
+    "c0020": [
+     "Bash"
+    ]
+   },
+   "permission_denials_total": 12,
+   "sessions_over_turn_cap": [
+    {
+     "id": "c0003",
+     "turns": 45,
+     "cap": 40
+    }
+   ],
+   "session_stderr_first_lines": {
+    "SessionEnd hook [node \"${CLAUDE_PLUGIN_ROOT}/scripts/session-lifecycle-hook.mjs\" SessionEnd] failed: /bin/sh: 1: node: not found": [
+     "c0001",
+     "c0002",
+     "c0003",
+     "c0004",
+     "c0005",
+     "c0006",
+     "c0007",
+     "c0008",
+     "c0009",
+     "c0010",
+     "c0011",
+     "c0012",
+     "c0013",
+     "c0014",
+     "c0015",
+     "c0016",
+     "c0017",
+     "c0018",
+     "c0019",
+     "c0020"
+    ]
+   }
+  },
+  "D4": {
+   "worker_max_turns": 40,
+   "permission_denials_by_candidate": {
+    "c0006": [
+     "Bash"
+    ],
+    "c0007": [
+     "Bash"
+    ],
+    "c0009": [
+     "Bash"
+    ],
+    "c0013": [
+     "Bash"
+    ]
+   },
+   "permission_denials_total": 4,
+   "sessions_over_turn_cap": [],
+   "session_stderr_first_lines": {
+    "SessionEnd hook [node \"${CLAUDE_PLUGIN_ROOT}/scripts/session-lifecycle-hook.mjs\" SessionEnd] failed: /bin/sh: 1: node: not found": [
+     "c0001",
+     "c0002",
+     "c0003",
+     "c0004",
+     "c0005",
+     "c0006",
+     "c0007",
+     "c0008",
+     "c0009",
+     "c0010",
+     "c0011",
+     "c0012",
+     "c0013",
+     "c0014",
+     "c0015",
+     "c0016",
+     "c0017",
+     "c0018",
+     "c0019"
+    ]
+   }
+  },
+  "engram-mem2-legacy-w0": {
+   "worker_max_turns": 40,
+   "permission_denials_by_candidate": {
+    "c0001": [
+     "Bash"
+    ],
+    "c0010": [
+     "Bash"
+    ],
+    "c0016": [
+     "Bash"
+    ],
+    "c0020": [
+     "Bash"
+    ]
+   },
+   "permission_denials_total": 4,
+   "sessions_over_turn_cap": [],
+   "session_stderr_first_lines": {
+    "Ignoring 7 permissions.allow entries from .claude/settings.json: this workspace has not been trusted. Run Claude Code interactively here once and accept the tru": [
+     "c0001",
+     "c0002",
+     "c0003",
+     "c0004",
+     "c0005",
+     "c0006",
+     "c0007",
+     "c0008",
+     "c0009",
+     "c0010",
+     "c0011",
+     "c0012",
+     "c0013",
+     "c0014",
+     "c0015",
+     "c0016",
+     "c0017",
+     "c0018",
+     "c0019",
+     "c0020"
+    ]
+   }
+  },
+  "engram-mem2-findings-w0": {
+   "worker_max_turns": 40,
+   "permission_denials_by_candidate": {
+    "c0004": [
+     "Bash"
+    ],
+    "c0006": [
+     "Bash",
+     "Bash"
+    ]
+   },
+   "permission_denials_total": 3,
+   "sessions_over_turn_cap": [],
+   "session_stderr_first_lines": {
+    "SessionEnd hook [node \"${CLAUDE_PLUGIN_ROOT}/scripts/session-lifecycle-hook.mjs\" SessionEnd] failed: /bin/sh: 1: node: not found": [
+     "c0001",
+     "c0002",
+     "c0003",
+     "c0004",
+     "c0005",
+     "c0006",
+     "c0007",
+     "c0008",
+     "c0009",
+     "c0010",
+     "c0011",
+     "c0012",
+     "c0013",
+     "c0014",
+     "c0015",
+     "c0016",
+     "c0017",
+     "c0018",
+     "c0019"
+    ]
+   }
+  }
+ },
+ "weights": {
+  "D1": {
+   "checked": 20,
+   "violations": [],
+   "rows": [
+    {
+     "id": "c0001",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T21:43:16Z",
+     "dispatch": "2026-09-14T21:17:26Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0002",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T21:57:36Z",
+     "dispatch": "2026-09-14T21:44:52Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0003",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T22:14:28Z",
+     "dispatch": "2026-09-14T21:44:52Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0004",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T22:09:57Z",
+     "dispatch": "2026-09-14T21:59:03Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0005",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T22:21:50Z",
+     "dispatch": "2026-09-14T22:11:13Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0006",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T22:26:50Z",
+     "dispatch": "2026-09-14T22:16:44Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0007",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T22:34:24Z",
+     "dispatch": "2026-09-14T22:23:04Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0008",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T22:40:51Z",
+     "dispatch": "2026-09-14T22:28:45Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0009",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T22:47:57Z",
+     "dispatch": "2026-09-14T22:36:06Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0010",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T22:56:02Z",
+     "dispatch": "2026-09-14T22:43:17Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0011",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T23:01:24Z",
+     "dispatch": "2026-09-14T22:49:07Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0012",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T23:10:57Z",
+     "dispatch": "2026-09-14T22:58:19Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0013",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T23:15:41Z",
+     "dispatch": "2026-09-14T23:04:00Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0014",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T23:24:56Z",
+     "dispatch": "2026-09-14T23:13:11Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0015",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T23:28:21Z",
+     "dispatch": "2026-09-14T23:18:32Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0016",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T23:40:04Z",
+     "dispatch": "2026-09-14T23:27:13Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0017",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T23:44:01Z",
+     "dispatch": "2026-09-14T23:30:34Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0018",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T23:51:31Z",
+     "dispatch": "2026-09-14T23:42:06Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0019",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T23:57:00Z",
+     "dispatch": "2026-09-14T23:46:58Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0020",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T00:04:03Z",
+     "dispatch": "2026-09-14T23:53:29Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    }
+   ]
+  },
+  "D4": {
+   "checked": 19,
+   "violations": [],
+   "rows": [
+    {
+     "id": "c0001",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T06:01:42Z",
+     "dispatch": "2026-09-15T05:45:49Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0002",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T06:01:22Z",
+     "dispatch": "2026-09-15T05:46:10Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0003",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T06:17:06Z",
+     "dispatch": "2026-09-15T06:03:50Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0004",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T06:16:29Z",
+     "dispatch": "2026-09-15T06:04:01Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0005",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T06:29:03Z",
+     "dispatch": "2026-09-15T06:18:12Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0006",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T06:30:47Z",
+     "dispatch": "2026-09-15T06:18:42Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0007",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T06:42:44Z",
+     "dispatch": "2026-09-15T06:31:13Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0008",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T06:42:46Z",
+     "dispatch": "2026-09-15T06:33:03Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0009",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T06:56:47Z",
+     "dispatch": "2026-09-15T06:45:05Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0010",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T06:55:43Z",
+     "dispatch": "2026-09-15T06:45:45Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0011",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T07:06:11Z",
+     "dispatch": "2026-09-15T06:56:46Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0012",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T07:11:05Z",
+     "dispatch": "2026-09-15T06:58:37Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0013",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T07:19:35Z",
+     "dispatch": "2026-09-15T07:07:48Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0014",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T07:23:48Z",
+     "dispatch": "2026-09-15T07:13:39Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0015",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T07:35:06Z",
+     "dispatch": "2026-09-15T07:21:50Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0016",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T07:36:40Z",
+     "dispatch": "2026-09-15T07:25:11Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0017",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T07:49:13Z",
+     "dispatch": "2026-09-15T07:37:13Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0018",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T07:49:27Z",
+     "dispatch": "2026-09-15T07:39:14Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0019",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-15T08:00:57Z",
+     "dispatch": "2026-09-15T07:51:17Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    }
+   ]
+  },
+  "engram-mem2-legacy-w0": {
+   "checked": 19,
+   "violations": [],
+   "rows": [
+    {
+     "id": "c0001",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T12:20:12Z",
+     "dispatch": "2026-09-14T11:58:10Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0002",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T12:32:57Z",
+     "dispatch": "2026-09-14T12:21:21Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0003",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T12:43:51Z",
+     "dispatch": "2026-09-14T12:34:01Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0004",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T12:55:01Z",
+     "dispatch": "2026-09-14T12:44:41Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0005",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T13:05:43Z",
+     "dispatch": "2026-09-14T12:56:22Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0006",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T13:16:49Z",
+     "dispatch": "2026-09-14T13:07:02Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0007",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T13:27:54Z",
+     "dispatch": "2026-09-14T13:17:53Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0009",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T14:11:10Z",
+     "dispatch": "2026-09-14T14:00:04Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0010",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T14:31:15Z",
+     "dispatch": "2026-09-14T14:12:14Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0011",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T14:42:50Z",
+     "dispatch": "2026-09-14T14:33:25Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0012",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T14:56:25Z",
+     "dispatch": "2026-09-14T14:43:45Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0013",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T15:10:40Z",
+     "dispatch": "2026-09-14T14:58:36Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0014",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T15:22:30Z",
+     "dispatch": "2026-09-14T15:11:26Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0015",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T15:34:56Z",
+     "dispatch": "2026-09-14T15:24:47Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0016",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T15:49:20Z",
+     "dispatch": "2026-09-14T15:36:57Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0017",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T16:02:13Z",
+     "dispatch": "2026-09-14T15:51:18Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0018",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T16:15:24Z",
+     "dispatch": "2026-09-14T16:04:28Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0019",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T16:27:57Z",
+     "dispatch": "2026-09-14T16:17:19Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0020",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T16:43:31Z",
+     "dispatch": "2026-09-14T16:29:59Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    }
+   ]
+  },
+  "engram-mem2-findings-w0": {
+   "checked": 19,
+   "violations": [],
+   "rows": [
+    {
+     "id": "c0001",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T17:18:50Z",
+     "dispatch": "2026-09-14T17:05:03Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0002",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T17:28:41Z",
+     "dispatch": "2026-09-14T17:20:54Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0003",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T17:39:01Z",
+     "dispatch": "2026-09-14T17:30:44Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0004",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T17:48:19Z",
+     "dispatch": "2026-09-14T17:40:05Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0005",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T17:57:32Z",
+     "dispatch": "2026-09-14T17:49:26Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0006",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T18:10:15Z",
+     "dispatch": "2026-09-14T17:58:47Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0007",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T18:22:05Z",
+     "dispatch": "2026-09-14T18:11:18Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0008",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T18:34:24Z",
+     "dispatch": "2026-09-14T18:23:19Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0009",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T18:44:03Z",
+     "dispatch": "2026-09-14T18:35:51Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0010",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T18:55:41Z",
+     "dispatch": "2026-09-14T18:45:12Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0011",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T19:06:51Z",
+     "dispatch": "2026-09-14T18:56:44Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0012",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T19:19:26Z",
+     "dispatch": "2026-09-14T19:08:16Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0013",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T19:31:51Z",
+     "dispatch": "2026-09-14T19:20:48Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0014",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T19:43:42Z",
+     "dispatch": "2026-09-14T19:32:50Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0015",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T19:55:24Z",
+     "dispatch": "2026-09-14T19:44:42Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0016",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T20:08:14Z",
+     "dispatch": "2026-09-14T19:56:34Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0017",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T20:20:23Z",
+     "dispatch": "2026-09-14T20:10:27Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0018",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T20:32:20Z",
+     "dispatch": "2026-09-14T20:21:29Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    },
+    {
+     "id": "c0019",
+     "file": "memory.safetensors",
+     "weights_mtime": "2026-09-14T20:44:53Z",
+     "dispatch": "2026-09-14T20:34:02Z",
+     "weights_postdate_dispatch": true,
+     "weights_postdate_oldest_code_file": true
+    }
+   ]
+  }
+ },
+ "frozen_gpus_differ": false,
+ "m4": {
+  "two_slot": {
+   "engram-drafts1-w0": 4.19,
+   "engram-drafts4-w0": 4.6
+  },
+  "one_slot_references": [
+   {
+    "arm": "engram-mem2-legacy-w0",
+    "dir": "/mnt/data/projects/nullsilver/labloop-mem2-legacy-20260914",
+    "settled": 20,
+    "gpu_hours": 4.234,
+    "settled_per_gpu_hour": 4.72,
+    "wall_hours": 4.794
+   },
+   {
+    "arm": "engram-mem2-findings-w0",
+    "dir": "/mnt/data/projects/nullsilver/labloop-mem2-findings-20260914",
+    "settled": 20,
+    "gpu_hours": 3.667,
+    "settled_per_gpu_hour": 5.45,
+    "wall_hours": 3.698
+   }
+  ],
+  "reference_min": 4.72,
+  "reference_max": 5.45,
+  "criterion": "two slots settle fewer candidates per GPU-hour than one",
+  "fires_against_every_reference": true,
+  "fires_against_any_reference": true
+ }
+}

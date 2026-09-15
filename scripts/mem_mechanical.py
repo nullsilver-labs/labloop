@@ -33,8 +33,13 @@ def arm_facts(d: Path) -> dict:
     cands = pop["candidates"]
     ordered = [cands[k] for k in sorted(cands)]
     execs = collections.Counter(c.get("exec") for c in ordered)
-    served = collections.Counter(tuple((c.get("session") or {}).get("models") or []) for c in ordered
-                                 if c.get("operator") != "baseline")
+    # A job the usage window deferred before its session started leaves a record with an
+    # empty model list (mem2-legacy c0008, 2026-09-14); it served no model, so it is
+    # counted apart and never compared between arms.
+    ran = [c for c in ordered if c.get("operator") != "baseline" and (c.get("session") or {}).get("models")]
+    never_ran = [c["id"] for c in ordered if c.get("operator") != "baseline" and c.get("exec") != "baseline"
+                 and not (c.get("session") or {}).get("models")]
+    served = collections.Counter(tuple(c["session"]["models"]) for c in ran)
     turns = [(c.get("session") or {}).get("turns") for c in ordered if (c.get("session") or {}).get("turns")]
     gpu_h = (pop.get("gpu_seconds") or 0) / 3600
     started, finished = iso(pop.get("started")), iso(pop.get("finished"))
@@ -54,6 +59,7 @@ def arm_facts(d: Path) -> dict:
         "gpu_hours": round(gpu_h, 3), "wall_hours": round(wall_h, 3) if wall_h else None,
         "valid_per_gpu_hour": round(execs.get("completed", 0) / gpu_h, 2) if gpu_h else None,
         "served_models": {"|".join(k): v for k, v in served.items()},
+        "sessions_never_ran": never_ran,
         "turns_median": statistics.median(turns) if turns else None, "turns_max": max(turns) if turns else None,
         "best_search_after_8": best_after(8), "best_search_after_20": best_after(20),
         "frozen": pop.get("best"), "final_score": fin_score,
@@ -156,6 +162,7 @@ def main() -> None:
     row("wall clock (h)", "wall_hours")
     row("valid candidates per GPU-hour", "valid_per_gpu_hour")
     row("served models (sessions)", "served_models", lambda v: "; ".join(f"{k}: {n}" for k, n in (v or {}).items()))
+    row("sessions that never ran (deferred before start)", "sessions_never_ran", lambda v: ", ".join(v) if v else "none")
     row("turns median / max", "turns_median", lambda v: v)
     lines[-1] = f"| turns median / max | {f['turns_median']} / {f['turns_max']} | {l['turns_median']} / {l['turns_max']} |"
     row("best search fitness after 8 settled", "best_search_after_8")
