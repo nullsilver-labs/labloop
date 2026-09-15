@@ -301,3 +301,54 @@ best-after-8 not above chance's; or fallbacks above 20 % of decisions. What it c
 show: that model selection beats chance in general; one seed, one world, and D1 vs D4 have
 already shown that a single draft roll moves the final by .15 at the same seed, so a gap
 between two single arms is descriptive until more seeds exist.
+
+## 6. `mem3`: knob ledger v3, then a third memory seed (decided 2026-09-15, next after the mixed arm)
+
+Decided with the human after the mem2 read, while the mixed arm was running (launched
+2026-09-15 09:12Z, two Opus drafts in flight on both GPUs). What the cards were for is on
+record in `docs/finding-cards-plan.md`: a small reliable account of what was tried and
+measured, including findings outside the ancestry, so that workers repeat less and see
+more of the population. Both pairs moved those secondary measures the cards' way
+(unacknowledged repeats 3 / 6 and 1 / 4, named replications 0 / 1 and 4 / 1, candidates
+naming an out-of-lineage candidate 1 / 2 and 12 / 3, findings first). What failed at seed 2
+is the accuracy endpoint, and the rated errors trace to the ledger, not the cards.
+
+**Kept on purpose.** The card stays derived from the summary's `## Finding` section (one
+worker-authored narrative; the duplication on disk is cheap). The prompt carries cards and
+the ledger and a pointer to the parent's summary, as now. The side effect is known and
+accepted: workers write about the population in card style, short and categorical, so a
+gap in the ledger becomes a rated error. v3 fixes the facts behind those claims, not the
+style; the rubric stays as in mem2 (`## Finding` rated).
+
+**Ledger v3, the change.** One preregistered change to `tools/lab_findings.py`:
+1. knob keys only — outcome keys (`epochs_started`, `examples_seen`, `final_loss`,
+   `holdout_*`, `steps`, `wall_seconds`, `trainable_params`, `seed`) never enter a ledger
+   row; they live in the card's measured fields;
+2. list-valued knobs rendered compactly (`orders [1,2,3]→[1,2]`), not dropped;
+3. a **per-knob index** in place of per-candidate diff rows: for every knob key seen in any
+   settled candidate's file, the values tried and who tried them
+   (`weight_decay: 0.0 (c0001–c0008, c0010–c0013, c0015–c0018) · 0.01 (c0009, c0014)`),
+   so the question "has this knob been varied?" is answered in one line per knob, and no
+   candidate is ever dropped for age. The 2 KiB bound stays; if the index exceeds it the
+   oldest *values* are elided, never whole knobs, and the elision is written into the row.
+The card selector, the byte caps and everything else stay as in v2, so the pair isolates
+the ledger.
+
+**Replay before any GPU.** Rebuild c0008's and c0019's v3 ledgers from the recorded mem2
+findings population (as `scripts/mem_replay_selector.py` does for the selector) and check
+that each rated "never varied" claim in `docs/mem2-comparison-20260914/RESULT.md` would
+have had its contradicting fact in the worker's context; report the v3 ledger's bytes for
+every mem2 job. If any of the eleven facts is still absent, v3 is not ready.
+
+**The pair.** `mem3`: legacy vs findings-v3, seed 4, order drawn once, two GPUs, everything
+else as mem2 (Sonnet, 20 candidates, `initial_drafts` 1 so the pair stays comparable with
+the first two; coverage's single-draft miss is reported as such). Endpoint, rule and rubric
+as mem2's PREREG, with the rubric paragraphs inlined (`mem_rating_pack.py` now does this).
+Reported beside it: the three-seed description (supported, not supported, and this one),
+never pooled. Expectation written down now: not a win. The base rates are low and one seed
+moved the ratio from .37 to 1.59; a third seed can land anywhere. If v3 is not supported
+again, the cards are kept for what they demonstrably do (acknowledgment, named
+replications) and the accuracy claim is dropped for this task.
+
+Order now: mixed arm (running) → replay → `mem3` pair → then the baseline-out-of-the-pool
+scheduler change and item 5 as before.

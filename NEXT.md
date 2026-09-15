@@ -257,12 +257,15 @@ about knobs that had been varied. Cross-branch acknowledgment did move the cards
 (12 vs 3 candidates). Next for memory: `findings-v3` ledger (knob keys only, lists
 rendered, a per-knob index) behind its own preregistration, then a third seed.
 
-**Next campaign: the mixed arm** (`../labloop-mixed-20260914`, Opus drafts, Sonnet
-improves, `initial_drafts` 4, seed 3) on two GPUs against D4 as its control, after its
-PREREG amendment (`docs/campaign-plan-20260914.md`, "Amended after the drafts pair"). A
-future experiment is recorded there as item 5: a CPU-hosted small model with a large
-context as the selector, against the rank-selection chance we use now, starting with a
-zero-GPU replay of D4's ticks.
+**The mixed arm is running** (`../labloop-mixed-20260914`, Opus drafts, Sonnet
+improves, `initial_drafts` 4, seed 3; launched by the human 2026-09-15 09:12Z on two GPUs
+against D4 as its control, PREREG amendment of the same day). Operator sessions do not
+touch it. **Decided next (plan §6): knob ledger v3** — knob keys only, list-valued knobs
+rendered, a per-knob index that never drops a candidate — checked first by replaying the
+mem2 population against the eleven rated "never varied" claims, then a third memory pair
+(`mem3`, seed 4, legacy vs findings-v3). The card shape stays (derived from the summary's
+`## Finding` section, one narrative); the plan says why and what it costs. Item 5 there is
+the future orchestrator experiment (a CPU-hosted model as the selector, replay first).
 
 ### Next work, in priority order
 
@@ -294,8 +297,9 @@ zero-GPU replay of D4's ticks.
    cross-branch floor, the baseline in the strongest-outside slot) and add a
    machine-readable knob ledger per `opus-review.md`~~ (done 2026-09-14 as
    findings-v2; second seed 2026-09-15 **not_supported**, the ledger itself misled
-   workers). Next: ledger v3 (knob keys only, list-valued knobs rendered, a per-knob
-   index that never drops old candidates), then a third seed. The two-GPU throughput read came with
+   workers). Next, decided 2026-09-15 (plan §6): ledger v3 (knob keys only, list-valued
+   knobs rendered, a per-knob index that never drops old candidates), a replay over
+   the mem2 population as the gate, then the `mem3` pair at seed 4. The two-GPU throughput read came with
    the drafts pair (M4 above): the criterion fired on a metric that charges agent
    time as GPU time; a measure that separates the two goes into the next
    preregistration. After the mixed arm: exclude the baseline from the parent pool once
