@@ -8,39 +8,49 @@
 
 # labloop
 
-One repo is one research campaign. You write `campaign.toml`: the task, the evaluator,
-the baseline, the budgets, and a success threshold fixed before anything runs. Then
-`tools/lab run` searches. A population of candidates, a mechanical scheduler that picks
-a parent and an operator, one short headless coding-agent session per job, fitness from
-a hidden split that only `lab eval` can read, and a final split read exactly once at the
-end.
+Coding agents can write and run experiments, but that alone does not make a research
+campaign. Someone still has to decide which experiment to try next, keep the work inside
+its budgets, and make sure every result is evaluated the same way. Labloop is the tooling
+around the agent that takes on those tasks.
+
+A campaign starts from a configuration written by a human: the task, a trivial baseline,
+an evaluator, the available budgets, and a success threshold. From there, `tools/lab run`
+runs a loop. It selects a parent candidate and an operator, gives one short headless
+agent session the job of producing a new candidate, evaluates the result on a hidden
+search split, records it, and selects again. The agent sessions run in Claude Code or in
+[Pi](https://pi.dev), which can drive a local open model or a hosted one; the model id in
+the configuration decides which. Labloop manages the search around the sessions and is
+the only writer of the campaign's records.
+
+Search scores are used to decide which candidates to pursue, so they are optimistic by
+construction and do not support a claim on their own. When the campaign stops, the
+selected candidate is evaluated once on a separate final split, and that single result
+is compared against the threshold fixed before the search began. Failed, invalid, killed
+and deferred candidates stay in the record with their configurations and their reasons,
+so that what is preserved is what actually happened rather than only the attempts that
+worked. The rules that the lab is run by, and that an agent working in the repository is
+expected to follow, are written in [CLAUDE.md](CLAUDE.md).
 
 The loop follows AIRA₂ (Meta FAIR, arXiv 2603.26499): `draft`, `improve`, `crossover`
 and `debug` operators, temperature-scaled rank selection over search fitness, lineage
-summaries as the only memory, one hidden consistent evaluation split. What labloop adds
-is what a local box with one or two GPUs and a subscription requires: watchers with
-budgets, restart-safe bookkeeping on the filesystem, privilege-separated labels, and a
-usage governor that treats the subscription's rolling window as a resource. It derives
-from [marcodsn/labloop](https://github.com/marcodsn/labloop) and keeps its values:
+summaries as the memory between candidates, and one hidden evaluation split used
+consistently. Labloop adds what running this on a local machine with one or two GPUs and
+a subscription requires: watchers with budgets, bookkeeping on the filesystem that
+survives a restart, labels that can be hidden by the operating system, and a usage
+governor that treats the subscription's rolling window as a resource. It derives from
+[marcodsn/labloop](https://github.com/marcodsn/labloop) and keeps its values:
 pre-registration, numeric thresholds, honest claims, evidence never deleted.
 
-A good score during the search is not a result. Those scores decide which candidates to
-pursue, so they are optimistic by construction. Only the one read of the final split,
-against the threshold fixed before the search began, supports a claim. Failed, invalid,
-killed and deferred candidates stay in the population with their reasons. The rules the
-lab is run by are in [CLAUDE.md](CLAUDE.md), which is judgment rather than procedure:
-honesty over optimism, baselines mandatory, evidence immutable, compute spent like
-money.
-
 Two machine-readable files, `population.json` and `events.jsonl`, describe a campaign in
-a published format, so a site such as [nullsilver.com](https://nullsilver.com) can render
-a project that opts in.
+a published format, so that a site such as [nullsilver.com](https://nullsilver.com) can
+render a project that opts in.
 
-**Status: experimental.** The loop is exercised end to end by `scripts/acceptance.sh`
-without an LLM, and has run live on MNIST and CIFAR-10. Status is in NEXT.md, design in
+Labloop is still experimental. The loop is exercised end to end by
+`scripts/acceptance.sh` without any model involved, and it has run live on MNIST and
+CIFAR-10. The current state is in NEXT.md and the design in
 [docs/aira2-loop-design.md](docs/aira2-loop-design.md).
 
-## The loop
+## How a campaign runs
 
 ```
 campaign.toml ──► lab run ──► [ select parent → worker → evaluate → add to population ] ──► REPORT.md
@@ -48,38 +58,42 @@ campaign.toml ──► lab run ──► [ select parent → worker → evaluat
                     └──────────────── until a stop condition ───────────────────────────────┘
 ```
 
-Every tick, `lab run` reaps finished jobs (reads `fitness.json`, writes the LEDGER row),
-enforces budgets (GPU-hours, the usage window), dispatches while a slot is free, and
-stops on a stop condition. Dispatch order is the baseline first, then the drafts, then
-`improve` with p = 0.85 or `crossover` with p = 0.15 on rank-selected parents, with
-`debug` on a failed candidate under its retry cap. When it stops it freezes the best
-candidate by search fitness, runs it once on the final split, writes `REPORT.md` with
-the claim against the pre-fixed threshold, and exits. Kill it and start it again: it
-resumes from `population.json` and the candidate dirs.
+On every tick, `lab run` reaps the jobs that finished (it reads their `fitness.json` and
+writes their LEDGER row), enforces the budgets (GPU-hours and the usage window),
+dispatches new jobs while a slot is free, and checks the stop conditions. The baseline is
+dispatched first, then the initial drafts. After that, each free slot gets an `improve`
+with probability 0.85 or a `crossover` with probability 0.15 on rank-selected parents,
+and a `debug` when a candidate failed and its retry cap allows one. Once a stop
+condition fires, the loop freezes the best candidate by search fitness, runs it once on
+the final split, writes `REPORT.md` with the claim against the pre-fixed threshold, and
+exits. If the process is killed it can simply be started again; it resumes from
+`population.json` and the candidate directories.
 
 | status | meaning |
 |---|---|
 | `running` | searching |
 | `waiting_usage` | the usage governor paused dispatch; `next_eligible` says until when |
 | `stopping` | a stop condition fired; running jobs finish, then the final read |
-| `finished` | `REPORT.md` written; claim `supported`, `not_supported` or `inconclusive` |
+| `finished` | `REPORT.md` is written; the claim is `supported`, `not_supported` or `inconclusive` |
 
 ![tools/lab campaign status after a campaign finished](docs/assets/labloop-status-finished.png)
 
-`tools/lab campaign status` after a campaign finished: the header line with the claim
-and the one final score, the usage window, the GPUs, the population with operator,
-parent, lease, turns, cost and search fitness per candidate, and the loop's log.
+The screenshot shows `tools/lab campaign status` after a campaign has finished. The
+header carries the claim and the one final score, then the usage window and the GPUs,
+then the population with the operator, parent, lease, turns, cost and search fitness of
+each candidate, and finally the loop's own log.
 
 ## Starting a campaign
 
-1. Scaffold a project: `tools/lab campaign init <id>` writes `campaign.toml`, `task.md`,
-   `eval/score.py`, `eval/baseline.sh` and the data dirs.
-2. Write the task, the evaluator and the baseline. The evaluator is stdlib Python taking
-   `<predictions> <labels_dir>` and printing `{"score", "n"}`. The labels of the search
-   and final splits live outside the repo, under `$LAB_PRIVATE`.
-3. Fix the threshold in `campaign.toml` before running. It is reported against at the
-   end and blocks nothing. A changed `campaign.toml` is a new campaign.
-4. Check and run:
+1. Scaffold a project with `tools/lab campaign init <id>`. It writes `campaign.toml`,
+   `task.md`, `eval/score.py`, `eval/baseline.sh` and the data directories.
+2. Write the task statement, the evaluator and the baseline. The evaluator is a
+   stdlib-only Python script that takes `<predictions> <labels_dir>` and prints
+   `{"score", "n"}`. The labels of the search and final splits are kept outside the
+   repository, under `$LAB_PRIVATE`.
+3. Fix the success threshold in `campaign.toml` before running anything. It is reported
+   against at the end and blocks nothing. A changed `campaign.toml` is a new campaign.
+4. Check the configuration and run the loop under a watcher:
    ```sh
    export LAB_PRIVATE=~/.local/share/labloop-private
    tools/lab campaign check
@@ -89,56 +103,63 @@ parent, lease, turns, cost and search fitness per candidate, and the loop's log.
    tools/lab serve                    # the same, as a page on http://<this host>:8791/
    tools/lab campaign stop [--now]    # stop dispatching (and kill running jobs)
    ```
-5. Read `REPORT.md` when it finishes: baseline, best by search, the one final score, the
-   threshold, GPU-hours, usage, deferrals.
+5. Read `REPORT.md` when the campaign finishes. It states the baseline, the best
+   candidate by search fitness, the one final score against the threshold, the
+   GPU-hours, the usage and the deferrals.
 
-Everything else a new project needs is in [docs/campaign-setup.md](docs/campaign-setup.md):
-the Python environment workers use, trusting the project dir once so headless Claude Code
-sessions honour the allow-list, the optional `labeval` user, calibrating the usage
-budget, and the Pi harness. Check the plumbing before trusting it with compute:
-`scripts/acceptance.sh` runs the loop with scripted workers and a fake CLI, no LLM
-involved.
+The rest of what a new project needs is in
+[docs/campaign-setup.md](docs/campaign-setup.md): the Python environment the candidates
+use, trusting the project directory once so that headless Claude Code sessions honour
+the allow-list, the optional `labeval` user, calibrating the usage budget, and setting up
+Pi workers. Before trusting the tooling with compute, `scripts/acceptance.sh` runs the
+whole loop with scripted workers and a fake agent CLI.
 
-## Two harnesses
+## The two harnesses
 
-The worker model id picks the harness, so a campaign does not configure one.
+The worker model named in `campaign.toml` decides which harness runs the session. An id
+such as `claude-sonnet-5` runs the job through Claude Code on subscription login, in
+`tools/lab-worker`. An id of the form `provider/model`, such as `local/gpt-oss-20b`, runs
+it through Pi in `tools/lab-worker-pi`, against whatever that provider is in Pi's own
+`models.json`. Because the choice is per model id, the two can be mixed within one
+campaign through the per-operator model table: a Claude Code draft where the approach is
+chosen, and local improves for the many jobs that follow.
 
-`claude-…` runs the job through Claude Code on subscription login, in
-`tools/lab-worker`. A `provider/model` id, for example `local/gpt-oss-20b`, runs it
-through [Pi](https://pi.dev) in `tools/lab-worker-pi`, against whatever that provider is
-in Pi's own `models.json`. The two mix per operator: a Claude draft where the approach is
-chosen, local improves for the many jobs that follow.
-
-For local models, `scripts/llm-server.sh` runs llama.cpp's CUDA server on one GGUF,
-pinned to one GPU and bound to localhost. It is a service, not a job: started once
-outside any campaign, shared by every client on the host, never started or stopped by
-`lab run`, which only checks before it starts that the endpoint serves the requested
-model id. Pi is configured the way Pi documents it, in `~/.pi/agent/models.json`, so a
-fork can point workers at any OpenAI-compatible server or hosted API without touching
+For local models, `scripts/llm-server.sh` runs llama.cpp's CUDA server on one GGUF file,
+pinned to one GPU and bound to localhost. The server is a service rather than a job. It
+is started once, outside any campaign, and shared by every client on the machine; `lab
+run` never starts or stops it, and only checks before a campaign begins that the endpoint
+serves the requested model id and that Pi's declared context window does not exceed the
+one served. Pi is configured the way Pi documents it, so a fork of this repository can
+point its workers at any OpenAI-compatible server or hosted API without changing
 labloop.
 
-A Pi session gets the same contract as a Claude one: the turn budget, the evidence
-guard, the refusal to read label paths and a bounded bash timeout, all from
-`tools/pi/lab-worker.js`, loaded explicitly with nothing else discovered. Pi's event
-stream and session file are kept beside the candidate, and `session.json` has the same
-shape for both harnesses.
+A Pi session works under the same contract as a Claude Code session. A small extension,
+`tools/pi/lab-worker.js`, loaded explicitly for each session and with nothing else
+discovered, enforces the turn budget, runs the same evidence guard, refuses reads of
+label paths, bounds every bash call within the remaining job budget, clips oversized tool
+results, and continues a run that was cut at the model's output limit. Pi's event stream
+and session file are kept beside the candidate, and `session.json` has the same shape
+under both harnesses.
 
-Two MNIST probes on 2026-09-15 ([docs/pi-probe-20260915.md](docs/pi-probe-20260915.md))
-re-ran the M1 task, five candidates each, against the same pre-fixed 0.985: gpt-oss-20b
-scored 0.9888 on the final split, Qwen3.8-27B Q4_K_M scored 0.9937, and M1 itself, Claude
-Code on Sonnet, scored 0.9875. All three are supported at that threshold. This is
-feasibility only. Five candidates on MNIST sit at the noise floor, so it is not a
-comparison of models.
+Two probes on 2026-09-15 re-ran the first MNIST campaign (M1, Claude Code on Sonnet)
+with five candidates each on local models, against the same threshold of 0.985 fixed for
+M1. gpt-oss-20b scored 0.9888 on the final split and Qwen3.8-27B Q4_K_M scored 0.9937;
+M1 itself had scored 0.9875. All three claims are supported at that threshold. These
+runs show that the harness works end to end on a local model. They do not compare the
+models, since five candidates on MNIST sit at the noise floor. The details, including
+what went wrong in each run, are in [docs/pi-probe-20260915.md](docs/pi-probe-20260915.md).
 
-## What you own, what the lab owns
+## What you own and what the lab owns
 
-Yours: `campaign.toml`, the task statement, the evaluator, the baseline. The lab never
-edits them, and refuses to continue a campaign whose file changed.
+The human owns `campaign.toml`, the task statement, the evaluator and the baseline. The
+lab never edits them, and it refuses to continue a campaign whose configuration file
+has changed since the campaign started.
 
-The lab's: the population. Candidate dirs, `population.json`, `LEDGER.md`,
-`events.jsonl`, `finding.json` and `REPORT.md` are written only by `tools/lab` and never
-deleted. A failed, killed, invalid or deferred candidate is evidence. A worker writes
-only inside its own candidate dir, never reads labels, and never spawns a second session.
+The lab owns the population. The candidate directories, `population.json`, `LEDGER.md`,
+`events.jsonl`, `finding.json` and `REPORT.md` are written only by `tools/lab` and are
+never deleted, because a failed, killed, invalid or deferred candidate is evidence. A
+worker writes only inside its own candidate directory, never reads labels, and never
+starts a second session.
 
 ## Layout
 
@@ -165,29 +186,30 @@ docs/                # campaign-setup.md, labeval.md, the dated result write-ups
 scripts/             # acceptance.sh and its fixtures, sync-project.sh
 ```
 
-A candidate dir is the unit of evidence. `config.json` holds the operator, the parents,
-the seed, the git commit, the command, the hardware, the package versions and the model
-provenance. `job.json` is what the worker was told. Then the candidate's own `code/`, and
-`summary.md`, written when the candidate ends, including when it was killed, saying so
-and why. `fitness.json` is written by `lab eval` and nothing else. `session.json` is the
-worker session's result: turns, list-price cost, model. When the campaign opts into
-finding cards, `finding.json` is written once by `lab run` after the candidate settles,
-which keeps the worker's report apart from the measured search score.
+A candidate directory is the unit of evidence. `config.json` records the operator, the
+parents, the seed, the git commit, the command, the hardware, the package versions and
+the model provenance. `job.json` is what the worker was told. The candidate's own code is
+in `code/`, and `summary.md` is written when the candidate ends, including when it was
+killed, in which case it says so and why. `fitness.json` is written by `lab eval` and by
+nothing else. `session.json` is the result of the worker session: its turns, its
+list-price cost and the model that answered. When the campaign opts into finding cards,
+`finding.json` is written once by `lab run` after the candidate settles, which keeps the
+worker's account of its work separate from the measured search score.
 
 ### Which model ran it
 
-Two facts, kept apart. Requested is the worker model named in `campaign.toml`. Served is
-what actually answered, read from the session result the worker stores (`session.json`,
-`modelUsage`). Both land in the candidate's `config.json` under `agent`, with their
-sources. `lab usage` reads every session's transcript for token counts; `lab campaign
-usage` reads the list-price cost per candidate.
+Two facts are kept apart. The requested model is the one named in `campaign.toml`. The
+served model is the one that actually answered, read from the session result the worker
+stores. Both are recorded in the candidate's `config.json` under `agent`, together with
+their sources. `lab usage` reads every session's transcript for token counts, and
+`lab campaign usage` reads the list-price cost per candidate.
 
 ## `tools/lab`
 
-Zero dependencies beyond Python 3, and the only legal writer of the machine files:
-`population.json`, `LEDGER.md`, `events.jsonl`, `fitness.json`, `finding.json` and
-`FORMAT.json`. A `PreToolUse` hook blocks hand-edits, by a shell command or by the
-Write and Edit tools.
+The CLI has no dependencies beyond Python 3, and it is the only legal writer of the
+machine files: `population.json`, `LEDGER.md`, `events.jsonl`, `fitness.json`,
+`finding.json` and `FORMAT.json`. A `PreToolUse` hook blocks hand edits, whether by a
+shell command or by an agent's Write and Edit tools.
 
 ```
 lab campaign init <id> | check | status | usage [--json] | stop [--now]
@@ -208,26 +230,26 @@ lab format show | sync | version
 
 ## Format versioning
 
-Everything here is parsed by machines, so every artifact declares the format it was
-written in. `FORMAT.json` at the repo root publishes the whole contract: file locations,
-campaign and candidate statuses, operators, claims, the feed class of every event type,
-provenance locations, and the limits. A consumer should build its filters from that file
-rather than from this README.
+Everything the lab writes is meant to be parsed by machines, so every artifact declares
+the format it was written in. `FORMAT.json` at the root of the repository publishes the
+whole contract: file locations, campaign and candidate statuses, operators, claims, the
+feed class of every event type, where provenance is recorded, and the limits. A consumer
+should build its filters from that file rather than from this README.
 
-`population.json` carries `format`, restamped on every write, and so does each
-candidate's `config.json`. Every event carries its own `format`, fixed at write time:
-`events.jsonl` is append-only, so a long-running project's feed may contain lines written
-by several versions of `lab`, and a per-line stamp means a consumer never has to guess
-which rules applied to a given line.
+`population.json` carries a `format` field that is restamped on every write, and so does
+each candidate's `config.json`. Every event carries its own `format`, fixed when it was
+written. Since `events.jsonl` is append-only, the feed of a long-running project may
+contain lines written by several versions of `lab`, and the per-line stamp means a
+consumer never has to guess which rules applied to a given line.
 
-`FORMAT.json` is generated from the constants in `tools/lab` and `tools/lab_campaign.py`.
-Never hand-edit it. `lab validate` fails if it has drifted from the code or declares a
-version the lab does not write.
+`FORMAT.json` is generated from the constants in `tools/lab` and `tools/lab_campaign.py`
+and is never edited by hand. `lab validate` fails if it has drifted from the code or
+declares a version the lab does not write.
 
-Bump policy. MAJOR when a consumer that ignored the change would misread the data: a key
-renamed or removed, a status renamed, an event type's feed class changed, a limit
-tightened. MINOR for additive changes it can safely ignore: a new event type, a new
-optional key.
+The major version is bumped when a consumer that ignored the change would misread the
+data: a key renamed or removed, a status renamed, an event type moved to another feed
+class, a limit tightened. The minor version is bumped for additive changes a consumer can
+safely ignore, such as a new event type or a new optional key.
 
 | version | change |
 |---|---|
@@ -241,40 +263,42 @@ optional key.
 
 ## The event feed
 
-`events.jsonl` is written to be published as it is, in a public repo or by a site tailing
-it, so `lab` enforces the contract mechanically: a closed set of event types, `msg`
-collapsed to one line and truncated at 140 chars, events capped at 4 KB, `metric` events
-throttled to one per candidate per minute, and redaction always. Redaction covers `sk-…`,
-`AKIA…`, `hf_…`, `ghp_…`, bearer tokens, and the literal values of every env var named in
+`events.jsonl` is written to be published as it is, whether in a public repository or by
+a site tailing it, so the lab enforces its contract mechanically. The set of event types
+is closed, `msg` is collapsed to one line and truncated at 140 characters, an event is
+capped at 4 KB, `metric` events are throttled to one per candidate per minute, and
+redaction is always on. Redaction covers keys of the forms `sk-…`, `AKIA…`, `hf_…` and
+`ghp_…`, bearer tokens, and the literal values of every environment variable named in
 `.lab-redact`.
 
-Each type has a fixed feed class. `news` (`campaign.start`, `campaign.stop`) is eligible
-for a homepage and RSS. `activity` (`candidate.launch`, `candidate.done`,
-`candidate.failed`, `campaign.paused`, `note`, `error`) is for a project timeline only.
-`metric` is chart data and never a feed item. The authoritative table is `FORMAT.json` →
-`events.types`.
+Each event type has a fixed feed class. `news` (`campaign.start` and `campaign.stop`) is
+eligible for a homepage and an RSS feed. `activity` (`candidate.launch`,
+`candidate.done`, `candidate.failed`, `campaign.paused`, `note` and `error`) belongs on a
+project timeline only. `metric` is chart data and never a feed item. The authoritative
+table is the `events.types` section of `FORMAT.json`.
 
-Set `NULLSILVER_INGEST_URL` (and `NULLSILVER_TOKEN`) for realtime push. It is best-effort
-and silent on failure, because git is the source of truth and the site backfills on push.
+Setting `NULLSILVER_INGEST_URL` (and `NULLSILVER_TOKEN`) enables a realtime push of
+events. The push is best-effort and silent on failure, because git remains the source of
+truth and the site backfills from it on push.
 
 ## Configuration
 
-Model, turn budget, GPUs, wall clocks, stop conditions and the usage budget all live in
-`campaign.toml`. `lab campaign check` validates it and `templates/campaign.toml`
-documents every key.
+The model, the turn budget, the GPUs, the wall clocks, the stop conditions and the usage
+budget all live in `campaign.toml`. `lab campaign check` validates the file, and
+`templates/campaign.toml` documents every key.
 
-Trust the project directory once for Claude Code before the first run: open `claude`
+Claude Code needs the project directory trusted once before the first run: open `claude`
 there and accept the dialog, or set `hasTrustDialogAccepted` for the path in
-`~/.claude.json`. Until you do, headless sessions ignore the `permissions.allow` entries
-in `.claude/settings.json` for that workspace, hooks still run, and they lose more actions
-to auto-deny than they need to. Pi workers need no trust: the wrapper passes
-`--no-approve` and loads only the lab's extension.
+`~/.claude.json`. Until then, headless sessions ignore the `permissions.allow` entries
+in `.claude/settings.json` for that workspace, the hooks still run, and the sessions
+lose more actions to auto-deny than they need to. Pi workers need no trust, since the
+wrapper passes `--no-approve` and loads only the lab's extension.
 
-Claude Code workers run with `--permission-mode auto`: anything the classifier will not
-approve is auto-denied rather than prompting, so an unattended loop can never hang. A
-worker can lose an action instead, and the contract check turns that into an invalid
-candidate, never a silent success. The `permissions.deny` rules in
-`.claude/settings.json` and the evidence guard hook stay on either way.
+Claude Code workers run with `--permission-mode auto`, so anything the classifier will
+not approve is auto-denied rather than left waiting for a prompt, and an unattended loop
+can never hang. A worker may lose an action this way, and the contract check turns that
+into an invalid candidate rather than a silent success. The `permissions.deny` rules in
+`.claude/settings.json` and the evidence guard hook stay on in either case.
 
 ## License
 
