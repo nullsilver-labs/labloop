@@ -13,7 +13,9 @@
 //      tool_input, cwd). Exit 2 blocks the call with the guard's message. One guard,
 //      two harnesses. Reads of the hidden labels are refused here as well.
 //
-// Bash calls get a timeout inside the remaining job budget when the model gave none;
+// Tool results are clipped to LAB_TOOL_RESULT_MAX_CHARS (16000) so a log dump cannot
+// overflow a small context in one step. Bash calls get a timeout inside the remaining job
+// budget when the model gave none;
 // the watcher stays the wall-clock authority. Pi has no background execution of its
 // own, and lab_process.py contains whatever a command detaches.
 import { spawnSync } from "node:child_process";
@@ -22,6 +24,11 @@ import path from "node:path";
 
 const LABELS_RE = /LAB_PRIVATE|labels\.json|\/labels(?:\/|$)/;
 const WARN_TURNS = 5;
+// Every tool result is clipped to this many characters (head and tail kept). An open
+// model on a 32k context has no room for a 50 KB training log or a file dump: the first
+// probe lost two sessions to a 40k-token request after their work was done. Claude Code
+// does its own clipping; Pi's is per tool and generous.
+const RESULT_MAX = Math.max(2000, parseInt(process.env.LAB_TOOL_RESULT_MAX_CHARS || "16000", 10) || 16000);
 
 export default function (pi) {
   const env = process.env;
@@ -73,14 +80,26 @@ export default function (pi) {
   });
 
   pi.on("tool_result", (event) => {
+    let content = Array.isArray(event.content) ? [...event.content] : [];
+    let changed = false;
+    content = content.map((b) => {
+      if (!b || b.type !== "text" || typeof b.text !== "string" || b.text.length <= RESULT_MAX) return b;
+      changed = true;
+      const head = Math.floor(RESULT_MAX * 0.6), tail = RESULT_MAX - head;
+      const cut = b.text.length - RESULT_MAX;
+      return { ...b, text: b.text.slice(0, head) +
+        `\n\n[lab] ${cut} characters elided from the middle of this tool result to keep the session inside ` +
+        `the model's context; narrow the command (head, tail, grep) if you need them.\n\n` + b.text.slice(-tail) };
+    });
     const left = maxTurns - turns;
-    if (left > WARN_TURNS || left < 0) return undefined;
-    const note = left > 0
-      ? `\n\n[lab] ${left} turn${left === 1 ? "" : "s"} of ${maxTurns} left and ${remainingSec()} s of wall clock: ` +
-        `write summary.md now if it is not written, then stop.`
-      : `\n\n[lab] this was the last turn of ${maxTurns}: write summary.md and stop; further tool calls are refused.`;
-    const content = Array.isArray(event.content) ? [...event.content] : [];
-    content.push({ type: "text", text: note });
-    return { content };
+    if (left <= WARN_TURNS && left >= 0) {
+      const note = left > 0
+        ? `\n\n[lab] ${left} turn${left === 1 ? "" : "s"} of ${maxTurns} left and ${remainingSec()} s of wall clock: ` +
+          `write summary.md now if it is not written, then stop.`
+        : `\n\n[lab] this was the last turn of ${maxTurns}: write summary.md and stop; further tool calls are refused.`;
+      content.push({ type: "text", text: note });
+      changed = true;
+    }
+    return changed ? { content } : undefined;
   });
 }

@@ -56,6 +56,10 @@ check("a write into the own candidate dir passes", r === undefined, JSON.stringi
 r = await call("edit", { path: "population.json", oldText: "a", newText: "b" });
 check("an edit of a machine file is blocked", r?.block === true && /one writer/.test(r.reason), JSON.stringify(r));
 
+r = await fire("tool_result", { toolName: "bash", content: [{ type: "text", text: "x".repeat(50000) }] });
+check("a huge tool result is clipped with a marker", r?.content?.[0]?.text.length < 17000 && /characters elided/.test(r.content[0].text), String(r?.content?.[0]?.text?.length));
+r = await fire("tool_result", { toolName: "bash", content: [{ type: "text", text: "small" }] });
+check("a small result is not clipped", r?.content?.[0]?.text === "small" && !/elided/.test(JSON.stringify(r)), JSON.stringify(r));
 await fire("turn_start", { turnIndex: 1 });
 r = await fire("tool_result", { toolName: "bash", content: [{ type: "text", text: "out" }] });
 check("a countdown note is appended near the turn budget", Array.isArray(r?.content) && /\[lab\] 1 turn of 3 left/.test(r.content.at(-1).text), JSON.stringify(r));
