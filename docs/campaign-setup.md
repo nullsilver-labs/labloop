@@ -96,6 +96,15 @@ point workers at any OpenAI-compatible server or hosted API.
    the backend per model and asks the endpoint; `lab run` refuses to start when the
    endpoint is down or serves another id (`refusing to start: Pi model …`). A provider
    without a `baseUrl` (a built-in one) is checked with `pi auth check` instead.
+4. **The context window is set in two places and recorded, never in campaign.toml.**
+   The server's `-c` (the start script's third argument, default 32768) is the real
+   window; `contextWindow` on the model in Pi's models.json is what Pi compacts
+   against and must not exceed it, or Pi sends a request the server refuses (the first
+   probe lost two sessions that way). The preflight reads the served window from
+   llama.cpp's `/props`, records both numbers with the population and in REPORT.md
+   (`context declared 32768, served 32768`), and refuses to start when declared exceeds
+   served. A hosted API has only the declared number, recorded as such. A run at 32k and
+   one at 128k on the same model id are different experiments; the report says which.
 
 What a Pi session gets that `claude -p` has from flags and hooks, all from
 `tools/pi/lab-worker.js`, loaded explicitly with `-e` and nothing else discovered

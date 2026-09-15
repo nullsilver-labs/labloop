@@ -59,7 +59,7 @@ def check_model(model: str, timeout: float = 5.0) -> dict:
     provider, `pi auth check`. Never raises; the dict says what was checked."""
     provider, mid = split_model(model)
     out = {"model": model, "provider": provider, "id": mid, "ok": False, "base_url": None,
-           "served": [], "detail": ""}
+           "served": [], "context_declared": None, "context_served": None, "detail": ""}
     if not provider or not mid:
         out["detail"] = "a Pi model id is provider/model"
         return out
@@ -67,7 +67,13 @@ def check_model(model: str, timeout: float = 5.0) -> dict:
     if cfg and cfg.get("baseUrl"):
         base = str(cfg["baseUrl"]).rstrip("/")
         out["base_url"] = base
-        ids = [m.get("id") for m in (cfg.get("models") or []) if isinstance(m, dict)]
+        models = [m for m in (cfg.get("models") or []) if isinstance(m, dict)]
+        ids = [m.get("id") for m in models]
+        mine = next((m for m in models if m.get("id") == mid), {})
+        # what Pi believes the window is: it compacts against this number, so it must
+        # not exceed what the server actually serves
+        declared = mine.get("contextWindow") or cfg.get("contextWindow")
+        out["context_declared"] = int(declared) if isinstance(declared, (int, float)) else None
         if mid not in ids:
             out["detail"] = (f"{mid} is not listed under providers.{provider}.models in "
                              f"{pi_config_dir() / 'models.json'}")
@@ -84,9 +90,18 @@ def check_model(model: str, timeout: float = 5.0) -> dict:
             return out
         served = [str(m.get("id")) for m in (data.get("data") or []) if isinstance(m, dict)]
         out["served"] = served
-        if mid in served:
+        out["context_served"] = _served_context(base, key, timeout)
+        ctx = (f"; context declared {out['context_declared'] or '?'}, "
+               f"served {out['context_served'] or 'unknown (no /props)'}")
+        if mid in served and out["context_declared"] and out["context_served"] \
+                and out["context_declared"] > out["context_served"]:
+            out["detail"] = (f"{mid} declares a {out['context_declared']}-token context in Pi's "
+                             f"models.json but {base} serves {out['context_served']}: Pi would never "
+                             "compact before the server refuses a request. Lower contextWindow or "
+                             "start the server with a larger -c")
+        elif mid in served:
             out["ok"] = True
-            out["detail"] = f"{base} serves {mid}"
+            out["detail"] = f"{base} serves {mid}{ctx}"
         else:
             out["detail"] = (f"{base} serves {', '.join(served) or 'nothing'}, not {mid}; "
                              "start the server with that model (scripts/llm-server.sh)")
@@ -97,6 +112,22 @@ def check_model(model: str, timeout: float = 5.0) -> dict:
     out["ok"] = cp.returncode == 0
     out["detail"] = (cp.stdout or cp.stderr).strip()[:300] or f"pi auth check exit {cp.returncode}"
     return out
+
+
+def _served_context(base: str, key: str, timeout: float) -> int | None:
+    """llama.cpp reports the loaded window on /props (at the server root, not under /v1);
+    a hosted API has no such route and the declared window is all there is."""
+    root = base[:-3] if base.endswith("/v1") else base
+    req = urllib.request.Request(root + "/props", headers={"Accept": "application/json"})
+    if key and not key.startswith(("$", "!")):
+        req.add_header("Authorization", f"Bearer {key}")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            data = json.loads(r.read().decode("utf-8", errors="replace"))
+        n = (data.get("default_generation_settings") or {}).get("n_ctx")
+        return int(n) if isinstance(n, (int, float)) and n > 0 else None
+    except (urllib.error.URLError, OSError, ValueError, AttributeError):
+        return None
 
 
 # ---------------------------------------------------------------------------

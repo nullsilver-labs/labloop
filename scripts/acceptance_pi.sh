@@ -16,7 +16,8 @@ export PATH="$SRC/scripts/fixtures/campaign/fake-pi:$PATH"
 PIDIR="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-piconf.XXXXXX")"
 export PI_CODING_AGENT_DIR="$PIDIR"
 STATIC="$PIDIR/static"; mkdir -p "$STATIC/v1"
-echo '{"object":"list","data":[{"id":"other-model","object":"model"}]}' > "$STATIC/v1/models"
+echo '{"object":"list","data":[{"id":"other-model","object":"model"},{"id":"wide-model","object":"model"}]}' > "$STATIC/v1/models"
+echo '{"default_generation_settings":{"n_ctx":4096},"model_alias":"other-model"}' > "$STATIC/props"
 port=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1])')
 ( cd "$STATIC" && timeout 300 python3 -m http.server "$port" --bind 127.0.0.1 >/dev/null 2>&1 ) &
 static_pid=$!
@@ -24,7 +25,8 @@ cat > "$PIDIR/models.json" <<JSON
 {"providers": {
   "fake":   {"api": "openai-completions", "models": [{"id": "model-x"}]},
   "static": {"baseUrl": "http://127.0.0.1:$port/v1", "api": "openai-completions", "apiKey": "x",
-             "models": [{"id": "model-x"}, {"id": "other-model"}]},
+             "models": [{"id": "model-x"}, {"id": "other-model", "contextWindow": 4096},
+                        {"id": "wide-model", "contextWindow": 8192}]},
   "down":   {"baseUrl": "http://127.0.0.1:1/v1", "api": "openai-completions", "apiKey": "x",
              "models": [{"id": "model-x"}]}
 }}
@@ -38,7 +40,12 @@ assert_eq   "a model id names its backend" \
 assert_ok   "the preflight accepts a served model"            python3 "$SRC/tools/lab_pi.py" check static/other-model
 assert_fail "the preflight refuses a model the endpoint does not serve" python3 "$SRC/tools/lab_pi.py" check static/model-x
 assert_eq   "… and says what is served instead" \
-  "$(python3 "$SRC/tools/lab_pi.py" check static/model-x 2>&1 | grep -c 'serves other-model, not model-x')" 1
+  "$(python3 "$SRC/tools/lab_pi.py" check static/model-x 2>&1 | grep -c 'serves other-model, wide-model, not model-x')" 1
+assert_eq   "… and records the declared and served context windows" \
+  "$(python3 "$SRC/tools/lab_pi.py" check static/other-model 2>&1 | grep -c 'context declared 4096, served 4096')" 1
+assert_fail "the preflight refuses a model whose declared context exceeds the served one" python3 "$SRC/tools/lab_pi.py" check static/wide-model
+assert_eq   "… and says which numbers disagree" \
+  "$(python3 "$SRC/tools/lab_pi.py" check static/wide-model 2>&1 | grep -c 'declares a 8192-token context.*serves 4096')" 1
 assert_fail "the preflight refuses a down endpoint"            python3 "$SRC/tools/lab_pi.py" check down/model-x
 assert_ok   "a provider without a baseUrl is checked through pi auth" python3 "$SRC/tools/lab_pi.py" check fake/model-x
 assert_eq   "the kill pattern is scoped to the Pi prefix as well" \

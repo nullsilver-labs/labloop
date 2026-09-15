@@ -532,7 +532,8 @@ def auth_preflight(cfg: dict | None = None) -> dict:
                 pre["pi"][model] = {"ok": False, "base_url": None, "served": [], "detail": "no `pi` on PATH"}
             else:
                 r = P.check_model(model)
-                pre["pi"][model] = {k: r[k] for k in ("ok", "base_url", "served", "detail")}
+                pre["pi"][model] = {k: r[k] for k in ("ok", "base_url", "served", "context_declared",
+                                                       "context_served", "detail")}
             pre["ok"] = pre["ok"] and pre["pi"][model]["ok"]
     return pre
 
