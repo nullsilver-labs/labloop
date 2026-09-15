@@ -275,6 +275,81 @@ Whether that changes what workers *write* is the open question: this is a select
 measured by replay, not a result about research quality, and a new campaign is a new
 campaign.
 
+## 3c. findings-v3 — the knob ledger as a per-knob index (2026-09-15)
+
+The second live comparison (`docs/mem2-comparison-20260914/RESULT.md`) read
+**not_supported** at seed 2, and eleven of the findings arm's eighteen bad statements
+are novelty claims the population contradicts — written under the v2 ledger's own
+"repeat check" instruction. The rated errors trace to the ledger, not to the cards:
+
+1. every row was truncated at 240 bytes with its keys in alphabetical order, so outcome
+   keys (`epochs_started`, `examples_seen`, `final_loss`, `holdout_*`, `seed`, `steps`)
+   filled the row before `table_size`, `train_seconds` or `weight_decay` could appear;
+2. `orders` is a list, and `sanitize_knobs` carried scalars only, so the one row where
+   `orders [1,2,3]→[1,2]` would have shown up said `seed` and `trainable_params`;
+3. c0019's ledger held rows for c0011–c0018 only — ten candidates dropped by the 2 KiB
+   bound, c0009's `weight_decay 0→0.01` row among them. The word "decay" appeared
+   nowhere in that worker's context, and it wrote "never varied anywhere".
+
+`[memory] mode = "findings-v3"` changes the ledger and one rendered line on the card
+(below), so the preregistered mem3 pair isolates the facts a worker is shown: the card
+schema (`finding-card/2`), the selector, the byte caps, the prompt and the rubric are
+v2's, and v1 and v2 stay frozen byte for byte.
+
+- **Knob keys only.** `OUTCOME_KEYS` (`epochs_started`, `examples_seen`, `final_loss`,
+  `holdout_n`, `predicted`, `seed`, `steps`, `trainable_params`, `wall_seconds`) plus
+  the prefixes `holdout_ val_ final_ eval_ test_ measured_` never enter the index; they
+  are measured results, not settings. The set is explicit, documented and frozen into
+  `population.json memory` with the rest of the policy, because a knob wrongly excluded
+  would be invisible.
+- **Lists are rendered, not dropped.** `orders: [1,2,3]` — a list of at most 16 scalars
+  whose rendering fits the 64-byte value bound. A dict, or a list too big to print, is
+  kept as the sentinel `{}` and rendered `(structure not shown)`, so the skip is written
+  into the row instead of leaving the knob silent.
+- **A per-knob index, not per-candidate diff rows.** One row per knob key any settled
+  non-baseline candidate configured: each value tried, oldest value first, with the ids
+  that tried it and consecutive ids collapsed
+  (`weight_decay: 0.01 (c0009, c0014) · not in the file of 16 other(s)`). "Has this knob
+  been varied?" is one line, and **no candidate is ever dropped for age**.
+- **The 2 KiB bound stays**, and under it the *oldest values* are elided — oldest by
+  last use, so the value a knob is currently on survives and one abandoned long ago goes
+  first; never the last value a knob has, never a whole knob, never an id of a value
+  still shown, and never a candidate — with the elision written into that knob's own row
+  (`· 3 older elided`). If even one value per knob does not fit, the index goes
+  over the bound rather than lie by omission, and the record says `over_budget`.
+- The header says what the index is and how to read it, and the repeat line of v2 is
+  kept in spirit: a knob and a value already in the index has been tried.
+
+Two things outside the index came with it, because the first replay showed where the
+outcome facts would otherwise have gone — nowhere:
+
+- **A v3 card renders its measured line.** The plan said outcome keys "live in the card's
+  measured fields", but `render_card` never printed the knobs map. Under v3 only, each card
+  now ends with `- Measured (from the candidate's knobs file, not the search score):
+  final_loss … · steps … · trainable_params …` — the outcome keys of that candidate's own
+  file, so a parameter count is read from the file that recorded it and never copied from
+  another worker's rounded prose (the two "14.1M" errors of mem2). v1 and v2 rendering are
+  unchanged; the line counts against the same byte cap as the rest of the card.
+- **The job card's population table lists parents** (every policy, both arms of a pair):
+  `| id | operator | parents | status | fitness |`. A superlative over search deltas ("the
+  single largest jump in the ledger") is checkable only if lineage and score sit side by
+  side; the v2 per-candidate rows gave that and the v3 index does not, so the table does.
+  A pre-existing `job.json` without the key renders a dash.
+
+Replayed over the mem2 findings arm before any GPU time
+(`scripts/mem_replay_ledger.py`, output in `docs/mem2-comparison-20260914/
+ledger-v3-replay.md`): the rebuilt v2 cards match every stored snapshot (one artifact
+drift, c0016's knobs file rewritten by the final run after c0019 was dispatched, cards
+and selection identical), the index costs 0–1664 B against v2's 0–2046 B, names all 18
+earlier candidates in the last job against v2's 8, elides nothing, and the eleven rated
+facts of mem2 are **11 of 11 present** in the context the job would have seen: 8 of 8
+knob-novelty claims in the index (both `weight_decay` claims, all three `orders` claims,
+`heads`, `batch_size`, the seed-only comparison), the two parameter counts on c0003's
+measured line, and the delta superlative in the population table, where four earlier
+jumps larger than the claimed +0.0668 sit with their parents (c0002 +.130, c0003 +.156,
+c0006 +.093, c0014 +.107; the rater had counted two). The first replay, before the
+measured line and the parents column, read 8 of 11 and is superseded by this one.
+
 ## 4. Opt-in and compatibility
 
 Add `[memory] mode = "findings-v1"`; absence means the existing lineage behavior.

@@ -16,9 +16,9 @@ revised here after the fact.
 | M1 | Worker contract implemented and tested | MNIST probe: 5 completed, final 0.9875 ≥ 0.985 | Probe demonstrates feasibility, not full-window reliability or superiority over interactive work |
 | M2 | Full operators and selection implemented; bounded worker lifecycle live-validated | Frozen matched pair 2026-09-13: search 40/40 completed, final .9464; greedy 40/40 completed, final .9406; lease-matched D = +.0044 at B = 26334 s (one sd, over the .004 band by a hair) | One pair, one order; label separation OFF in both; the 24 h criterion not run |
 | M3 | Governor and fake-CLI tests implemented; live rate-limit enforcement by the watcher (2026-09-12, section E2b) | First live deferral 2026-09-14 (mem2-legacy c0008: limit message → deferred, not failed → re-dispatched after 30.5 min; 0 failed); the predictive gate never fired (no `window_budget`) | Predictive gate armed at a calibrated budget in the drafts arms (`window_budget` 20.0, `session_cost` 0.48 from 37 sessions); expected to fire only on an overrun, so unattended validation is still pending |
-| M4 | Slots, VRAM checks and fake-GPU tests implemented; second-slot draft rule fixed 2026-09-14 (`e464135`); `max_candidates` guard counts in-flight jobs since 2026-09-15 (two slots overshot the cap by one in D1) | The drafts pair ran on two GPUs 2026-09-14/15: 4.19 and 4.60 settled per GPU-hour vs 4.72 / 5.45 on one GPU — **the M4 kill criterion fired**; `gpu_seconds` is slot-lease time and the growth is in the non-training part of each lease (`docs/drafts-comparison-20260915/RESULT.md` §5); wall clock roughly halved (2.83 h / 2.28 h vs 4.79 h / 3.70 h) | Two-slot dispatch is under the fired rule; the mixed arm uses it anyway to match its D4 control (a disclosed exception, `docs/campaign-plan-20260914.md`) and adds a reported-only throughput read that separates agent time from GPU time; the cause (host contention, inferred) is not measured |
+| M4 | Slots, VRAM checks and fake-GPU tests implemented; second-slot draft rule fixed 2026-09-14 (`e464135`); `max_candidates` guard counts in-flight jobs since 2026-09-15 (two slots overshot the cap by one in D1) | The drafts pair ran on two GPUs 2026-09-14/15: 4.19 and 4.60 settled per GPU-hour vs 4.72 / 5.45 on one GPU — **the M4 kill criterion fired**; `gpu_seconds` is slot-lease time and the growth is in the non-training part of each lease (`docs/drafts-comparison-20260915/RESULT.md` §5); wall clock roughly halved (2.83 h / 2.28 h vs 4.79 h / 3.70 h) | Two-slot dispatch is under the fired rule; the mixed arm used it anyway to match its D4 control (a disclosed exception, `docs/campaign-plan-20260914.md`) and reproduced the pattern (4.19 per lease-hour, 8.23 per wall-hour, non-training lease median 346 s vs 226 / 181 s one-slot; `docs/mixed-comparison-20260915/RESULT.md` §7); the mem3 pair runs on two slots under its own disclosure; the cause (host contention, inferred) is not measured |
 | M5 | Phase removal and format 2.0 complete locally | Site renderer completion recorded historically | External deployment not independently audited in this review |
-| Finding cards | Implemented and tested (opt-in `[memory]`, format 2.1, section G); prompt-size pilot run 2026-09-12 (`docs/finding-cards-pilot.md`); comparison preregistered 2026-09-13 and run 2026-09-13/14 (`docs/memory-comparison-20260913/`, engram w0, 20 candidates per arm, findings first) | Both arms 20/20 completed; blinded rating 2026-09-14: fraction_bad findings .017 (2/115) vs legacy .047 (9/191), ratio .37 ≤ .50 → **supported** (feasibility, one seed); prompt ratio 1.74 ≤ 2.0; coverage NOT full (8/16 jobs under two cross-branch cards) | Human spot-check (`spot-check.md`); fix the selector's eviction order and cross-branch floor before any second comparison; superiority needs more seeds (`RESULT.md`, `opus-review.md`); second pair (mem2, seed 2, legacy first, findings-v2 selector and knob ledger) run 2026-09-14, mechanical pass clean (coverage 18/19, the miss is the single-draft opening; prompt ratio 1.85 ≤ 2.2), blinded rating with the `## Finding` section kept 2026-09-15: **not_supported** (.095 vs .060, ratio 1.59; `docs/mem2-comparison-20260914/RESULT.md`); the two seeds disagree | Ledger v3 (knob keys only, list knobs, per-knob index) before a third seed; human spot-checks of both pairs still open |
+| Finding cards | Implemented and tested (opt-in `[memory]`, format 2.1, section G); prompt-size pilot run 2026-09-12 (`docs/finding-cards-pilot.md`); comparison preregistered 2026-09-13 and run 2026-09-13/14 (`docs/memory-comparison-20260913/`, engram w0, 20 candidates per arm, findings first) | Both arms 20/20 completed; blinded rating 2026-09-14: fraction_bad findings .017 (2/115) vs legacy .047 (9/191), ratio .37 ≤ .50 → **supported** (feasibility, one seed); prompt ratio 1.74 ≤ 2.0; coverage NOT full (8/16 jobs under two cross-branch cards) | Human spot-check (`spot-check.md`); fix the selector's eviction order and cross-branch floor before any second comparison; superiority needs more seeds (`RESULT.md`, `opus-review.md`); second pair (mem2, seed 2, legacy first, findings-v2 selector and knob ledger) run 2026-09-14, mechanical pass clean (coverage 18/19, the miss is the single-draft opening; prompt ratio 1.85 ≤ 2.2), blinded rating with the `## Finding` section kept 2026-09-15: **not_supported** (.095 vs .060, ratio 1.59; `docs/mem2-comparison-20260914/RESULT.md`); the two seeds disagree | Ledger v3 implemented 2026-09-15 (per-knob index, measured line on v3 cards, parents in the job card's population table; `docs/finding-cards-plan.md` §3c) and its replay gate passed 11 of 11 (`docs/mem2-comparison-20260914/ledger-v3-replay.md`); the `mem3` pair (`../labloop-mem3-20260915`, seed 4, two GPUs, Sonnet only, findings first by draw) is scaffolded and waits for the human's launch; human spot-checks of both earlier pairs still open |
 
 Current no-LLM acceptance: **413 passed, 0 failed** (2026-09-14 evening, e464135: second-slot draft rule, +3 slot cases; earlier that day 410 with findings-v2, initial_drafts and per-operator models; 2026-09-12: 388 including the
 new bounded-lifecycle section H). Focused lifecycle tests: **9 passed** (27.4 s).
@@ -257,10 +257,18 @@ about knobs that had been varied. Cross-branch acknowledgment did move the cards
 (12 vs 3 candidates). Next for memory: `findings-v3` ledger (knob keys only, lists
 rendered, a per-knob index) behind its own preregistration, then a third seed.
 
-**The mixed arm is running** (`../labloop-mixed-20260914`, Opus drafts, Sonnet
-improves, `initial_drafts` 4, seed 3; launched by the human 2026-09-15 09:12Z on two GPUs
-against D4 as its control, PREREG amendment of the same day). Operator sessions do not
-touch it. **Decided next (plan §6): knob ledger v3** — knob keys only, list-valued knobs
+**The mixed arm ran** (`../labloop-mixed-20260914-arm`, Opus drafts, Sonnet improves,
+`initial_drafts` 4, seed 3, two GPUs, 09:12–11:38Z, D4 as its control;
+`docs/mixed-comparison-20260915/RESULT.md`): **supported** (frozen c0016 final .997 vs
+.50), 20/20 completed, every session served the requested model; cost per settled
+candidate $0.79 vs D4's $0.69 (the four Opus drafts $1.02 each vs $0.85, short sessions);
+drafts .572 / .597 / .696 / .965 vs .587 / .373 / .677 / .710, the one draft above D4's
+best being the frozen candidate's ancestor; the kill criterion does not fire on either
+half. Coverage full; the v2 ledger dropped 46 rows in 7 jobs (same defect as mem2).
+Throughput 4.19 settled per lease-hour / 8.23 per wall-hour (D4 4.60 / 8.76; one-slot
+4.72 / 4.17 and 5.45 / 5.41); the M4 read stands. The all-Opus reference is shelved, so
+what the split buys of an all-Opus arm is not measurable; no Opus is needed for the next
+campaigns. **Decided next (plan §6): knob ledger v3** — knob keys only, list-valued knobs
 rendered, a per-knob index that never drops a candidate — checked first by replaying the
 mem2 population against the eleven rated "never varied" claims, then a third memory pair
 (`mem3`, seed 4, legacy vs findings-v3). The card shape stays (derived from the summary's
@@ -297,9 +305,13 @@ the future orchestrator experiment (a CPU-hosted model as the selector, replay f
    cross-branch floor, the baseline in the strongest-outside slot) and add a
    machine-readable knob ledger per `opus-review.md`~~ (done 2026-09-14 as
    findings-v2; second seed 2026-09-15 **not_supported**, the ledger itself misled
-   workers). Next, decided 2026-09-15 (plan §6): ledger v3 (knob keys only, list-valued
+   workers). ~~Next, decided 2026-09-15 (plan §6): ledger v3 (knob keys only, list-valued
    knobs rendered, a per-knob index that never drops old candidates), a replay over
-   the mem2 population as the gate, then the `mem3` pair at seed 4. The two-GPU throughput read came with
+   the mem2 population as the gate~~ (done 2026-09-15 afternoon: v3 implemented, the
+   first replay found the three outcome facts absent, a measured line on v3 cards and a
+   parents column in every job card's population table closed that, the replay reads
+   11 of 11), then the `mem3` pair at seed 4 (scaffolded, launch lines in
+   `../labloop-mem3-20260915/LAUNCH.md`). The two-GPU throughput read came with
    the drafts pair (M4 above): the criterion fired on a metric that charges agent
    time as GPU time; a measure that separates the two goes into the next
    preregistration. After the mixed arm: exclude the baseline from the parent pool once

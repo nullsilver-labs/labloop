@@ -55,7 +55,7 @@ L: Any = None          # the `lab` module, injected by register()
 
 POP_FILE = "population.json"
 CARD_FILE = "finding.json"
-MEMORY_POLICIES = ["legacy", "findings-v1", "findings-v2"]
+MEMORY_POLICIES = ["legacy", "findings-v1", "findings-v2", "findings-v3"]
 CAND_DIR = "candidates"
 REPORT_FILE = "REPORT.md"
 OPERATORS = ["baseline", "draft", "improve", "crossover", "debug"]
@@ -301,10 +301,12 @@ def load_campaign(path: Path) -> dict:
     knobs = mem.get("knobs") if isinstance(mem, dict) else None
     if knobs is not None:
         # The candidate's own configuration file, read after it settles and diffed
-        # against its first parent's in the v2 knob ledger. Relative to the candidate
-        # dir, so it can never name the labels or anything outside the project.
-        if mode != F.POLICY_V2:
-            L.die(f"{path.name}: [memory] knobs needs mode = \"{F.POLICY_V2}\" (got {mode!r})")
+        # against its first parent's in the v2 knob ledger, or indexed per knob in the
+        # v3 one. Relative to the candidate dir, so it can never name the labels or
+        # anything outside the project.
+        if mode not in F.LEDGER_POLICIES:
+            L.die(f"{path.name}: [memory] knobs needs mode = "
+                  f"{' or '.join(chr(34) + m + chr(34) for m in F.LEDGER_POLICIES)} (got {mode!r})")
         if not isinstance(knobs, str) or not knobs or knobs.startswith("/") \
                 or ".." in Path(knobs).parts:
             L.die(f"{path.name}: [memory] knobs must be a relative path inside the candidate "
@@ -546,7 +548,7 @@ def memory_snapshot(cfg: dict) -> dict:
     mode = cfg["memory"]["mode"]
     if F.is_findings(mode):
         snap = {"policy": mode, **findings_limits(mode)}
-        if mode == F.POLICY_V2:
+        if mode in F.LEDGER_POLICIES:
             # the configured knobs path is part of the frozen policy too: it decides
             # what every card records and what the ledger can diff
             snap["knobs"] = cfg["memory"]["knobs"]
@@ -561,10 +563,15 @@ def findings_limits(policy: str = F.POLICY) -> dict:
            "topic_max_bytes": F.TOPIC_MAX_BYTES, "reason_max_bytes": F.REASON_MAX_BYTES,
            "max_warnings": F.MAX_WARNINGS, "warning_max_bytes": F.WARNING_MAX_BYTES,
            "provenance_max_bytes": F.PROVENANCE_MAX_BYTES}
-    if policy == F.POLICY_V2:
+    if policy in F.LEDGER_POLICIES:
         lim.update({"ledger_max_bytes": F.LEDGER_MAX_BYTES, "ledger_row_max_bytes": F.LEDGER_ROW_MAX_BYTES,
                     "knobs_max": F.KNOBS_MAX, "knob_key_bytes": F.KNOB_KEY_BYTES,
                     "knob_value_bytes": F.KNOB_VALUE_BYTES})
+    if policy == F.POLICY_V3:
+        # the exclusion set is part of the frozen policy: a later tooling change to what
+        # counts as an outcome key must not change a running campaign's ledger
+        lim.update({"knob_list_max": F.KNOB_LIST_MAX, "outcome_keys": sorted(F.OUTCOME_KEYS),
+                    "outcome_prefixes": list(F.OUTCOME_PREFIXES)})
     return lim
 
 
@@ -659,7 +666,7 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
         # byte after later candidates end. Consumes no scheduler randomness. Selected
         # before the dir exists, so a tooling error here leaves no orphan.
         extra = {"ledger_max_bytes": mem["ledger_max_bytes"], "knobs_file": mem.get("knobs")} \
-            if mem["policy"] == F.POLICY_V2 else {}
+            if mem["policy"] in F.LEDGER_POLICIES else {}
         try:
             findings = F.select_context(load_cards(pop), parents, policy=mem["policy"],
                                         max_cards=mem["max_cards"], max_bytes=mem["max_bytes"],
@@ -729,8 +736,8 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
                      "summary": read_summary(a, 400)}
                     for a in (lineage(pop, parents[0])[1:] if parents and findings is None else [])],
         "findings": findings,
-        "population": [{"id": k, "operator": v["operator"], "status": v["status"],
-                        "fitness": v.get("fitness")}
+        "population": [{"id": k, "operator": v["operator"], "parents": list(v.get("parents") or []),
+                        "status": v["status"], "fitness": v.get("fitness")}
                        for k, v in pop["candidates"].items()],
         "best": pop.get("best"),
         "contract": {
@@ -1165,7 +1172,7 @@ def build_candidate_card(cfg: dict, pop: dict, cid: str) -> dict:
     mem = pop.get("memory") or {"policy": "legacy"}
     policy = mem["policy"] if F.is_findings(mem.get("policy")) else F.POLICY
     # the path is the campaign's, frozen at start; the file is the worker's own output
-    knobs_file = mem.get("knobs") if policy == F.POLICY_V2 else None
+    knobs_file = mem.get("knobs") if policy in F.LEDGER_POLICIES else None
     parents = []
     for p in c["parents"]:
         pc = pop["candidates"].get(p)
@@ -1217,7 +1224,8 @@ def ensure_cards(cfg: dict, pop: dict) -> None:
     """Every settled candidate has a valid card that agrees with its sources; publish the
     missing ones. Dies — dispatch blocked, evidence untouched — on a corrupt or
     conflicting card, naming the card and the failed check."""
-    if not F.is_findings(memory_policy(pop)["policy"]):
+    policy = memory_policy(pop)["policy"]
+    if not F.is_findings(policy):
         return
     for cid, c in pop["candidates"].items():
         if c.get("exec") not in F.EXEC_STATUSES:
@@ -1242,7 +1250,7 @@ def ensure_cards(cfg: dict, pop: dict) -> None:
             card = json.loads(raw.decode("utf-8")) if raw is not None else None
         except (UnicodeDecodeError, json.JSONDecodeError):
             card = None
-        problems = F.validate_card(card) if card is not None else ["not valid JSON"]
+        problems = F.validate_card(card, policy) if card is not None else ["not valid JSON"]
         if not problems:
             cdir = cand_dir(cid)
             problems = F.check_card_sources(
@@ -1263,11 +1271,12 @@ def load_cards(pop: dict) -> dict[str, dict]:
     """The cards of every settled candidate, for context selection. ensure_cards has
     run in this tick, so a missing or invalid card here is a tooling error."""
     cards: dict[str, dict] = {}
+    policy = memory_policy(pop)["policy"]
     for cid, c in pop["candidates"].items():
         if c.get("exec") not in F.EXEC_STATUSES:
             continue
         card = _read_json(card_path(cid))
-        if card is None or F.validate_card(card):
+        if card is None or F.validate_card(card, policy):
             L.die(f"finding card {rel(card_path(cid))} is missing or invalid at dispatch time")
         cards[cid] = card
     return cards
@@ -1921,24 +1930,6 @@ def _campaign_cfg(pop: dict) -> dict | None:
             return None
 
 
-def cmd_campaign_status(args) -> None:
-    pop = load_pop()
-    if pop is None:
-        L.die(f"no {POP_FILE}: no campaign has started here")
-    pop.setdefault("usage", usage_defaults())
-    rows = [(k, v["operator"], ",".join(v["parents"]) or "-", v["exec"] or v["status"],
-             "-" if v["fitness"] is None else f"{v['fitness']:.6g}") for k, v in pop["candidates"].items()]
-    print(f"campaign {pop['campaign']}  status {pop['status']}  tick {pop['tick']}  "
-          f"settled {pop['settled']}  best {pop['best']}  claim {pop['claim']}  "
-          f"gpu-h {pop['gpu_seconds']/3600:.2f}")
-    cfg = _campaign_cfg(pop)
-    if cfg is not None:
-        st = usage_state(cfg, pop)
-        print("  usage: " + _usage_line(cfg, pop, st))
-    for r in rows:
-        print("  " + "  ".join(f"{x:<12}" if i < 4 else x for i, x in enumerate(r)))
-
-
 def _usage_line(cfg: dict, pop: dict, st: dict) -> str:
     u = pop["usage"]
     if st["budget"]:
@@ -2018,6 +2009,17 @@ def cmd_job_card(args) -> None:
     print(render_job_card(card, task))
 
 
+def population_table(rows: list[dict]) -> list[str]:
+    """The job card's population table. Parents are listed since 2026-09-15 (findings-v3
+    preparation) so a worker can see every candidate's lineage and score together; a
+    pre-existing job.json without the key renders a dash."""
+    out = ["| id | operator | parents | status | fitness |", "|---|---|---|---|---|"]
+    for p in rows:
+        parents = ",".join(p["parents"]) if p.get("parents") else "—"
+        out.append(f"| {p['id']} | {p['operator']} | {parents} | {p['status']} | {p['fitness']} |")
+    return out
+
+
 def render_job_card(card: dict, task: str) -> str:
     """The prompt a worker receives, from its job.json snapshot and the task text."""
     out = [f"# Job {card['candidate']} — operator `{card['operator']}`", "",
@@ -2057,8 +2059,7 @@ def render_job_card(card: dict, task: str) -> str:
         for a in card["lineage"]:
             out += [f"- **{a['id']}** ({a['operator']}, fitness {a['fitness']}): {a['summary'] or '_no summary_'}"]
         out += [""]
-    out += ["## Population", "", "| id | operator | status | fitness |", "|---|---|---|---|"]
-    out += [f"| {p['id']} | {p['operator']} | {p['status']} | {p['fitness']} |" for p in card["population"]]
+    out += ["## Population", ""] + population_table(card["population"])
     out += ["", f"Best so far: {card['best']}", ""]
     return "\n".join(out)
 
@@ -2082,8 +2083,8 @@ def register(sub, lab_module) -> None:
     q = s2.add_parser("check", help="validate a campaign.toml")
     q.add_argument("file", nargs="?", default="campaign.toml")
     q.set_defaults(func=cmd_campaign_check)
-    q = s2.add_parser("status", help="population at a glance")
-    q.set_defaults(func=cmd_campaign_status)
+    import lab_status
+    lab_status.register(s2, lab_module)   # `campaign status`: live view, --once, --plain
     q = s2.add_parser("usage", help="the usage governor's view of the Max window; calibrate "
                                     "usage.window_budget from it")
     q.add_argument("--json", action="store_true")

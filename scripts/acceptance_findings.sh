@@ -127,6 +127,156 @@ assert C.memory_policy({'memory': m}) == m, 'the snapshot this lab freezes must 
 " "$WORKF/tools"
 rm -f v2-memory.toml v2-bad.toml v2-escape.toml
 
+# --- findings-v3: the same cards and selector, a per-knob knob ledger ---------
+sed 's|mode = "findings-v1"|mode = "findings-v3"\nknobs = "out/memory_config.json"|' campaign.toml > v3-memory.toml
+assert_ok   "campaign check accepts findings-v3 with a knobs file" "$LABF" campaign check v3-memory.toml
+assert_eq   "and reports the v3 mode" \
+  "$("$LABF" campaign check v3-memory.toml | python3 -c "import json,sys;print(json.load(sys.stdin)['memory'])")" "findings-v3"
+assert_ok   "the frozen v3 snapshot names the card schema, the ledger budget and the excluded outcome keys" python3 -c "
+import importlib.machinery, importlib.util, pathlib, sys
+tools = sys.argv[1]
+loader = importlib.machinery.SourceFileLoader('lab', tools + '/lab')
+lab = importlib.util.module_from_spec(importlib.util.spec_from_loader('lab', loader))
+sys.modules['lab'] = lab; loader.exec_module(lab)
+sys.path.insert(0, tools)
+import lab_campaign as C, lab_findings as F
+C.L = lab
+m = C.memory_snapshot(C.load_campaign(pathlib.Path('v3-memory.toml')))
+assert m['policy'] == F.POLICY_V3 and m['schema'] == 'finding-card/2', m
+assert m['ledger_max_bytes'] == F.LEDGER_MAX_BYTES and m['knobs'] == 'out/memory_config.json', m
+assert 'weight_decay' not in m['outcome_keys'] and 'final_loss' in m['outcome_keys'], m
+assert C.memory_policy({'memory': m}) == m, 'the snapshot this lab freezes must be one it accepts'
+" "$WORKF/tools"
+rm -f v3-memory.toml
+
+# One synthetic population, built twice — once under v2, once under v3 — so the two
+# ledgers can be compared over the same knobs files. Nothing here runs a worker.
+V3PY=$(cat <<'PY'
+import sys
+sys.path.insert(0, sys.argv[1])
+import lab_findings as F
+
+KF = "out/memory_config.json"
+KNOBS = {
+    "c0000": {"lr": 0.003, "orders": [1, 2, 3], "final_loss": 0.5, "seed": 11},
+    "c0001": {"lr": 0.003, "orders": [1, 2, 3], "final_loss": 0.4, "seed": 12,
+              "trainable_params": 100},
+    "c0002": {"lr": 0.003, "orders": [1, 2], "final_loss": 0.3, "seed": 13,
+              "holdout_acc": 0.9},
+    "c0003": {"lr": 0.003, "orders": [1, 2, 3], "final_loss": 0.2, "seed": 14},
+    "c0004": {"lr": 0.003, "orders": [1, 2, 3], "wall_seconds": 3.5},
+    "c0005": {"lr": 0.01, "orders": [1, 2, 3], "sched": {"warmup": 10}},
+}
+SUMMARY = ("## Finding\nChange: a change\nHypothesis: a hypothesis\n"
+           "Local observation: a local observation\nInterpretation: an interpretation\n"
+           "Limitations: a limitation\nTopics: alpha\n\n## Details\n\nbody\n").encode()
+
+
+def card(cid, policy):
+    i = int(cid[1:])
+    parents = [] if i == 0 else ["c%04d" % (i - 1)]
+    return F.build_card(
+        campaign={"id": "unit", "sha256": "f" * 64, "higher_is_better": True},
+        candidate={"id": cid, "operator": "baseline" if i == 0 else "improve",
+                   "parents": parents, "exec": "completed", "fail_reason": None,
+                   "redispatch_of": None, "defers": 0},
+        config={"seed": 1, "git_commit": "abc1234",
+                "agent": {"requested": "m", "served": [], "served_source": "none"}},
+        fitness={"search": {"score": 0.5 + i, "n": 20, "evaluator": "eval/score.py",
+                            "evaluator_sha256": "a" * 64, "privilege_separation": False,
+                            "ts": "2026-09-12T00:00:00Z", "error": None}},
+        parents=[{"id": p, "score": 0.5, "seed": 1} for p in parents],
+        summary=SUMMARY, created_at="2026-09-12T00:00:00Z",
+        policy=policy, knobs=KNOBS[cid], knobs_file=KF)
+
+
+V2 = {c: card(c, F.POLICY_V2) for c in KNOBS}
+V3 = {c: card(c, F.POLICY_V3) for c in KNOBS}
+TEXT, REC = F.render_ledger_v3(V3, KF)
+ROWS = {l.split(":")[0]: l for l in TEXT.splitlines() if ": " in l and l[0].islower()}
+PY
+)
+v3py() { assert_ok "$1" python3 -c "$V3PY
+$2" "$WORKF/tools"; }
+
+v3py "no outcome key reaches the v3 index" '
+assert sorted(ROWS) == ["lr", "orders", "sched"], sorted(ROWS)
+for k in ("final_loss", "seed", "trainable_params", "wall_seconds", "holdout_acc"):
+    assert k + ":" not in TEXT, k
+assert REC["knobs"] == ["lr", "orders", "sched"], REC
+'
+v3py "the measured keys are still on the card, where a worker reads them" '
+assert V3["c0001"]["knobs"]["trainable_params"] == 100
+assert V3["c0002"]["knobs"]["holdout_acc"] == 0.9
+'
+v3py "a list-valued knob is rendered, never dropped" '
+assert ROWS["orders"] == "orders: [1,2,3] (c0001, c0003–c0005) · [1,2] (c0002)", ROWS["orders"]
+assert V3["c0002"]["knobs"]["orders"] == [1, 2], V3["c0002"]["knobs"]
+'
+v3py "a dict-valued knob is skipped, and the skip is written into its row" '
+assert ROWS["sched"] == "sched: (structure not shown) (c0005) · not in the file of 4 other(s)", ROWS["sched"]
+'
+v3py "the index groups candidates by value and collapses contiguous ranges" '
+assert ROWS["lr"] == "lr: 0.003 (c0001–c0004) · 0.01 (c0005)", ROWS["lr"]
+assert "c0000" not in TEXT, "the baseline has no place in the index"
+assert REC["rows"] == ["c0001", "c0002", "c0003", "c0004", "c0005"], REC["rows"]
+'
+v3py "the index says what it is and what a repeat is" '
+assert "per-knob index" in TEXT and KF in TEXT
+assert F.LEDGER_V3_REPEAT_LINE in TEXT
+'
+v3py "a tiny ledger budget elides the oldest values, never a knob or a newest id" '
+tight, rec = F.render_ledger_v3(V3, KF, len(TEXT.encode()) - 40)
+rows = {l.split(":")[0]: l for l in tight.splitlines() if ": " in l and l[0].islower()}
+assert sorted(rows) == ["lr", "orders", "sched"], sorted(rows)
+assert rec["elided"], rec
+assert "older elided" in tight
+assert "0.01 (c0005)" in rows["lr"], rows
+assert "[1,2] (c0002)" in rows["orders"], rows   # no id of a value still shown is lost
+assert len(tight.encode()) < len(TEXT.encode()), len(tight.encode())
+assert rec["omitted"] == [] and rec["rows"] == REC["rows"], rec
+floor, frec = F.render_ledger_v3(V3, KF, 100)
+frows = {l.split(":")[0]: l for l in floor.splitlines() if ": " in l and l[0].islower()}
+assert sorted(frows) == ["lr", "orders", "sched"], frows
+assert frec["over_budget"] and frec["bytes"] > 100, frec
+assert all(" (c" in r for r in frows.values()), frows   # every knob keeps a value and its ids
+'
+v3py "a list knob validates under v3 and only under v3" '
+assert F.validate_card(V3["c0002"], F.POLICY_V3) == []
+assert F.validate_card(V3["c0002"], F.POLICY_V2), "v2 must still refuse a nested knob value"
+assert F.validate_card(V3["c0002"]), "the strict rule is the default"
+assert F.validate_card(V2["c0002"], F.POLICY_V3) == [] and F.validate_card(V2["c0002"]) == []
+'
+v3py "the v3 selection is the v2 selection, with the ledger swapped" '
+a = F.select_context(V2, ["c0005"], policy=F.POLICY_V2, knobs_file=KF)
+b = F.select_context(V3, ["c0005"], policy=F.POLICY_V3, knobs_file=KF)
+assert [c["id"] for c in a["cards"]] == [c["id"] for c in b["cards"]]
+cut = lambda r, p: "\n".join(l for l in r["rendered"].split("## Knob ledger")[0].replace("Policy " + p, "Policy X").splitlines()
+                             if not l.startswith("- Measured ("))
+assert cut(a, "findings-v2") == cut(b, "findings-v3")   # only the policy name and the measured line differ
+assert b["policy"] == "findings-v3" and b["ledger"]["policy"] == "findings-v3"
+assert b["limits"]["ledger_max_bytes"] == F.LEDGER_MAX_BYTES
+'
+v3py "a v3 card carries the outcome keys of its knobs file; a v2 card does not" '
+b = F.select_context(V3, ["c0005"], policy=F.POLICY_V3, knobs_file=KF)
+a = F.select_context(V2, ["c0005"], policy=F.POLICY_V2, knobs_file=KF)
+assert "- Measured (from the candidate" in b["rendered"], b["rendered"]
+assert "- Measured (" not in a["rendered"]
+c1 = F.render_card(V3["c0001"], policy=F.POLICY_V3)
+assert "trainable_params 100" in c1 and "final_loss 0.4" in c1 and "seed 12" in c1 and " lr " not in c1, c1
+assert "- Measured (" not in F.render_card(V3["c0001"])       # the default rendering (v1/v2) is unchanged
+'
+v3py "findings-v2 is unchanged: scalars only, per-candidate rows, oldest dropped" '
+assert V2["c0002"]["knobs"] == {"final_loss": 0.3, "holdout_acc": 0.9, "lr": 0.003, "seed": 13}
+assert "orders" not in V2["c0002"]["knobs"] and "sched" not in V2["c0005"]["knobs"]
+t2, r2 = F.render_ledger(V2, set(V2), KF)
+assert "newest first; Δ vs first parent" in t2 and "orders" not in t2
+assert "c0002 ← c0001 · search 2.5 (Δ +2) · final_loss 0.4→0.3 · holdout_acc (unset)→0.9" in t2
+assert r2["rows"] == ["c0005", "c0004", "c0003", "c0002", "c0001"] and "policy" not in r2, r2
+small = F.render_ledger(V2, set(V2), KF, 400)[1]
+assert small["rows"] == ["c0005"] and small["omitted"] == ["c0004", "c0003", "c0002", "c0001"], small
+'
+
 export FAIL_ON=c0002
 export FINDING_BAD="c0003=malformed c0004=missing c0005=invented c0006=oversize c0007=secret c0008=twice c0009=forge"
 export FINDING_PRIVATE_PATH="$PRIVF/search"

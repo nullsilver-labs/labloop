@@ -1,0 +1,816 @@
+{
+ "campaign": "engram-mem2-findings-w0",
+ "project": "/mnt/data/projects/nullsilver/labloop-mem2-findings-20260914",
+ "policy": "findings-v2",
+ "knobs": "out/memory_config.json",
+ "v2_matches_snapshot": true,
+ "artifact_drift": [
+  "c0019"
+ ],
+ "ledger_max_bytes": 2048,
+ "outcome_keys": [
+  "epochs_started",
+  "examples_seen",
+  "final_loss",
+  "holdout_n",
+  "predicted",
+  "seed",
+  "steps",
+  "trainable_params",
+  "wall_seconds"
+ ],
+ "outcome_prefixes": [
+  "holdout_",
+  "val_",
+  "final_",
+  "eval_",
+  "test_",
+  "measured_"
+ ],
+ "jobs": [
+  {
+   "id": "c0001",
+   "operator": "draft",
+   "parents": [],
+   "available": 1,
+   "v2_ledger_bytes": 0,
+   "v2_ledger_rows": 0,
+   "v2_ledger_omitted": [],
+   "v3_ledger_bytes": 0,
+   "v3_knobs": [],
+   "v3_candidates": 0,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 809,
+   "v3_bytes": 809,
+   "stored_ledger_bytes": 0
+  },
+  {
+   "id": "c0002",
+   "operator": "improve",
+   "parents": [
+    "c0001"
+   ],
+   "available": 2,
+   "v2_ledger_bytes": 283,
+   "v2_ledger_rows": 1,
+   "v2_ledger_omitted": [],
+   "v3_ledger_bytes": 892,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size"
+   ],
+   "v3_candidates": 1,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 2340,
+   "v3_bytes": 3123,
+   "stored_ledger_bytes": 283
+  },
+  {
+   "id": "c0003",
+   "operator": "improve",
+   "parents": [
+    "c0001"
+   ],
+   "available": 3,
+   "v2_ledger_bytes": 405,
+   "v2_ledger_rows": 2,
+   "v2_ledger_omitted": [],
+   "v3_ledger_bytes": 973,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size"
+   ],
+   "v3_candidates": 2,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 4928,
+   "v3_bytes": 5844,
+   "stored_ledger_bytes": 405
+  },
+  {
+   "id": "c0004",
+   "operator": "improve",
+   "parents": [
+    "c0003"
+   ],
+   "available": 4,
+   "v2_ledger_bytes": 646,
+   "v2_ledger_rows": 3,
+   "v2_ledger_omitted": [],
+   "v3_ledger_bytes": 1065,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds"
+   ],
+   "v3_candidates": 3,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 7211,
+   "v3_bytes": 8284,
+   "stored_ledger_bytes": 646
+  },
+  {
+   "id": "c0005",
+   "operator": "improve",
+   "parents": [
+    "c0003"
+   ],
+   "available": 5,
+   "v2_ledger_bytes": 886,
+   "v2_ledger_rows": 4,
+   "v2_ledger_omitted": [],
+   "v3_ledger_bytes": 1107,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds"
+   ],
+   "v3_candidates": 4,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 9530,
+   "v3_bytes": 10710,
+   "stored_ledger_bytes": 886
+  },
+  {
+   "id": "c0006",
+   "operator": "improve",
+   "parents": [
+    "c0005"
+   ],
+   "available": 6,
+   "v2_ledger_bytes": 1127,
+   "v2_ledger_rows": 5,
+   "v2_ledger_omitted": [],
+   "v3_ledger_bytes": 1144,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds"
+   ],
+   "v3_candidates": 5,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 12543,
+   "v3_bytes": 12505,
+   "stored_ledger_bytes": 1127
+  },
+  {
+   "id": "c0007",
+   "operator": "improve",
+   "parents": [
+    "c0006"
+   ],
+   "available": 7,
+   "v2_ledger_bytes": 1385,
+   "v2_ledger_rows": 6,
+   "v2_ledger_omitted": [],
+   "v3_ledger_bytes": 1175,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds"
+   ],
+   "v3_candidates": 6,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 11841,
+   "v3_bytes": 12721,
+   "stored_ledger_bytes": 1385
+  },
+  {
+   "id": "c0008",
+   "operator": "improve",
+   "parents": [
+    "c0006"
+   ],
+   "available": 8,
+   "v2_ledger_bytes": 1644,
+   "v2_ledger_rows": 7,
+   "v2_ledger_omitted": [],
+   "v3_ledger_bytes": 1196,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds"
+   ],
+   "v3_candidates": 7,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 12101,
+   "v3_bytes": 12876,
+   "stored_ledger_bytes": 1644
+  },
+  {
+   "id": "c0009",
+   "operator": "improve",
+   "parents": [
+    "c0003"
+   ],
+   "available": 9,
+   "v2_ledger_bytes": 1867,
+   "v2_ledger_rows": 8,
+   "v2_ledger_omitted": [],
+   "v3_ledger_bytes": 1227,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds"
+   ],
+   "v3_candidates": 8,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 12964,
+   "v3_bytes": 11343,
+   "stored_ledger_bytes": 1867
+  },
+  {
+   "id": "c0010",
+   "operator": "improve",
+   "parents": [
+    "c0007"
+   ],
+   "available": 10,
+   "v2_ledger_bytes": 1915,
+   "v2_ledger_rows": 7,
+   "v2_ledger_omitted": [
+    "c0002",
+    "c0001"
+   ],
+   "v3_ledger_bytes": 1316,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds",
+    "weight_decay"
+   ],
+   "v3_candidates": 9,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 12380,
+   "v3_bytes": 13006,
+   "stored_ledger_bytes": 1915
+  },
+  {
+   "id": "c0011",
+   "operator": "improve",
+   "parents": [
+    "c0004"
+   ],
+   "available": 11,
+   "v2_ledger_bytes": 1915,
+   "v2_ledger_rows": 7,
+   "v2_ledger_omitted": [
+    "c0003",
+    "c0002",
+    "c0001"
+   ],
+   "v3_ledger_bytes": 1352,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds",
+    "weight_decay"
+   ],
+   "v3_candidates": 10,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 13463,
+   "v3_bytes": 12918,
+   "stored_ledger_bytes": 1915
+  },
+  {
+   "id": "c0012",
+   "operator": "improve",
+   "parents": [
+    "c0007"
+   ],
+   "available": 12,
+   "v2_ledger_bytes": 1916,
+   "v2_ledger_rows": 7,
+   "v2_ledger_omitted": [
+    "c0004",
+    "c0003",
+    "c0002",
+    "c0001"
+   ],
+   "v3_ledger_bytes": 1381,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds",
+    "weight_decay"
+   ],
+   "v3_candidates": 11,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 12812,
+   "v3_bytes": 13501,
+   "stored_ledger_bytes": 1916
+  },
+  {
+   "id": "c0013",
+   "operator": "improve",
+   "parents": [
+    "c0006"
+   ],
+   "available": 13,
+   "v2_ledger_bytes": 1916,
+   "v2_ledger_rows": 7,
+   "v2_ledger_omitted": [
+    "c0005",
+    "c0004",
+    "c0003",
+    "c0002",
+    "c0001"
+   ],
+   "v3_ledger_bytes": 1426,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds",
+    "weight_decay"
+   ],
+   "v3_candidates": 12,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 12877,
+   "v3_bytes": 13609,
+   "stored_ledger_bytes": 1916
+  },
+  {
+   "id": "c0014",
+   "operator": "improve",
+   "parents": [
+    "c0009"
+   ],
+   "available": 14,
+   "v2_ledger_bytes": 1917,
+   "v2_ledger_rows": 7,
+   "v2_ledger_omitted": [
+    "c0006",
+    "c0005",
+    "c0004",
+    "c0003",
+    "c0002",
+    "c0001"
+   ],
+   "v3_ledger_bytes": 1481,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds",
+    "weight_decay"
+   ],
+   "v3_candidates": 13,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 14059,
+   "v3_bytes": 13641,
+   "stored_ledger_bytes": 1917
+  },
+  {
+   "id": "c0015",
+   "operator": "improve",
+   "parents": [
+    "c0010"
+   ],
+   "available": 15,
+   "v2_ledger_bytes": 1916,
+   "v2_ledger_rows": 7,
+   "v2_ledger_omitted": [
+    "c0007",
+    "c0006",
+    "c0005",
+    "c0004",
+    "c0003",
+    "c0002",
+    "c0001"
+   ],
+   "v3_ledger_bytes": 1518,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds",
+    "weight_decay"
+   ],
+   "v3_candidates": 14,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 12579,
+   "v3_bytes": 13406,
+   "stored_ledger_bytes": 1916
+  },
+  {
+   "id": "c0016",
+   "operator": "improve",
+   "parents": [
+    "c0006"
+   ],
+   "available": 16,
+   "v2_ledger_bytes": 1914,
+   "v2_ledger_rows": 7,
+   "v2_ledger_omitted": [
+    "c0008",
+    "c0007",
+    "c0006",
+    "c0005",
+    "c0004",
+    "c0003",
+    "c0002",
+    "c0001"
+   ],
+   "v3_ledger_bytes": 1555,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds",
+    "weight_decay"
+   ],
+   "v3_candidates": 15,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 12945,
+   "v3_bytes": 13807,
+   "stored_ledger_bytes": 1914
+  },
+  {
+   "id": "c0017",
+   "operator": "improve",
+   "parents": [
+    "c0010"
+   ],
+   "available": 17,
+   "v2_ledger_bytes": 1914,
+   "v2_ledger_rows": 7,
+   "v2_ledger_omitted": [
+    "c0009",
+    "c0008",
+    "c0007",
+    "c0006",
+    "c0005",
+    "c0004",
+    "c0003",
+    "c0002",
+    "c0001"
+   ],
+   "v3_ledger_bytes": 1598,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds",
+    "weight_decay"
+   ],
+   "v3_candidates": 16,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 13189,
+   "v3_bytes": 11189,
+   "stored_ledger_bytes": 1914
+  },
+  {
+   "id": "c0018",
+   "operator": "improve",
+   "parents": [
+    "c0016"
+   ],
+   "available": 18,
+   "v2_ledger_bytes": 1914,
+   "v2_ledger_rows": 7,
+   "v2_ledger_omitted": [
+    "c0010",
+    "c0009",
+    "c0008",
+    "c0007",
+    "c0006",
+    "c0005",
+    "c0004",
+    "c0003",
+    "c0002",
+    "c0001"
+   ],
+   "v3_ledger_bytes": 1635,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds",
+    "weight_decay"
+   ],
+   "v3_candidates": 17,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 12875,
+   "v3_bytes": 13688,
+   "stored_ledger_bytes": 1914
+  },
+  {
+   "id": "c0019",
+   "operator": "improve",
+   "parents": [
+    "c0018"
+   ],
+   "available": 19,
+   "v2_ledger_bytes": 2046,
+   "v2_ledger_rows": 8,
+   "v2_ledger_omitted": [
+    "c0010",
+    "c0009",
+    "c0008",
+    "c0007",
+    "c0006",
+    "c0005",
+    "c0004",
+    "c0003",
+    "c0002",
+    "c0001"
+   ],
+   "v3_ledger_bytes": 1664,
+   "v3_knobs": [
+    "attach_layer",
+    "batch_size",
+    "d_mem",
+    "heads",
+    "loaded_existing_weights",
+    "lr_embed",
+    "lr_head",
+    "orders",
+    "table_size",
+    "train_seconds",
+    "weight_decay"
+   ],
+   "v3_candidates": 18,
+   "v3_elided": [],
+   "v3_over_budget": false,
+   "v2_bytes": 13318,
+   "v3_bytes": 13895,
+   "stored_ledger_bytes": 2046
+  }
+ ],
+ "claims": [
+  {
+   "id": "c0008-orders-never",
+   "candidate": "c0008",
+   "knob": "orders",
+   "kind": "knob",
+   "quote": "No candidate in this lineage (c0001-c0007) had ever varied `orders`",
+   "present": true,
+   "values": 3,
+   "detail": "row: [1,2,3] (1 id(s)) \u00b7 [1,2] (1 id(s)) \u00b7 [1] (5 id(s))",
+   "ledger_bytes": 1196
+  },
+  {
+   "id": "c0008-orders-runsh",
+   "candidate": "c0008",
+   "knob": "orders",
+   "kind": "knob",
+   "quote": "but every prior `run.sh` hardcoded `--orders 1`",
+   "present": true,
+   "values": 3,
+   "detail": "row: [1,2,3] (1 id(s)) \u00b7 [1,2] (1 id(s)) \u00b7 [1] (5 id(s))",
+   "ledger_bytes": 1196
+  },
+  {
+   "id": "c0008-orders-first",
+   "candidate": "c0008",
+   "knob": "orders",
+   "kind": "knob",
+   "quote": "This candidate is the first to pass `--orders 1 2`",
+   "present": true,
+   "values": 3,
+   "detail": "row: [1,2,3] (1 id(s)) \u00b7 [1,2] (1 id(s)) \u00b7 [1] (5 id(s))",
+   "ledger_bytes": 1196
+  },
+  {
+   "id": "c0014-heads-540s",
+   "candidate": "c0014",
+   "knob": "heads",
+   "kind": "knob",
+   "quote": "but every 540s run in the ledger so far also used heads=8",
+   "present": true,
+   "values": 2,
+   "detail": "row: 4 (6 id(s)) \u00b7 8 (7 id(s))",
+   "ledger_bytes": 1481
+  },
+  {
+   "id": "c0015-seed-only",
+   "candidate": "c0015",
+   "knob": "weight_decay",
+   "kind": "knob",
+   "quote": "c0009 vs c0003's seed-only delta was -0.0054 held-out accuracy",
+   "present": true,
+   "values": 1,
+   "detail": "row: 0.01 (2 id(s))",
+   "ledger_bytes": 1518
+  },
+  {
+   "id": "c0019-wd-never",
+   "candidate": "c0019",
+   "knob": "weight_decay",
+   "kind": "knob",
+   "quote": "weight_decay has never been varied anywhere in this lineage",
+   "present": true,
+   "values": 1,
+   "detail": "row: 0.01 (2 id(s))",
+   "ledger_bytes": 1664
+  },
+  {
+   "id": "c0019-wd-repeat",
+   "candidate": "c0019",
+   "knob": "weight_decay",
+   "kind": "knob",
+   "quote": "Repeat check: no candidate in the ledger has ever varied `weight_decay`",
+   "present": true,
+   "values": 1,
+   "detail": "row: 0.01 (2 id(s))",
+   "ledger_bytes": 1664
+  },
+  {
+   "id": "c0019-batch-both",
+   "candidate": "c0019",
+   "knob": "batch_size",
+   "kind": "knob",
+   "quote": "a knob+direction already fully explored in both directions",
+   "present": true,
+   "values": 3,
+   "detail": "row: 32 (15 id(s)) \u00b7 64 (2 id(s)) \u00b7 128 (1 id(s))",
+   "ledger_bytes": 1664
+  },
+  {
+   "id": "c0005-params-14.1M",
+   "candidate": "c0005",
+   "knob": "trainable_params",
+   "kind": "outcome",
+   "quote": "28,234,240 trainable memory params, up from c0003's 14.1M",
+   "present": true,
+   "detail": "found in the rendered context: 15166720",
+   "ledger_bytes": 1107
+  },
+  {
+   "id": "c0006-params-14.1M",
+   "candidate": "c0006",
+   "knob": "trainable_params",
+   "kind": "outcome",
+   "quote": "c0005's 8-head model (28.2M trainable params, double c0003's 14.1M)",
+   "present": true,
+   "detail": "found in the rendered context: 15166720",
+   "ledger_bytes": 1144
+  },
+  {
+   "id": "c0017-largest-jump",
+   "candidate": "c0017",
+   "knob": "(search delta)",
+   "kind": "delta",
+   "quote": "and produced the single largest jump in the ledger (delta +0.0668)",
+   "present": true,
+   "detail": "larger jumps in the population table (parents column): c0002 +0.129883 from c0001, c0003 +0.156006 from c0001, c0006 +0.0925293 from c0005, c0014 +0.106567 from c0009",
+   "ledger_bytes": 1598
+  }
+ ],
+ "extra_claims": [
+  {
+   "id": "c0009-seed-swing",
+   "candidate": "c0009",
+   "knob": "orders",
+   "kind": "knob",
+   "quote": "even a bare seed change alone can swing hidden search score (c0006 vs c0008)",
+   "present": true,
+   "values": 3,
+   "detail": "row: [1,2,3] (1 id(s)) \u00b7 [1,2] (2 id(s)) \u00b7 [1] (5 id(s))",
+   "ledger_bytes": 1227
+  },
+  {
+   "id": "c0017-depth-axis",
+   "candidate": "c0017",
+   "knob": "attach_layer",
+   "kind": "knob",
+   "quote": "attach_layer 4 ... the only other point on the depth axis measured so far",
+   "present": true,
+   "values": 3,
+   "detail": "row: 2 (12 id(s)) \u00b7 6 (2 id(s)) \u00b7 4 (2 id(s))",
+   "ledger_bytes": 1598
+  }
+ ],
+ "ready": true
+}

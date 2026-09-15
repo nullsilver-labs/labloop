@@ -63,7 +63,11 @@ max_debug_retries = 1
                                  # v2 never shows the trivial baseline as a cross-branch
                                  # card, orders topic matches newest-first, gives siblings
                                  # their own slots and keeps two cross-branch cards under
-                                 # the byte budget. Default "legacy": the first-parent
+                                 # the byte budget. "findings-v3" (§3c) keeps v2's cards
+                                 # and selector and replaces the ledger with a per-knob
+                                 # index (each knob, every value tried, who tried it; no
+                                 # candidate dropped for age; outcome keys on the card's
+                                 # measured line instead). Default "legacy": the first-parent
                                  # lineage of clipped summaries.
                                  # Frozen into population.json when the campaign starts.
 # knobs = "out/memory_config.json"   # findings-v2 only: a small JSON object your code

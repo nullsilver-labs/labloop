@@ -352,3 +352,48 @@ replications) and the accuracy claim is dropped for this task.
 
 Order now: mixed arm (running) → replay → `mem3` pair → then the baseline-out-of-the-pool
 scheduler change and item 5 as before.
+
+## Amended after the mixed arm (2026-09-15, afternoon)
+
+**The mixed arm ran** (`../labloop-mixed-20260914-arm`, 09:12–11:38Z, two GPUs, D4 as its
+control; `docs/mixed-comparison-20260915/RESULT.md`). Read 1: **supported**, frozen c0016
+final .997 vs .50, 20/20 completed, every session served the model requested for its
+operator (4 Opus drafts, 15 Sonnet). Read 2: **$0.79 vs $0.69 per settled candidate**
+(ratio 1.14); the four Opus drafts cost $1.02 each against D4's Sonnet drafts at $0.85 —
+1.2×, not the 5× the governor reserved, because the Opus sessions were short (9–15 turns);
+the larger part of the gap is on the Sonnet side and is unexplained. Read 3: final .997 vs
+.846, descriptive. Read 4: drafts .572 / .597 / .696 / **.965** vs D4's .587 / .373 / .677 /
+.710; the one Opus draft above D4's best (c0004, hashing only tokens inside a known
+person-name span) is the ancestor of the frozen candidate and took 11 of 15 later slots. No
+disguised draft in either arm. **The kill criterion does not fire on either half.** Coverage
+full; the v2 knob ledger dropped 46 rows in 7 of 20 jobs (D4: 33 in 6), the same defect the
+mem2 read found. Leakage checks clean. Throughput: 4.19 settled per lease-hour (D4 4.60,
+one-slot arms 4.72 / 5.45) and 8.23 per wall-hour (D4 8.76, one-slot 4.17 / 5.41); the
+non-training part of the lease is again where the extra time sits (median 346 s vs 300 s
+two-slot, 226 / 181 s one-slot), with one confound of this arm's own (its workers trained
+540 s where D4's trained 480 s). The M4 read stands as written; the cause is still not
+measured. Governor: no pause, peak 34 % of $48.
+
+**What follows.** The idea is not killed and not shown to pay; the all-Opus reference that
+would bracket it is shelved, so the question "how much of an all-Opus arm does the split
+buy" is not measurable from what exists and is not pursued now. The per-operator model
+knob stays available; the next campaigns need no Opus (the `mem3` pair is Sonnet-only by
+design). The plan's order is unchanged: replay gate → `mem3` pair → the baseline-out-of-
+the-pool scheduler change → item 5.
+
+**Ledger v3 and the replay gate (same afternoon).** `findings-v3` is implemented
+(`docs/finding-cards-plan.md` §3c, acceptance cases in `scripts/acceptance_findings.sh`):
+knob keys only, list knobs rendered, a per-knob index that never drops a candidate, oldest
+values elided under the 2 KiB bound with the elision written into the row. The first replay
+over the mem2 findings arm found the 8 knob-novelty facts present and the other three of the
+eleven absent — two parameter counts and one search-delta superlative, which are outcomes
+and which §6 had assumed "live in the card's measured fields" while the rendered card never
+printed them. Two additions closed that, both outside the index and both disclosed in the
+mem3 preregistration: a v3 card renders a measured line from its own knobs file, and the
+job card's population table lists parents beside scores for every policy (so both arms of
+a pair get it). The replay then reads **11 of 11 present**
+(`docs/mem2-comparison-20260914/ledger-v3-replay.md`; v3 index 0–1664 B per job, no
+elision, all 18 earlier candidates named in the last job against v2's 8): **the gate
+passes as written.** The `mem3` pair is scaffolded (`../labloop-mem3-20260915`, arms
+`../labloop-mem3-{findings,legacy}-20260915`, seed 4, two GPUs, Sonnet only, order drawn:
+findings first) and waits for the human's launch.

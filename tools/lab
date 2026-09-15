@@ -401,12 +401,19 @@ def format_manifest() -> dict:
                      "selection: the trivial baseline is never a cross-branch card, topic "
                      "matches are newest-first, two cross-branch cards survive the byte budget, "
                      "and every job also gets a knob ledger — one mechanical line per settled "
-                     "candidate diffing the [memory] knobs file against its first parent's. The "
+                     "candidate diffing the [memory] knobs file against its first parent's. "
+                     "`findings-v3` keeps v2's cards, selector and byte caps and changes only the "
+                     "ledger: it is a per-knob index — for every knob key any settled candidate "
+                     "configured, the values tried and who tried them, with consecutive ids "
+                     "collapsed — it carries knob keys only (measured outcomes stay in the cards), "
+                     "it renders list-valued knobs compactly instead of dropping them, and under "
+                     "the same budget it elides the oldest values of a knob rather than whole "
+                     "candidates, so no candidate is ever dropped for age. The "
                      "effective policy and its limits are frozen in "
                      "population.json `memory` when the campaign starts."),
             "policies": C.MEMORY_POLICIES,
             "card_schema": F.SCHEMA,
-            "card_schemas": {F.POLICY: F.SCHEMA, F.POLICY_V2: F.SCHEMA_V2},
+            "card_schemas": {p: F.SCHEMAS[p] for p in F.POLICIES},
             "card_keys": ["schema", "campaign", "campaign_sha256", "candidate", "sequence",
                           "operator", "parents", "execution", "search", "metric", "comparisons",
                           "comparison_note", "provenance", "report", "caveats", "evidence_limits",
@@ -422,7 +429,10 @@ def format_manifest() -> dict:
                        "field_bytes": dict(F.FIELD_BYTES), "topics_max": F.TOPICS_MAX,
                        "topic_max_bytes": F.TOPIC_MAX_BYTES,
                        "ledger_max_bytes": F.LEDGER_MAX_BYTES, "knobs_max": F.KNOBS_MAX,
-                       "knob_key_bytes": F.KNOB_KEY_BYTES, "knob_value_bytes": F.KNOB_VALUE_BYTES},
+                       "knob_key_bytes": F.KNOB_KEY_BYTES, "knob_value_bytes": F.KNOB_VALUE_BYTES,
+                       "knob_list_max": F.KNOB_LIST_MAX},
+            "ledger_outcome_keys": sorted(F.OUTCOME_KEYS),
+            "ledger_outcome_prefixes": list(F.OUTCOME_PREFIXES),
         },
         "ledger": {
             "columns": ["campaign", "operator", "candidate", "status", "claim", "path", "note"],
@@ -1172,7 +1182,7 @@ def cmd_validate(args) -> None:
                         continue
                     try:
                         card = json.loads(fp.read_text())
-                        problems = F.validate_card(card)
+                        problems = F.validate_card(card, mem["policy"])
                     except (OSError, json.JSONDecodeError, UnicodeDecodeError) as e:
                         card, problems = None, [f"unreadable: {e}"]
                     for pr in problems:

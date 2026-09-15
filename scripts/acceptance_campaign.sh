@@ -154,6 +154,10 @@ assert_nogrep "the token is not in the public feed"           "tok_supersecret_v
 assert_ok   "a finished campaign is a no-op"                  "$LAB2" run --once --poll-sec 1
 assert_fail "the final split is never evaluated on request"   "$LAB2" eval candidates/c0000 --split final
 assert_ok   "status renders"                                  "$LAB2" campaign status
+assert_ok   "status --once renders the live layout"           bash -c '"$0" campaign status --once | grep -q "^ population "' "$LAB2"
+assert_ok   "status --once fits 80 columns"                   bash -c 'COLUMNS=80 "$0" campaign status --once | awk "length(\$0) > 80 {exit 1}"' "$LAB2"
+assert_ok   "status --once names the best candidate"          bash -c '"$0" campaign status --once | grep -q " best$"' "$LAB2"
+assert_ok   "status --plain keeps the text shape"             bash -c '"$0" campaign status --plain | head -1 | grep -q "^campaign .* status finished "' "$LAB2"
 assert_ok   "job card renders"                                "$LAB2" job card candidates/c0003
 [ -z "$(ls .lab/watch/*.json 2>/dev/null)" ] && ok "every watcher was archived" || bad "watchers left in .lab/watch: $(ls .lab/watch/*.json)"
 

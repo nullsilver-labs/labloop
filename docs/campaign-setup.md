@@ -40,7 +40,7 @@ Then:
 export LAB_PRIVATE=~/.local/share/labloop-private
 tools/lab campaign check
 tools/lab run campaign.toml --poll-sec 10        # or under: lab watch start --op campaign --budget-min N -- tools/lab run …
-tools/lab campaign status                        # any time, from another shell
+tools/lab campaign status                        # live view from another shell; --once one frame, --plain text
 tools/lab serve                                  # read-only page for a phone on the LAN (port 8791)
 tools/lab campaign stop [--now]                  # stop dispatching (and kill running jobs)
 ```
@@ -261,6 +261,18 @@ from prose; a campaign whose workers write no such file simply gets a ledger of 
 scores and deltas. The path is frozen into `population.json` with the rest of the
 policy, and `knobs` under `findings-v1` is refused — v1 is frozen so its jobs stay
 reproducible byte for byte.
+
+**`mode = "findings-v3"`** (the plan's §3c, 2026-09-15) keeps v2's selector, caps and
+card schema and replaces the ledger with a **per-knob index**: one line per knob key any
+settled non-baseline candidate configured, with each value tried and the ids that tried
+it (`weight_decay: 0.01 (c0009, c0014) · not in the file of 16 other(s)`), so "has this
+knob been varied?" is one line and no candidate is ever dropped for age. Outcome keys
+(`steps`, `final_loss`, `trainable_params`, `wall_seconds`, `seed`, `holdout_*` …) never
+enter the index; under v3 each card instead ends with a measured line listing them from
+the candidate's own file. List-valued knobs are rendered, not dropped. Under the same
+2 KiB bound the oldest values of a knob are elided, never a knob or an id of a value still
+shown, and the elision is written into the row. The job card's population table lists
+parents beside scores for every policy since the same day. `knobs` is required under v3.
 
 Passing the acceptance suite shows that the plumbing is correct, not that the memory
 is useful; the comparison that would show that is `docs/finding-cards-plan.md` §7.

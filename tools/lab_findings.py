@@ -32,11 +32,17 @@ SCHEMA = "finding-card/1"
 SCHEMA_V2 = "finding-card/2"          # v1 fields plus the optional `knobs` object
 POLICY = "findings-v1"
 POLICY_V2 = "findings-v2"
-POLICIES = (POLICY, POLICY_V2)
+POLICY_V3 = "findings-v3"
+POLICIES = (POLICY, POLICY_V2, POLICY_V3)
+# The policies that carry a knob ledger and therefore need a [memory] knobs file.
+# v3 keeps v2's card selector, card schema and byte caps exactly, and changes only
+# the ledger (docs/finding-cards-plan.md §3c, docs/campaign-plan-20260914.md §6).
+LEDGER_POLICIES = (POLICY_V2, POLICY_V3)
 # The card schema each policy publishes. v1 is frozen: every byte it selected and
 # rendered before 2026-09-14 must stay reproducible, so v2 is a separate branch
 # everywhere rather than an edit to v1's rules (docs/finding-cards-plan.md §3b).
-SCHEMAS = {POLICY: SCHEMA, POLICY_V2: SCHEMA_V2}
+# v3 publishes v2's schema: the same card, with lists kept in `knobs`.
+SCHEMAS = {POLICY: SCHEMA, POLICY_V2: SCHEMA_V2, POLICY_V3: SCHEMA_V2}
 
 
 def is_findings(policy: str | None) -> bool:
@@ -73,6 +79,33 @@ KNOB_KEY_BYTES = 48
 KNOB_VALUE_BYTES = 64
 LEDGER_REPEAT_LINE = ("A knob and direction already in this ledger is a repeat: name the "
                       "earlier candidate and say why you repeat it, or choose a different change.")
+# v3 only. The ledger is a per-knob index rather than per-candidate diff rows, and it
+# carries knob keys only: an *outcome* key is something the run measured, not something
+# a worker set, and under v2 outcome keys filled the alphabetically ordered rows before
+# the knobs could appear (docs/mem2-comparison-20260914/RESULT.md). Measured values stay
+# in the card, which is where a worker is meant to read them.
+#
+# The explicit set is the one preregistered in docs/campaign-plan-20260914.md §6, plus
+# `holdout_n` and `predicted`, which the mem2 configuration files also measure. The
+# prefix rule catches the families a task invents (`holdout_*`, `val_*`, `final_*`,
+# `eval_*`, `test_*`, `measured_*`). A knob wrongly excluded would be invisible, so the
+# set stays small, explicit and documented; anything else is treated as a knob.
+OUTCOME_KEYS = frozenset({
+    "epochs_started", "examples_seen", "final_loss", "holdout_n", "predicted",
+    "seed", "steps", "trainable_params", "wall_seconds",
+})
+OUTCOME_PREFIXES = ("holdout_", "val_", "final_", "eval_", "test_", "measured_")
+KNOB_LIST_MAX = 16             # elements of a list-valued knob carried into a card
+LEDGER_V3_HEAD = ("## Knob ledger ({src}per-knob index over {n} settled candidate(s), "
+                  "excluding the baseline)")
+LEDGER_V3_NOTE = ("Every knob key any settled candidate configured, with each value tried and who "
+                  "tried it, oldest value first; consecutive ids are collapsed into a range, and "
+                  "`N older elided` means N values this knob had are not shown. "
+                  "Measured outcomes (loss, accuracy, steps, wall time, parameter counts, seeds) "
+                  "are never in this index — they are in the cards.")
+LEDGER_V3_REPEAT_LINE = ("A knob and a value already in this index has been tried: name the earlier "
+                         "candidate and say why you repeat it, or choose a different change. Only "
+                         "the values shown here have been tried, and only by the ids shown.")
 REASON_MAX_BYTES = 240
 PROVENANCE_MAX_BYTES = 120     # a model name, a source label
 PROVENANCE_MAX_ITEMS = 8
@@ -322,11 +355,16 @@ def bound_warnings(ws: list[str]) -> list[str]:
 # 2. the card
 # ---------------------------------------------------------------------------
 
-def sanitize_knobs(raw: Any, clean: Redact) -> dict | None:
+def sanitize_knobs(raw: Any, clean: Redact, *, lists: bool = False) -> dict | None:
     """The candidate's own configuration file, reduced to a small, printable, sorted map
     of scalars. Nothing nested, nothing long, nothing about the final split: the file is
     written by the worker's code, so it is untrusted text like any other worker output.
-    → None when the file is missing or is not an object."""
+    → None when the file is missing or is not an object.
+
+    lists=True (findings-v3): a list of scalars is kept and rendered compactly, because
+    dropping it made `orders` invisible to the mem2 workers; a dict, or a list this
+    function cannot print, is kept as the empty object `{}`, a sentinel that says "a
+    structure was here" so the index can name the skip instead of staying silent."""
     if not isinstance(raw, dict):
         return None
     out: dict[str, Any] = {}
@@ -349,9 +387,35 @@ def sanitize_knobs(raw: Any, clean: Redact) -> dict | None:
             t = clean_line(v, clean)
             if t and len(t.encode("utf-8")) <= KNOB_VALUE_BYTES:
                 out[k] = t
-        # lists and dicts are skipped: a ledger row is one line, and a nested value is
-        # a structure to read in the candidate's own file, not a knob to compare
+        elif lists and isinstance(v, (list, dict)):
+            kept = _sanitize_list(v, clean) if isinstance(v, list) else None
+            out[k] = kept if kept is not None else {}
+        # under v1/v2 lists and dicts are skipped: a ledger row is one line, and a
+        # nested value is a structure to read in the candidate's own file
     return out
+
+
+def _sanitize_list(v: list, clean: Redact) -> list | None:
+    """A list of scalars, bounded and printable → the list; anything else → None, which
+    the caller records as a skipped structure."""
+    if len(v) > KNOB_LIST_MAX:
+        return None
+    out = []
+    for x in v:
+        if isinstance(x, bool) or isinstance(x, int):
+            out.append(x)
+        elif isinstance(x, float):
+            if not math.isfinite(x):
+                return None
+            out.append(x)
+        elif isinstance(x, str):
+            t = clean_line(x, clean)
+            if not t:
+                return None
+            out.append(t)
+        else:
+            return None
+    return out if len(knob_value(out).encode("utf-8")) <= KNOB_VALUE_BYTES else None
 
 
 def build_card(*, campaign: dict, candidate: dict, config: dict | None, fitness: dict | None,
@@ -446,8 +510,9 @@ def build_card(*, campaign: dict, candidate: dict, config: dict | None, fitness:
         caveats.append(f"worker report {report['status']}: facts only")
     if candidate.get("redispatch_of"):
         caveats.append(f"re-dispatch of deferred {candidate['redispatch_of']}: a new attempt, not a replication")
-    knob_map = sanitize_knobs(knobs, cleaner(redact, private_paths)) if policy == POLICY_V2 else None
-    if policy == POLICY_V2 and knobs_file and knob_map is None:
+    knob_map = sanitize_knobs(knobs, cleaner(redact, private_paths),
+                              lists=policy == POLICY_V3) if policy in LEDGER_POLICIES else None
+    if policy in LEDGER_POLICIES and knobs_file and knob_map is None:
         # the campaign asked for a configuration file and this attempt has none: the
         # ledger says so rather than leaving a silent gap that reads like "no change"
         caveats.append("knobs file missing")
@@ -516,9 +581,9 @@ def build_card(*, campaign: dict, candidate: dict, config: dict | None, fitness:
         },
         "created_at": created_at,
     }
-    if policy == POLICY_V2:
+    if policy in LEDGER_POLICIES:
         card["knobs"] = knob_map
-    problems = validate_card(card)
+    problems = validate_card(card, policy)
     if problems:
         raise ToolingError(f"{cid}: built an invalid card: " + "; ".join(problems))
     return card
@@ -582,17 +647,22 @@ def _opt(v: Any, typ) -> bool:
     return v is None or (isinstance(v, typ) and not isinstance(v, bool))
 
 
-def validate_card(card: Any) -> list[str]:
+def validate_card(card: Any, policy: str | None = None) -> list[str]:
     """Schema problems, as strings; empty means valid. Exhaustive: every key set is
     exact and every value typed, so a corrupt card cannot carry text in a measured
-    field or smuggle a key the schema does not name. Never raises on odd input."""
+    field or smuggle a key the schema does not name. Never raises on odd input.
+
+    `policy` is the campaign's memory policy, when the caller knows it. v2 and v3
+    publish the same schema but not the same `knobs`: only v3 keeps list values and the
+    skipped-structure sentinel, so a nested value is a problem unless the caller says
+    this is a v3 card. Omitted, the stricter v1/v2 rule applies."""
     try:
-        return _validate_card(card)
+        return _validate_card(card, policy)
     except (TypeError, AttributeError, ValueError, KeyError) as e:
         return [f"malformed value: {e.__class__.__name__}: {e}"]
 
 
-def _validate_card(card: Any) -> list[str]:
+def _validate_card(card: Any, policy: str | None = None) -> list[str]:
     p: list[str] = []
     if not isinstance(card, dict):
         return ["card is not an object"]
@@ -736,6 +806,18 @@ def _validate_card(card: Any) -> list[str]:
                 elif isinstance(v, str):
                     if not v or "\n" in v or len(v.encode("utf-8")) > KNOB_VALUE_BYTES:
                         p.append(f"knobs[{k!r}] must be one bounded line")
+                elif isinstance(v, list) and policy == POLICY_V3:
+                    # findings-v3 keeps list-valued knobs; v1/v2 never build one
+                    if len(v) > KNOB_LIST_MAX or len(knob_value(v).encode("utf-8")) > KNOB_VALUE_BYTES \
+                            or not all(isinstance(x, (bool, int, float, str)) for x in v) \
+                            or not all(math.isfinite(x) for x in v if isinstance(x, float)) \
+                            or not all(x and "\n" not in x for x in v if isinstance(x, str)):
+                        p.append(f"knobs[{k!r}] must be a short list of bounded scalars")
+                elif isinstance(v, dict) and policy == POLICY_V3:
+                    if v:
+                        p.append(f"knobs[{k!r}] must be {{}} — the skipped-structure sentinel")
+                elif policy == POLICY_V3:
+                    p.append(f"knobs[{k!r}] must be an int, float, bool, str or list")
                 else:
                     p.append(f"knobs[{k!r}] must be an int, float, bool or str")
     integ = card["integrity"]
@@ -886,7 +968,7 @@ def select_context(cards: dict[str, dict], parents: list[str], *, policy: str = 
     """
     if policy not in POLICIES:
         raise ToolingError(f"unknown memory policy {policy!r}")
-    v2 = policy == POLICY_V2
+    v2 = policy in LEDGER_POLICIES      # v3 keeps v2's selector exactly; only the ledger differs
     if not v2 and knobs_file is not None:
         raise ToolingError(f"{POLICY} has no knob ledger; a knobs file needs {POLICY_V2}")
     parents = sorted(set(parents))
@@ -980,8 +1062,11 @@ def select_context(cards: dict[str, dict], parents: list[str], *, policy: str = 
         if v2:
             # the ledger is rendered against the cards actually shown (an id it names
             # that no card covers is marked), so it is rebuilt on every eviction
-            ledger_text, ledger = render_ledger(cards, {e["id"] for e in chosen}, knobs_file,
-                                                ledger_max_bytes)
+            if policy == POLICY_V3:
+                ledger_text, ledger = render_ledger_v3(cards, knobs_file, ledger_max_bytes)
+            else:
+                ledger_text, ledger = render_ledger(cards, {e["id"] for e in chosen}, knobs_file,
+                                                    ledger_max_bytes)
         if size <= max_bytes:
             break
         n2 = sum(1 for e in chosen if e["tier"] == 2)
@@ -1022,7 +1107,7 @@ def select_context(cards: dict[str, dict], parents: list[str], *, policy: str = 
     # must be there even when no card fits
     rendered += ledger_text
     return {
-        "policy": POLICY_V2,
+        "policy": policy,
         "limits": {"max_cards": max_cards, "max_bytes": max_bytes,
                    "ledger_max_bytes": ledger_max_bytes},
         "anchors": sorted(anchors),
@@ -1041,7 +1126,23 @@ def _fmt(v: float | None) -> str:
     return "—" if v is None else f"{v:.6g}"
 
 
-def render_card(card: dict, reason: str | None = None, dropped: tuple[str, ...] | list[str] = ()) -> str:
+def render_measured(card: dict) -> str | None:
+    """v3 only: the outcome keys of the candidate's knobs file, on its card. The v3
+    index keeps measured quantities out of the ledger by design; this is where they
+    live instead, so a parameter count or a step count is read from the file that
+    recorded it and never copied from another worker's rounded prose."""
+    kn = card.get("knobs")
+    if not isinstance(kn, dict):
+        return None
+    items = [(k, v) for k, v in sorted(kn.items()) if is_outcome_key(k) and not isinstance(v, (list, dict))]
+    if not items:
+        return None
+    return ("- Measured (from the candidate's knobs file, not the search score): "
+            + " · ".join(f"{k} {knob_value(v)}" for k, v in items))
+
+
+def render_card(card: dict, reason: str | None = None, dropped: tuple[str, ...] | list[str] = (),
+                *, policy: str = POLICY) -> str:
     cid = card["candidate"]
     s, ex, r = card["search"], card["execution"], card["report"]
     head = f"### {cid} · {card['operator']}"
@@ -1071,6 +1172,10 @@ def render_card(card: dict, reason: str | None = None, dropped: tuple[str, ...] 
             lines.append("- Report warnings: " + "; ".join(r["warnings"]))
     else:
         lines.append(f"- Worker report: {r['status']} — " + "; ".join(r["warnings"]))
+    if policy == POLICY_V3:
+        measured = render_measured(card)
+        if measured:
+            lines.append(measured)
     if card["caveats"]:
         lines.append("- Caveats: " + "; ".join(card["caveats"]))
     lines.append(f"- Full summary: candidates/{cid}/summary.md · code: candidates/{cid}/code/")
@@ -1088,6 +1193,11 @@ def knob_value(v: Any) -> str:
         return f"{v:.6g}"
     if isinstance(v, int):
         return str(v)
+    if isinstance(v, list):
+        # compact and unambiguous: `orders [1,2,3]`, never dropped (findings-v3)
+        return "[" + ",".join(knob_value(x) for x in v) + "]"
+    if isinstance(v, dict):
+        return "(structure not shown)"    # the sanitiser's skipped-structure sentinel
     return repr(v)
 
 
@@ -1151,7 +1261,122 @@ def render_ledger(cards: dict[str, dict], shown: set[str], knobs_file: str | Non
                   "bytes": len(text.encode("utf-8"))}
 
 
-V2_HEADER = (f"Policy {POLICY_V2}: {{n}} card(s) chosen deterministically — direct parents, up to "
+def collapse_ids(ids: list[str]) -> str:
+    """Candidate ids with consecutive runs collapsed: c0001–c0008, c0010–c0013."""
+    out, i = [], 0
+    ids = sorted(ids, key=seq)
+    while i < len(ids):
+        j = i
+        while j + 1 < len(ids) and seq(ids[j + 1]) == seq(ids[j]) + 1:
+            j += 1
+        out.append(ids[i] if j == i else f"{ids[i]}–{ids[j]}")
+        i = j + 1
+    return ", ".join(out)
+
+
+def is_outcome_key(k: str) -> bool:
+    """A measured result, not a knob: it belongs in the card's fields, never in the
+    index. Explicit set first, then the documented prefix families."""
+    return k in OUTCOME_KEYS or any(k.startswith(pre) for pre in OUTCOME_PREFIXES)
+
+
+def knob_index(cards: dict[str, dict]) -> list[dict]:
+    """Every knob key any settled non-baseline candidate configured → the values tried
+    and who tried them, oldest value first. Mechanical: every value comes from that
+    candidate's own configuration file, none from worker prose.
+
+    `unset` counts the candidates whose file *has* a knobs map without this key: a knob
+    only some attempts record is the common case (`weight_decay` in the mem2 population
+    appears in three files of nineteen), and a row that did not say so would read as if
+    the whole population had run that one value. A candidate with no knobs file at all
+    is not counted either way — its card says the file is missing."""
+    order = sorted((c for c in cards.values() if c["operator"] != "baseline"),
+                   key=lambda c: c["sequence"])
+    known = [c for c in order if isinstance(c.get("knobs"), dict)]
+    index: dict[str, dict[str, list[str]]] = {}
+    for c in known:
+        for k, v in c["knobs"].items():
+            if is_outcome_key(k):
+                continue
+            index.setdefault(k, {}).setdefault(knob_value(v), []).append(c["candidate"])
+    out = []
+    for k, vals in sorted(index.items()):
+        named = {cid for ids in vals.values() for cid in ids}
+        out.append({"knob": k, "unset": len(known) - len(named),
+                    "values": [{"value": val, "ids": ids} for val, ids in vals.items()]})
+    return out
+
+
+def render_index_row(row: dict, elided: int) -> str:
+    parts = [f"{v['value']} ({collapse_ids(v['ids'])})" for v in row["values"]]
+    if elided:
+        parts.insert(0, f"{elided} older elided")
+    if row.get("unset"):
+        parts.append(f"not in the file of {row['unset']} other(s)")
+    return f"{row['knob']}: " + " · ".join(parts)
+
+
+def render_ledger_v3(cards: dict[str, dict], knobs_file: str | None,
+                     max_bytes: int = LEDGER_MAX_BYTES) -> tuple[str, dict]:
+    """The v3 knob ledger: a per-knob index, not per-candidate diff rows, so the question
+    "has this knob been varied?" is one line per knob and no candidate is ever dropped
+    for age (docs/campaign-plan-20260914.md §6).
+
+    Under the same 2 KiB bound the *oldest values* are elided — oldest by last use, so
+    the value a knob is currently on survives and a value abandoned long ago goes first —
+    and the elision is written into that knob's own row, so a row that has lost a value
+    says so instead of reading like a complete history. A knob never disappears, no id of
+    a value still shown is ever dropped, and no candidate is ever dropped for age. A knob
+    down to one value is never elided further, so "never varied" can always be read off
+    the index; if even that does not fit, the index goes over the bound rather than lie
+    by omission, and the record says so.
+    → (rendered text, the record for job.json)."""
+    rows = knob_index(cards)
+    if not rows:
+        return "", {"file": knobs_file, "policy": POLICY_V3, "knobs": [], "rows": [],
+                    "omitted": [], "elided": [], "over_budget": False, "bytes": 0}
+    named = sorted({cid for r in rows for v in r["values"] for cid in v["ids"]}, key=seq)
+    elided = {r["knob"]: 0 for r in rows}
+    kept = {r["knob"]: list(r["values"]) for r in rows}
+
+    def render() -> str:
+        head = ["", LEDGER_V3_HEAD.format(src=f"from {knobs_file}, " if knobs_file else "",
+                                          n=len(named)), "", LEDGER_V3_NOTE, ""]
+        body = [render_index_row({"knob": r["knob"], "unset": r["unset"],
+                                  "values": kept[r["knob"]]}, elided[r["knob"]])
+                for r in rows]
+        foot = ["", LEDGER_V3_REPEAT_LINE] if knobs_file else []
+        return "\n".join(head + body + foot) + "\n"
+
+    text = render()
+    skip: set[tuple[str, str]] = set()
+    while len(text.encode("utf-8")) > max_bytes:
+        # the least recently used value of any knob that still has more than one
+        cand = sorted((max(seq(i) for i in v["ids"]), k, n)
+                      for k in kept if len(kept[k]) > 1
+                      for n, v in enumerate(kept[k]) if (k, v["value"]) not in skip)
+        if not cand:
+            break                     # nothing left that shrinks the index: it yields
+        _, k, n = cand[0]
+        gone = kept[k].pop(n)
+        elided[k] += 1
+        shorter = render()
+        if len(shorter.encode("utf-8")) >= len(text.encode("utf-8")):
+            # the elision marker costs more than the value it replaced: put it back and
+            # look at the next candidate rather than making the index bigger
+            kept[k].insert(n, gone)
+            elided[k] -= 1
+            skip.add((k, gone["value"]))
+            continue
+        text = shorter
+    return text, {"file": knobs_file, "policy": POLICY_V3,
+                  "knobs": [r["knob"] for r in rows], "rows": named, "omitted": [],
+                  "elided": [{"knob": k, "values": n} for k, n in sorted(elided.items()) if n],
+                  "over_budget": len(text.encode("utf-8")) > max_bytes,
+                  "bytes": len(text.encode("utf-8"))}
+
+
+V2_HEADER = (f"Policy {{policy}}: {{n}} card(s) chosen deterministically — direct parents, up to "
              "two nearest ancestors, then the strongest candidate outside this lineage, siblings, "
              "a non-improving same-topic run, other topic matches (newest first), a recent "
              "execution problem and recent remaining; the trivial baseline is never a "
@@ -1161,7 +1386,7 @@ V2_HEADER = (f"Policy {POLICY_V2}: {{n}} card(s) chosen deterministically — di
 def render_context(cards: dict[str, dict], chosen: list[dict], dropped: list[str],
                    anchors: set[str] | None = None, omitted: list[dict] | None = None,
                    *, policy: str = POLICY) -> str:
-    head = (V2_HEADER.format(n=len(chosen)) if policy == POLICY_V2 else
+    head = (V2_HEADER.format(policy=policy, n=len(chosen)) if policy in LEDGER_POLICIES else
             f"Policy {POLICY}: {len(chosen)} card(s) chosen deterministically (direct parents, then "
             "nearest ancestors, then other branches by topic, strength and recency).")
     out = ["## Findings from earlier candidates", "",
@@ -1181,7 +1406,8 @@ def render_context(cards: dict[str, dict], chosen: list[dict], dropped: list[str
     if not chosen:
         out += ["", "_No earlier candidate has a finding card yet._"]
     for e in chosen:
-        out += ["", render_card(cards[e["id"]], e["reason"], dropped if e["tier"] < 2 else ())]
+        out += ["", render_card(cards[e["id"]], e["reason"], dropped if e["tier"] < 2 else (),
+                                policy=policy)]
     return "\n".join(out) + "\n"
 
 
