@@ -33,14 +33,20 @@ min_free_vram_mb = 0             # >0: skip a GPU whose free VRAM (nvidia-smi) i
 gpu_hours_total  = 20
 job_wall_clock   = "3h"          # per job, enforced by `lab watch`
 stall_min        = 30            # kill a job with no output and no CPU for this long
-worker_model     = "claude-sonnet-5"
-worker_max_turns = 40
+worker_model     = "claude-sonnet-5"   # the id names the harness: claude-… runs through
+                                       # Claude Code (tools/lab-worker); Pi's provider/model
+                                       # (e.g. "local/gpt-oss-20b", a llama.cpp server named
+                                       # in ~/.pi/agent/models.json) through tools/lab-worker-pi.
+                                       # docs/campaign-setup.md "Pi workers"
+worker_max_turns = 40                  # both harnesses; Pi enforces it with tools/pi/lab-worker.js
 # [resources.worker_model_by_operator]   # per-operator override of worker_model; keys are
 # draft = "claude-opus-5"                # draft | improve | crossover | debug (not baseline).
-                                         # A stronger model where the approach is chosen
+# improve = "local/gpt-oss-20b"          # A stronger model where the approach is chosen; a
+                                         # local one for the many jobs that follow. Backends mix.
 
 [worker]
-# M0: any command. M1: the Claude Code wrapper. It receives LAB_CANDIDATE_DIR, LAB_JOB,
+# M0: any command. M1: the Claude Code wrapper, which hands a Pi model id over to
+# tools/lab-worker-pi. It receives LAB_CANDIDATE_DIR, LAB_JOB,
 # LAB_OPERATOR, LAB_TASK, LAB_TRAIN, LAB_SPLIT_INPUTS, LAB_PREDICTIONS_OUT,
 # CUDA_VISIBLE_DEVICES and must write code/run.sh + summary.md and run code/run.sh once.
 command = "tools/lab-worker"
@@ -78,6 +84,8 @@ max_debug_retries = 1
                                  # in this direction is visible even when its card is not.
 
 [usage]                          # the Claude Max window is the second scarce resource
+                                 # (Pi sessions on a local server cost nothing here; a hosted
+                                 # API through Pi is metered by the price in its models.json)
 # window_budget = 12.0           # list-price USD per window the plan tolerates (as `claude -p`
                                  # reports total_cost_usd). Calibrate from `lab campaign usage`
                                  # of a short run; without it the loop only reacts to

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # lab-worker — one Claude Code session, one job. The default `[worker] command`.
+# A Pi model id (`provider/model`) hands over to tools/lab-worker-pi at the top.
 #
 # `lab run` launches this under a watcher with the worker contract in the environment
 # (see tools/lab_campaign.py). It renders the job card, runs ONE headless Claude Code
@@ -22,6 +23,12 @@ model="${LAB_WORKER_MODEL:-claude-sonnet-5}"
 turns="${LAB_WORKER_MAX_TURNS:-40}"
 mode="${LAB_PERMISSION_MODE:-auto}"
 cid="$(basename "$LAB_CANDIDATE_DIR")"
+
+# The model id names the harness: `provider/model` is Pi's syntax (tools/lab-worker-pi),
+# anything else is Claude Code. One [worker] command, either backend, per operator.
+case "$model" in
+  */*) exec "$HERE/lab-worker-pi";;
+esac
 
 # Subscription login only: refuse a paid route rather than silently billing it.
 for v in ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN ANTHROPIC_BASE_URL CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX; do

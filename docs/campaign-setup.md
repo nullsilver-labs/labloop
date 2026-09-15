@@ -17,13 +17,15 @@ What a new project needs before `lab run` works. Learned on the first live run
 4. **A Python environment for candidates.** The worker's `code/run.sh` must name an
    interpreter that has what the task needs (torch, numpy …); the system `python3` is
    used only by `lab` itself and the evaluator. Say the path in the task statement.
-5. **Trust the project directory once** for Claude Code, or headless sessions ignore
+5. **Trust the project directory once** for Claude Code (Pi workers need no trust: the
+   wrapper passes `--no-approve` and loads only the lab's extension), or headless sessions ignore
    the project's `permissions.allow` (they still run the hooks). Either open
    `claude` interactively there once and accept the trust dialog, or set
    `projects["<abs path>"].hasTrustDialogAccepted: true` in `~/.claude.json`.
-6. **Subscription login only.** `claude auth status` must say `loggedIn: true`; no
-   `ANTHROPIC_API_KEY` or endpoint override in the environment. `lab run` and
-   `lab-worker` refuse to start otherwise.
+6. **Subscription login only** for Claude workers. `claude auth status` must say
+   `loggedIn: true`; no `ANTHROPIC_API_KEY` or endpoint override in the environment.
+   `lab run` and `lab-worker` refuse to start otherwise. Pi workers instead need their
+   provider's endpoint to serve the model ("Pi workers" below).
 7. Optional but recommended: the **`labeval` user** (`docs/labeval.md`) so hidden
    labels are hidden by the OS, not by convention. REPORT.md states which.
 
@@ -71,6 +73,54 @@ the cheap one on the many jobs that follow — which also makes the Max window g
 An unknown operator key is a `campaign.toml` error, never a silent fall back to the
 default. `config.json` records which key was used (`agent.requested_source`), REPORT.md's
 usage section lists the requested models, and `lab campaign check` prints them.
+
+## Pi workers (local and hosted open models)
+
+The worker model id names the harness. `claude-…` is Claude Code through
+`tools/lab-worker`. Pi's own `provider/model[:thinking]` form runs through
+`tools/lab-worker-pi`, which `lab-worker` hands over to at the top, so `[worker] command`
+stays `tools/lab-worker` and `worker_model_by_operator` can mix harnesses (a Claude
+draft, local improves). Pi is configured the way Pi documents it, never by labloop:
+`~/.pi/agent/models.json` (or `PI_CODING_AGENT_DIR`) names the providers, so a fork can
+point workers at any OpenAI-compatible server or hosted API.
+
+1. **A model server, started outside the campaign.** `scripts/llm-server.sh start
+   gpt-oss-20b 0 32768` runs llama.cpp's CUDA image under docker with one GGUF, pinned to
+   GPU 0, bound to `127.0.0.1:8083`, reporting the alias as its model id. It is a service
+   for every client on the host, not a job: no `lab watch`, and `lab run` never starts or
+   stops it. List the candidates' GPU in `resources.gpus` and leave the server's out.
+2. **A provider in Pi's models.json** with `baseUrl`, `api = "openai-completions"`, a
+   placeholder `apiKey`, `compat.supportsDeveloperRole = false` for llama.cpp, and one
+   entry per alias the server may run. `pi --list-models` shows them.
+3. **`worker_model = "local/gpt-oss-20b"`** in campaign.toml. `lab campaign check` prints
+   the backend per model and asks the endpoint; `lab run` refuses to start when the
+   endpoint is down or serves another id (`refusing to start: Pi model …`). A provider
+   without a `baseUrl` (a built-in one) is checked with `pi auth check` instead.
+
+What a Pi session gets that `claude -p` has from flags and hooks, all from
+`tools/pi/lab-worker.js`, loaded explicitly with `-e` and nothing else discovered
+(`--no-extensions --no-skills --no-prompt-templates --no-themes --no-approve`): the
+turn budget (`worker_max_turns`; a countdown in the last five tool results, then every
+tool call is refused and the run ends), the evidence guard (`.claude/hooks/guard.sh`, fed
+the same JSON Claude Code's hook gets, for bash, write and edit), a refusal to read
+label paths, and a bash timeout inside the remaining job budget. Pi has no background
+execution of its own; `lab_process.py` contains detached descendants as for Claude.
+
+Provenance: `session.stream.jsonl` (Pi's event stream) and `session-pi/*.jsonl` (Pi's
+session file) sit in the candidate dir; `session.json` is built from the stream in the
+`claude -p` shape (turns, cost as Pi computes it from its models.json prices, `modelUsage`
+keyed `provider/model`, the last assistant text, `error`, `stop_reason`, `turns_capped`,
+`session_started`). `config.json` records `agent.backend`. Pi exits 0 even when the
+model call failed, so the wrapper reads the stream: no completed model turn is exit 3
+(a failed candidate, one debug retry), a completed session without predictions is
+exit 2 (invalid). A provider's rate-limit message is matched by the same regex, on
+`[pi stderr]` lines, and defers the job like a spent Max window. `lab usage` reads the
+Pi session file for tokens.
+
+What to expect from an open model: slower sessions (a 27B Q4 on a 24 GB card generates
+tens of tokens per second, and the card is long), more invalid candidates, and tool
+calling that depends on the chat template llama.cpp renders (`--jinja`). That is data,
+and the smallest campaign first: `docs/pi-probe-20260915.md` records the first one.
 
 ## Supervising the campaign controller
 

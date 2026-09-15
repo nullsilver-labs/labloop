@@ -50,6 +50,7 @@ from pathlib import Path
 from typing import Any
 
 import lab_findings as F
+import lab_pi as P
 
 L: Any = None          # the `lab` module, injected by register()
 
@@ -246,6 +247,11 @@ def load_campaign(path: Path) -> dict:
                   "campaign's baseline command, not a session")
         if not isinstance(model, str) or not model.strip():
             L.die(f"{path.name}: resources.worker_model_by_operator.{op} must be a model id")
+    for model in [cfg["resources"]["worker_model"], *cfg["resources"]["worker_model_by_operator"].values()]:
+        # `claude-…` runs through Claude Code; `provider/model[:thinking]` through Pi
+        # (tools/lab-worker-pi). Anything else with a slash is a malformed Pi id.
+        if P.backend_for(model) == "pi" and not all(P.split_model(model)):
+            L.die(f"{path.name}: {model!r} is not a model id: claude-… or Pi's provider/model")
 
     cfg["usage"] = parse_usage(raw, path.name)
 
@@ -464,15 +470,19 @@ def cmd_campaign_check(args) -> None:
         "memory": cfg["memory"]["mode"],
         "worker_model": cfg["resources"]["worker_model"],
         "worker_model_by_operator": cfg["resources"]["worker_model_by_operator"],
+        "worker_backends": campaign_models(cfg),
         "initial_drafts": cfg["selection"]["initial_drafts"],
         "usage_governor": ("estimate + rate-limit detection" if cfg["usage"]["window_budget"]
                            else "rate-limit detection only (no usage.window_budget)"),
         "usage": {k: v for k, v in cfg["usage"].items() if k != "rate_limit_regex"},
     }, indent=2))
-    if not cfg["usage"]["window_budget"]:
+    backends = campaign_models(cfg)
+    if not cfg["usage"]["window_budget"] and "claude" in backends.values():
         L.warn("no usage.window_budget: the loop cannot pace itself inside the Max window; "
                "it will only defer jobs after a rate-limit message. Calibrate one from "
                "`lab campaign usage` of a previous run before an unattended campaign.")
+    for model, r in auth_preflight(cfg)["pi"].items():
+        (print if r["ok"] else L.warn)(f"pi {model}: {r['detail']}")
 
 
 # ---------------------------------------------------------------------------
@@ -499,18 +509,42 @@ def save_pop(pop: dict) -> None:
     L.write_json_atomic(pop_path(), pop)
 
 
-def auth_preflight() -> dict:
-    """Refuse a paid or non-subscription route. Recorded in population.json and REPORT.md."""
+def campaign_models(cfg: dict) -> dict[str, str]:
+    """Every worker model the campaign can request, mapped to its backend ('claude' | 'pi')."""
+    ids = [cfg["resources"]["worker_model"], *cfg["resources"]["worker_model_by_operator"].values()]
+    return {m: P.backend_for(m) for m in dict.fromkeys(ids)}
+
+
+def auth_preflight(cfg: dict | None = None) -> dict:
+    """Claude Code sessions: refuse a paid or non-subscription route. Pi sessions: the
+    provider must be configured and its endpoint must serve the requested model (a
+    local server that is down, or serving another GGUF, is caught here and not forty
+    candidates later). Recorded in population.json and REPORT.md."""
     offending = [k for k in PAID_ROUTE_ENV if os.environ.get(k)]
-    return {"checked_at": L.now_iso(), "paid_route_env_present": offending,
-            "ok": not offending}
+    pre = {"checked_at": L.now_iso(), "paid_route_env_present": offending, "ok": not offending,
+           "backends": {}, "pi": {}}
+    if cfg:
+        pre["backends"] = campaign_models(cfg)
+        for model, backend in pre["backends"].items():
+            if backend != "pi":
+                continue
+            if shutil.which("pi") is None:
+                pre["pi"][model] = {"ok": False, "base_url": None, "served": [], "detail": "no `pi` on PATH"}
+            else:
+                r = P.check_model(model)
+                pre["pi"][model] = {k: r[k] for k in ("ok", "base_url", "served", "detail")}
+            pre["ok"] = pre["ok"] and pre["pi"][model]["ok"]
+    return pre
 
 
 def init_pop(cfg: dict) -> dict:
-    pre = auth_preflight()
-    if not pre["ok"]:
+    pre = auth_preflight(cfg)
+    if pre["paid_route_env_present"]:
         L.die("refusing to start: " + ", ".join(pre["paid_route_env_present"]) +
               " is set. The loop runs on subscription login only (docs/aira2-loop-design.md §4); unset it.")
+    for model, r in pre["pi"].items():
+        if not r["ok"]:
+            L.die(f"refusing to start: Pi model {model}: {r['detail']}")
     pop = {
         "format": L.FORMAT_VERSION,
         "campaign": cfg["campaign"]["id"],
@@ -707,6 +741,7 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
         "hardware": L.hardware_fingerprint(),
         "packages": L.package_versions([]),
         "agent": {"requested": req_model, "requested_source": req_source,
+                  "backend": P.backend_for(req_model) if req_model else None,
                   "served": [], "served_source": "none"},
         "redispatch_of": origin["from"] if origin else None,
         "defers": origin["defers"] if origin else 0,
@@ -790,6 +825,7 @@ def worker_env(cfg: dict, cid: str, operator: str, gpu: int | None, split: str =
         "LAB_SPLIT_INPUTS": str(cfg["data"][split]["inputs"]),
         "LAB_PREDICTIONS_OUT": str(cdir / "out" / f"predictions-{split}.json"),
         "LAB_WORKER_MODEL": worker_model_for(cfg, operator)[0],
+        "LAB_WORKER_BACKEND": P.backend_for(worker_model_for(cfg, operator)[0]),
         "LAB_WORKER_MAX_TURNS": str(cfg["resources"]["worker_max_turns"]),
         "LAB_JOB_WALL_CLOCK_SEC": str(cfg["resources"]["job_wall_clock_sec"]),
         "CUDA_VISIBLE_DEVICES": "" if gpu is None else str(gpu),
@@ -798,6 +834,7 @@ def worker_env(cfg: dict, cid: str, operator: str, gpu: int | None, split: str =
 
 
 STDERR_PREFIX = "[claude stderr] "   # lab-worker echoes the CLI's stderr under this
+STDERR_PREFIX_PI = "[pi stderr] "     # lab-worker-pi likewise
 KILL_PATTERN_PREFIX = "kill pattern matched:"
 
 
@@ -816,7 +853,8 @@ def session_kill_regex(cfg: dict) -> str:
     rx = cfg["usage"]["rate_limit_regex"]
     m = _GLOBAL_FLAGS.match(rx)
     inner = f"(?{m.group(1)}:{rx[m.end():]})" if m else f"(?:{rx})"
-    return rf"(?im)^{re.escape(STDERR_PREFIX)}.*{inner}"
+    prefixes = "|".join(re.escape(p) for p in (STDERR_PREFIX, STDERR_PREFIX_PI))
+    return rf"(?im)^(?:{prefixes}).*{inner}"
 
 
 def launch(cfg: dict, pop: dict, cid: str) -> None:
@@ -1736,10 +1774,24 @@ def usage_report_lines(cfg: dict, pop: dict, wall_hours: float) -> list[str]:
         f"| jobs deferred | {u['deferred']} (re-dispatched: "
         f"{sum(1 for c in pop['candidates'].values() if c.get('redispatch_of'))}) |",
         "",
-        "All costs are the list-price equivalents `claude -p` reports for a subscription session; "
-        "the subscription itself is prepaid. Sessions ran on subscription login only "
-        f"(auth preflight {'ok' if pop['auth_preflight']['ok'] else 'FAILED'}).",
+        _cost_note(cfg, pop),
     ]
+
+
+def _cost_note(cfg: dict, pop: dict) -> str:
+    backends = set(campaign_models(cfg).values())
+    pre = pop.get("auth_preflight") or {}
+    parts = []
+    if "claude" in backends:
+        parts.append("Claude Code costs are the list-price equivalents `claude -p` reports for a "
+                     "subscription session; the subscription itself is prepaid. Sessions ran on "
+                     f"subscription login only (auth preflight {'ok' if pre.get('ok') else 'FAILED'}).")
+    if "pi" in backends:
+        served = "; ".join(f"{m}: {r.get('detail', '')}" for m, r in (pre.get("pi") or {}).items())
+        parts.append("Pi sessions (tools/lab-worker-pi) cost what Pi computes from its models.json "
+                     "prices: zero on a local server, the provider's list price on a hosted API. "
+                     f"Endpoint preflight at start: {served or 'none recorded'}.")
+    return " ".join(parts)
 
 
 def finish(cfg: dict, pop: dict, poll_sec: float) -> None:

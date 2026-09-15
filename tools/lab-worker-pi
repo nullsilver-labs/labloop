@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+# lab-worker-pi — one Pi (pi.dev) session, one job. tools/lab-worker hands over here
+# when the requested model is a Pi id (`provider/model[:thinking]`), so campaign.toml
+# picks the harness per model, per operator even, with one `[worker] command`.
+#
+# Same contract as lab-worker: render the job card, run ONE headless session, check
+# mechanically that code/run.sh and the search predictions exist, exit 2 when the
+# contract is unmet, 3 when the session never started. The session's JSON event stream
+# is kept beside the candidate (session.stream.jsonl) and folded into session.json in
+# the shape `claude -p` produces (tools/lab_pi.py), so `lab run` reads both backends
+# the same way. Pi's own session file is saved under session-pi/ for `lab usage`.
+#
+# Pi is isolated at the command line, not by a private config: no auto-discovered
+# extensions, skills, prompt templates or themes, no project-local files, only the
+# lab's own extension (tools/pi/lab-worker.js: turn budget + the evidence guard).
+# Providers and models come from the operator's Pi configuration — a local llama.cpp
+# server (scripts/llm-server.sh) or any hosted API Pi can talk to.
+#
+# Exit codes: 0 contract met · 2 contract unmet (session ran) · 3 session failed to start
+set -uo pipefail
+
+: "${LAB_CANDIDATE_DIR:?lab-worker-pi must be launched by lab run}"
+: "${LAB_JOB:?}" "${LAB_PREDICTIONS_OUT:?}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LAB="$HERE/lab"
+ROOT="${LAB_ROOT:-$(cd "$HERE/.." && pwd)}"
+cd "$ROOT" || exit 3
+
+model="${LAB_WORKER_MODEL:?LAB_WORKER_MODEL (provider/model) is required}"
+turns="${LAB_WORKER_MAX_TURNS:-40}"
+cid="$(basename "$LAB_CANDIDATE_DIR")"
+case "$model" in
+  */*) ;;
+  *) echo "lab-worker-pi: $model is not a Pi model id (provider/model)" >&2; exit 3;;
+esac
+command -v pi >/dev/null 2>&1 || { echo "lab-worker-pi: no \`pi\` on PATH" >&2; exit 3; }
+
+card="$("$LAB" job card "$LAB_CANDIDATE_DIR")" || { echo "lab-worker-pi: no job card" >&2; exit 3; }
+export LAB_MODEL="$model" LAB_ROLE=worker LAB_WORKER_BACKEND=pi
+export PI_OFFLINE=1 PI_SKIP_VERSION_CHECK=1
+mkdir -p "$LAB_CANDIDATE_DIR/session-pi"
+echo "lab-worker-pi: $cid ${LAB_OPERATOR:-?} model=$model max-turns=$turns"
+
+# One session. Events stream to session.stream.jsonl; stderr is kept in session.stderr
+# and echoed unbuffered under a `[pi stderr] ` prefix into the watcher's log, where
+# `lab run`'s kill pattern (a rate-limit message from a hosted provider) is scoped to
+# that prefix. Nothing the candidate's own run prints passes through Pi's stderr in
+# print mode.
+t0=$(date +%s%3N)
+python3 "$HERE/lab_process.py" pi -p --mode json \
+  --no-extensions --no-skills --no-prompt-templates --no-themes --no-approve \
+  -e "$HERE/pi/lab-worker.js" \
+  --session-dir "$LAB_CANDIDATE_DIR/session-pi" \
+  --model "$model" \
+  -- "$card" \
+  2>&1 > "$LAB_CANDIDATE_DIR/session.stream.jsonl" | tee "$LAB_CANDIDATE_DIR/session.stderr" | "$HERE/lab-stderr-prefix" '[pi stderr] '
+rc=${PIPESTATUS[0]}
+t1=$(date +%s%3N)
+python3 "$HERE/lab_pi.py" convert "$LAB_CANDIDATE_DIR/session.stream.jsonl" "$model" "$((t1 - t0))" \
+  > "$LAB_CANDIDATE_DIR/session.json" || echo "lab-worker-pi: could not convert the stream" >&2
+
+started="$(python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); print("yes" if r.get("session_started") else "no")' \
+           "$LAB_CANDIDATE_DIR/session.json" 2>/dev/null || echo no)"
+if [ "$started" != "yes" ] && [ "$rc" -ne 125 ]; then
+  echo "lab-worker-pi: pi exited $rc without a completed model turn:" >&2
+  python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); print(r.get("error") or r.get("stop_reason") or "no events")' \
+    "$LAB_CANDIDATE_DIR/session.json" 2>/dev/null >&2
+  tail -5 "$LAB_CANDIDATE_DIR/session.stderr" >&2
+  exit 3
+fi
+python3 - "$LAB_CANDIDATE_DIR/session.json" "$LAB_CANDIDATE_DIR" <<'PY' || true
+import glob, json, os, sys, time
+r = json.load(open(sys.argv[1]))
+print(f"lab-worker-pi: session {r.get('session_id','?')} turns={r.get('num_turns','?')} "
+      f"ms={r.get('duration_ms','?')} model={r.get('provider')}/{r.get('model')} "
+      f"stop={r.get('stop_reason')} capped={r.get('turns_capped')} cost=${r.get('total_cost_usd')}")
+# the record `lab usage` reads (Claude sessions get theirs from the SessionStart hook)
+files = sorted(glob.glob(os.path.join(sys.argv[2], "session-pi", "**", "*.jsonl"), recursive=True))
+os.makedirs(os.path.join(".lab", "sessions"), exist_ok=True)
+sid = r.get("session_id") or f"pi-{os.path.basename(sys.argv[2])}"
+json.dump({"session_id": sid, "start_epoch": time.time() - (r.get("duration_ms") or 0) / 1000,
+           "role": "worker", "backend": "pi", "candidate_dir": sys.argv[2],
+           "transcript_path": files[-1] if files else ""},
+          open(os.path.join(".lab", "sessions", f"{sid}.json"), "w"))
+PY
+
+# The contract, checked mechanically. A summary is owed even on failure.
+unmet=()
+[ "$rc" -ne 125 ] || unmet+=("CLI returned with live descendants (cleaned up; no late completion accepted)")
+[ -f "$LAB_CANDIDATE_DIR/code/run.sh" ]     || unmet+=("code/run.sh missing")
+[ -f "$LAB_PREDICTIONS_OUT" ]               || unmet+=("$(basename "$LAB_PREDICTIONS_OUT") missing")
+if [ ! -s "$LAB_CANDIDATE_DIR/summary.md" ]; then
+  {
+    echo "# $cid — no summary left by the worker"
+    echo
+    echo "Final session text (mechanically copied by lab-worker-pi):"
+    echo
+    python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); print((r.get("result") or r.get("error") or "")[:3000])' \
+      "$LAB_CANDIDATE_DIR/session.json" 2>/dev/null || echo "_none_"
+  } > "$LAB_CANDIDATE_DIR/summary.md"
+fi
+if [ "${#unmet[@]}" -gt 0 ]; then
+  echo "lab-worker-pi: contract unmet: ${unmet[*]}" >&2
+  exit 2
+fi
+echo "lab-worker-pi: contract met"

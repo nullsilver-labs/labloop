@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""lab-stderr-prefix — copy stdin to stdout with every line prefixed `[claude stderr] `.
+"""lab-stderr-prefix [PREFIX] — copy stdin to stdout with every line prefixed `[claude stderr] `
+(or PREFIX: lab-worker-pi passes `[pi stderr] `).
 
-Used by lab-worker to echo the Claude CLI's stderr into the job's watcher log, where
+Used by lab-worker to echo the CLI's stderr into the job's watcher log, where
 `lab run`'s kill pattern (lab_campaign.session_kill_regex) is scoped to that prefix.
 Unbuffered by design: a partial line is written the moment it arrives, so a
 usage-limit message printed without a trailing newline still reaches the watcher at
@@ -14,6 +15,7 @@ PREFIX = b"[claude stderr] "
 
 
 def main() -> None:
+    prefix = sys.argv[1].encode() if len(sys.argv) > 1 else PREFIX
     at_line_start = True
     while True:
         try:
@@ -29,7 +31,7 @@ def main() -> None:
                 at_line_start = True
             if piece:
                 if at_line_start:
-                    out += PREFIX
+                    out += prefix
                 out += piece
                 at_line_start = False
         view = memoryview(out)

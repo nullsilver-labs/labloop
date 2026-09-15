@@ -10,7 +10,8 @@
 
 One repo, one research campaign, rendered live on nullsilver.com. `lab run` runs the
 search: a population of candidates, a mechanical scheduler, one short headless session
-per job, fitness from a hidden split, a final split read once. Procedure lives in
+per job (Claude Code, or Pi on a local or hosted open model: the model id picks the
+harness), fitness from a hidden split, a final split read once. Procedure lives in
 `tools/lab`, `tools/lab_campaign.py` and the hooks — **this file is the judgment**.
 
 ## What you are for

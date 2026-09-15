@@ -374,9 +374,11 @@ def format_manifest() -> dict:
             "note": ("Which model produced a candidate — two facts, kept apart: "
                      "`requested` is the worker model named in campaign.toml, `served` is "
                      "what actually answered, read from the session result the worker "
-                     "stores (session.json, modelUsage)."),
+                     "stores (session.json, modelUsage). `backend` is the harness the id "
+                     "selects: `claude` (Claude Code, tools/lab-worker) or `pi` (pi.dev, "
+                     "tools/lab-worker-pi, for `provider/model` ids)."),
             "candidate": ("candidates/c<NNNN>/config.json -> agent {requested, "
-                          "requested_source, served, served_source}"),
+                          "requested_source, backend, served, served_source}"),
             "sources": {
                 "campaign.toml": "requested: [resources] worker_model",
                 "campaign.toml worker_model": ("requested: [resources] worker_model, for an "
@@ -940,7 +942,8 @@ def cmd_watch_close(args) -> None:
 #
 # Reads the session records in .lab/sessions/*.json (written by the SessionStart
 # hook for every session: worker and operator alike) and pulls per-turn usage from
-# each session's Claude Code transcript. Subagent (sidechain) turns are counted and
+# each session's transcript: Claude Code's, or the Pi session file lab-worker-pi
+# records. Subagent (sidechain) turns are counted and
 # attributed separately, so delegation shows up as delegation instead of vanishing
 # into the parent's numbers. The per-candidate list-price view is `lab campaign
 # usage`, read from each worker's session.json.
@@ -976,9 +979,16 @@ def _usage_from_lines(lines, sidechain_of) -> dict:
             e = json.loads(line)
         except (json.JSONDecodeError, UnicodeDecodeError):
             continue
-        if e.get("type") != "assistant":
-            continue
         msg = e.get("message") or {}
+        if e.get("type") == "message" and msg.get("role") == "assistant" and "input" in (msg.get("usage") or {}):
+            # a Pi session file (tools/lab-worker-pi): the same four counters, Pi's names
+            u = msg["usage"]
+            usage = {"input_tokens": u.get("input"), "output_tokens": u.get("output"),
+                     "cache_read_input_tokens": u.get("cacheRead"),
+                     "cache_creation_input_tokens": u.get("cacheWrite")}
+            msg = {**msg, "usage": usage, "model": f"{msg.get('provider', '?')}/{msg.get('model', '?')}"}
+        elif e.get("type") != "assistant":
+            continue
         usage = msg.get("usage") or {}
         if not usage:
             continue

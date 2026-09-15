@@ -102,7 +102,10 @@ REPORT.md            # written once, at the end                                 
 FORMAT.json          # the output-format contract, for machine consumers         (generated)
 tools/lab            # the CLI — the only writer of the machine files
 tools/lab_campaign.py  # the loop
-tools/lab-worker     # one headless Claude Code session per job
+tools/lab-worker     # one headless Claude Code session per job (hands Pi ids to lab-worker-pi)
+tools/lab-worker-pi  # the same job as one headless Pi (pi.dev) session: local or hosted open models
+tools/pi/            # the Pi extension: turn budget + the evidence guard, loaded per session
+scripts/llm-server.sh  # a llama.cpp server for local GGUFs, started outside the campaign
 .claude/             # settings + hooks (guard, session briefing)
 docs/                # campaign-setup.md, labeval.md
 scripts/             # acceptance.sh and its fixtures, sync-project.sh
@@ -207,6 +210,16 @@ backfills on push.
 Model, turn budget, GPUs, wall clocks, stop conditions and the usage budget all live
 in `campaign.toml`; `lab campaign check` validates it and `templates/campaign.toml`
 documents every key.
+
+**Two harnesses, one contract.** The worker model id picks the harness: `claude-…` runs
+through Claude Code on subscription login; Pi's `provider/model` (for example
+`local/gpt-oss-20b`) runs through [Pi](https://pi.dev) against whatever that provider is in
+Pi's own `models.json`: a llama.cpp server on this host (`scripts/llm-server.sh`), or a
+hosted API. Backends mix per operator. A Pi session gets the same turn budget and the
+same evidence guard through `tools/pi/lab-worker.js`, its event stream and Pi session
+file are kept beside the candidate, and `session.json` has the same shape for both.
+`lab run` refuses to start until the endpoint serves the requested model.
+See docs/campaign-setup.md, "Pi workers".
 
 Trust the project directory once for Claude Code before the first run (open `claude`
 there and accept the dialog, or set `hasTrustDialogAccepted` for the path in

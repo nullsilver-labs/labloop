@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# A stand-in for the `pi` CLI so tools/lab-worker-pi can be tested without a model.
+# Parses the flags lab-worker-pi passes, "acts" on the job card like the scripted
+# worker for the operator named in it, and prints the JSON event stream the way
+# `pi -p --mode json` does — session header, turns, assistant message_end events
+# with usage and cost, agent_end. Exit code 0 even on a model error, as Pi does.
+#
+#   FAKE_PI_MODE=lazy        do nothing (contract unmet)
+#   FAKE_PI_MODE=down        the first request fails (stopReason error, no text): the
+#                            session never started
+#   FAKE_PI_MODE=capped      the lab extension's turn cap ended the session
+#   FAKE_PI_COST=0.30        cost.total per assistant message (default 0.0)
+#   FAKE_PI_RATELIMIT=c0001  that candidate's session ends on a 429 from the provider
+#   FAKE_PI_RESET="in 5s"    the reset the 429 message states (default: in 5s)
+set -euo pipefail
+if [ "${1:-}" = "auth" ]; then      # `pi auth check --provider X --json`: every provider is ready
+  echo '{"status":"ready","provider":"fake"}'; exit 0
+fi
+if [ "${1:-}" = "--version" ]; then echo "0.85.1-fake"; exit 0; fi
+prompt=""; model=""; ext=""; sdir=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --model) model="$2"; shift 2;;
+    -e|--extension) ext="$2"; shift 2;;
+    --session-dir) sdir="$2"; shift 2;;
+    --) shift; prompt="${1:-}"; break;;
+    -p|--print|--mode|--no-extensions|--no-skills|--no-prompt-templates|--no-themes|--no-approve) [ "$1" = "--mode" ] && shift; shift;;
+    *) shift;;
+  esac
+done
+[ -f "$ext" ] || { echo "fake pi: extension $ext missing" >&2; exit 1; }
+cid="$(basename "${LAB_CANDIDATE_DIR:-none}")"
+provider="${model%%/*}"; mid="${model#*/}"; mid="${mid%%:*}"
+cost="${FAKE_PI_COST:-0.0}"
+mode="${FAKE_PI_MODE:-work}"
+[ "${FAKE_PI_RATELIMIT:-}" = "$cid" ] && mode=ratelimit
+
+result=""
+case "$mode" in
+  lazy) result="I looked at the task and did nothing.";;
+  down|ratelimit|capped) ;;
+  *)
+    op="$(printf '%s' "$prompt" | sed -n 's/.*operator `\([a-z]*\)`.*/\1/p' | head -1)"
+    LAB_OPERATOR="$op" bash "$(dirname "$0")/../worker.sh"
+    result="Wrote code/run.sh for operator $op and ran it. Model: $(cat "$LAB_CANDIDATE_DIR/code/model.json")";;
+esac
+mkdir -p "$sdir"
+python3 - "$mode" "$result" "$provider" "$mid" "$cost" "$sdir" <<'PY'
+import json, os, sys, time, uuid
+mode, result, provider, mid, cost, sdir = sys.argv[1:7]
+sid = str(uuid.uuid4())
+def usage(n_in, n_out):
+    return {"input": n_in, "output": n_out, "cacheRead": 0, "cacheWrite": 0, "totalTokens": n_in + n_out,
+            "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "total": float(cost)}}
+def asst(content, stop, err=None):
+    m = {"role": "assistant", "content": content, "api": "openai-completions", "provider": provider,
+         "model": mid, "usage": usage(1000, 200), "stopReason": stop, "timestamp": int(time.time() * 1000)}
+    if err: m["errorMessage"] = err
+    return m
+ev = [{"type": "session", "version": 3, "id": sid, "timestamp": "2026-01-01T00:00:00Z", "cwd": "."},
+      {"type": "agent_start"}, {"type": "turn_start"}]
+msgs = []
+if mode == "down":
+    m = asst([], "error", "fetch failed: connect ECONNREFUSED 127.0.0.1:8083")
+    ev += [{"type": "message_end", "message": m}, {"type": "turn_end", "message": m, "toolResults": []}]
+elif mode == "ratelimit":
+    m = asst([], "error", f"429 Too Many Requests: rate limit exceeded, resets {os.environ.get('FAKE_PI_RESET', 'in 5s')}")
+    ev += [{"type": "message_end", "message": m}, {"type": "turn_end", "message": m, "toolResults": []}]
+elif mode == "capped":
+    m1 = asst([{"type": "toolCall", "id": "t1", "name": "bash", "arguments": {"command": "ls"}}], "toolUse")
+    tr = {"role": "toolResult", "toolCallId": "t1", "toolName": "bash",
+          "content": [{"type": "text", "text": "lab: turn budget of 3 turns reached; the session ends here."}], "isError": True}
+    ev += [{"type": "message_end", "message": m1}, {"type": "message_end", "message": tr},
+           {"type": "turn_end", "message": m1, "toolResults": [tr]}]
+else:
+    m1 = asst([{"type": "toolCall", "id": "t1", "name": "bash", "arguments": {"command": "bash code/run.sh"}}], "toolUse")
+    tr = {"role": "toolResult", "toolCallId": "t1", "toolName": "bash", "content": [{"type": "text", "text": "ok"}], "isError": False}
+    m2 = asst([{"type": "text", "text": result}], "stop")
+    ev += [{"type": "message_end", "message": m1}, {"type": "message_end", "message": tr},
+           {"type": "turn_end", "message": m1, "toolResults": [tr]}, {"type": "turn_start"},
+           {"type": "message_end", "message": m2}, {"type": "turn_end", "message": m2, "toolResults": []}]
+ev.append({"type": "agent_end", "messages": []})
+for e in ev:
+    print(json.dumps(e))
+    if e["type"] == "message_end":
+        msgs.append({"type": "message", "id": uuid.uuid4().hex[:8], "parentId": None,
+                     "timestamp": "2026-01-01T00:00:00Z", "message": e["message"]})
+with open(f"{sdir}/{sid}.jsonl", "w") as f:
+    f.write(json.dumps({"type": "session", "version": 3, "id": sid, "timestamp": "2026-01-01T00:00:00Z", "cwd": "."}) + "\n")
+    for m in msgs:
+        f.write(json.dumps(m) + "\n")
+if mode in ("down", "ratelimit"):
+    print(f"Error: {ev[3]['message']['errorMessage']}", file=sys.stderr)
+PY

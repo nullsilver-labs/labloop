@@ -137,8 +137,8 @@
     "ts_format": "%Y-%m-%dT%H:%M:%SZ (UTC)"
   },
   "provenance": {
-    "note": "Which model produced a candidate \u2014 two facts, kept apart: `requested` is the worker model named in campaign.toml, `served` is what actually answered, read from the session result the worker stores (session.json, modelUsage).",
-    "candidate": "candidates/c<NNNN>/config.json -> agent {requested, requested_source, served, served_source}",
+    "note": "Which model produced a candidate \u2014 two facts, kept apart: `requested` is the worker model named in campaign.toml, `served` is what actually answered, read from the session result the worker stores (session.json, modelUsage). `backend` is the harness the id selects: `claude` (Claude Code, tools/lab-worker) or `pi` (pi.dev, tools/lab-worker-pi, for `provider/model` ids).",
+    "candidate": "candidates/c<NNNN>/config.json -> agent {requested, requested_source, backend, served, served_source}",
     "sources": {
       "campaign.toml": "requested: [resources] worker_model",
       "campaign.toml worker_model": "requested: [resources] worker_model, for an operator the per-operator table does not name",

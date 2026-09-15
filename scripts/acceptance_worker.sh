@@ -72,6 +72,8 @@ assert_eq   "each failed draft got exactly one debug attempt, then the loop move
 . "$SRC/scripts/acceptance_usage.sh"
 # shellcheck source=scripts/acceptance_slots.sh
 . "$SRC/scripts/acceptance_slots.sh"
+# shellcheck source=scripts/acceptance_pi.sh
+. "$SRC/scripts/acceptance_pi.sh"
 
 export PATH="$_saved_path"
 [ "${KEEP:-0}" = "1" ] || rm -rf "$WORK3" "$WORK4" "$WORK5"
