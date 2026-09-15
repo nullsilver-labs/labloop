@@ -1,0 +1,162 @@
+[
+ {
+  "arm": "A",
+  "index": 8,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/A/records.json",
+  "note": ""
+ },
+ {
+  "arm": "A",
+  "index": 52,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/A/records.json + pack/A/c0001/memory_config.json + pack/A/c0002/memory_config.json",
+  "note": ""
+ },
+ {
+  "arm": "A",
+  "index": 53,
+  "type": "M",
+  "rating": "incorrect",
+  "source": "pack/A/records.json + pack/A/c0002/memory_config.json + pack/A/c0003/memory_config.json",
+  "note": "held-out-wording fell 0.5034->0.4041 from c0002 to c0003 while search fitness rose 0.3142->0.3578, so the signal moved opposite, not directionally with, fitness on that step"
+ },
+ {
+  "arm": "A",
+  "index": 66,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/A/c0004/memory_config.json + pack/A/c0004/summary.md",
+  "note": ""
+ },
+ {
+  "arm": "A",
+  "index": 81,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/A/records.json",
+  "note": ""
+ },
+ {
+  "arm": "A",
+  "index": 105,
+  "type": "R",
+  "rating": "correct",
+  "source": "pack/A/c0001/summary.md",
+  "note": ""
+ },
+ {
+  "arm": "A",
+  "index": 150,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/A/records.json + pack/A/c0003/memory_config.json",
+  "note": ""
+ },
+ {
+  "arm": "A",
+  "index": 170,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/A/c0012/memory_config.json",
+  "note": ""
+ },
+ {
+  "arm": "A",
+  "index": 206,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/A/records.json",
+  "note": ""
+ },
+ {
+  "arm": "A",
+  "index": 229,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/A/c0012/memory_config.json",
+  "note": ""
+ },
+ {
+  "arm": "B",
+  "index": 4,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/B/c0001/summary.md",
+  "note": ""
+ },
+ {
+  "arm": "B",
+  "index": 26,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/B/c0003/code/ + pack/B/c0004/code/",
+  "note": ""
+ },
+ {
+  "arm": "B",
+  "index": 52,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/B/c0005/memory_config.json + pack/B/c0003/memory_config.json",
+  "note": ""
+ },
+ {
+  "arm": "B",
+  "index": 85,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/B/c0007/memory_config.json",
+  "note": ""
+ },
+ {
+  "arm": "B",
+  "index": 103,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/B/c0006/memory_config.json",
+  "note": ""
+ },
+ {
+  "arm": "B",
+  "index": 147,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/B/c0010/summary.md",
+  "note": ""
+ },
+ {
+  "arm": "B",
+  "index": 164,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/B/records.json + pack/B/c0010/memory_config.json",
+  "note": ""
+ },
+ {
+  "arm": "B",
+  "index": 179,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/B/records.json + pack/B/c0006/memory_config.json + pack/B/c0016/memory_config.json",
+  "note": ""
+ },
+ {
+  "arm": "B",
+  "index": 184,
+  "type": "M",
+  "rating": "correct",
+  "source": "pack/B/c0018/summary.md + pack/B/c0018/memory_config.json",
+  "note": ""
+ },
+ {
+  "arm": "B",
+  "index": 187,
+  "type": "M",
+  "rating": "incorrect",
+  "source": "pack/B/c0016/memory_config.json + pack/B/c0017/memory_config.json + pack/B/c0018/memory_config.json",
+  "note": "batch_size was only ever raised in this pack (32 -> 64 in c0016/c0017, 64 -> 128 in c0018); no candidate lowered it, so it was not explored in both directions"
+ }
+]

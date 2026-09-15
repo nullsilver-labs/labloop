@@ -181,3 +181,123 @@ still to do (`PREREG.md` in the bundle; pack with `--keep-finding`).
   confounds the arm with the card, and each governor would see half the spend on one
   window. If it is ever done, it needs cross-campaign GPU leasing and a shared usage ledger
   in `tools/lab` first, plus a port per `lab serve`.
+
+## Amended after the drafts pair (2026-09-15)
+
+**The drafts pair ran** on two GPUs, D1 then D4 as drawn (`docs/drafts-comparison-20260915/RESULT.md`).
+Both arms **supported** against the fixed 0.50 (D1 frozen c0016 final .998, D4 frozen c0017
+final .846); the kill criterion for `initial_drafts > 1` does **not** fire (three of D4's
+four drafts beat the first on the search split); the −.152 gap is descriptive and, more to
+the point, D1 was not a one-approach arm: rank selection drew the baseline as an improve
+parent at job 3 and that candidate introduced the canonicalising approach both arms ended on.
+Realised opening approaches were 3 vs 4, not 1 vs 4. Coverage under findings-v2 was full in
+both arms (the mem2 miss was the single-draft opening, as predicted). Two tooling findings:
+with two slots the candidate cap overshot by one in D1 (21 settled; fixed the same day with an
+acceptance case), and **the M4 kill criterion fired** (4.19 and 4.60 settled per GPU-hour
+against 4.72 / 5.45 on one GPU) because `gpu_seconds` is the sum of slot leases and a lease
+holds the worker's whole session; the growth is entirely in the non-training part of the
+lease (≈ 90–135 s at the median), most plausibly host contention, not measured.
+
+**What changes in the plan.**
+
+- **The mixed arm runs next, on two GPUs, as a single arm against D4.** D4 is its
+  preregistered control and ran on two GPUs, so matching D4 (same cards, same slots, same
+  tools contract apart from the overshoot guard) matters more for that comparison than the
+  M4 rule's "not again until the cause is understood". This is a deliberate exception to a
+  fired rule and is written into the mixed bundle's amendment with the diagnosis it rests
+  on; the human can revert to one GPU with a one-line change per file before launch, at the
+  price of an unmatched control. The mixed arm adds a reported-only throughput read that
+  separates the two (settled per wall-hour, and per-candidate non-training lease seconds
+  against D4 and mem2), which is the cheapest next look at the M4 cause.
+- **One arm, not a pair, when only one thing changes and the control already exists.**
+  The mixed arm was designed that way; the drafts pair shows why a second run buys little:
+  at the same seed, with everything else identical, a single rank draw moved the final by
+  .15. What turns a descriptive gap into evidence is more seeds of the same pair, not a
+  fresh control beside every new arm. The rule for this plan: a new arm that differs from a
+  finished arm by one setting is compared against that arm as its control, provided the task,
+  labels, evaluator, worker model, tools contract, GPUs and slots are identical and the
+  control's `population.json` is unchanged; anything else is a new pair.
+- **Baseline out of the parent pool** once any non-baseline candidate is evaluated: a
+  scheduler change to make *after* the mixed arm (which must keep D4's selection rule to be
+  comparable), preregistered with the next pair that uses it, since it changes the random
+  stream.
+- **A throughput measure for M4** that does not charge agent time as GPU time (settled per
+  wall-hour beside settled per lease-hour, and lease − training seconds per candidate) goes
+  into every following preregistration; the fired M4 read stands as written.
+- **The mem2 read is `not_supported`** (`docs/mem2-comparison-20260914/RESULT.md`): findings
+  fraction_bad .095 vs legacy .060 at seed 2, ratio 1.59 against the ≤ .50 rule; the first
+  pair's `supported` stands and the two seeds disagree. Eleven of the findings arm's eighteen
+  bad statements are "never varied" claims made against a knob ledger that had dropped the
+  relevant rows (2 KiB bound), never carried list-valued knobs, and truncated every row on
+  outcome keys before the knob keys. **Before any third memory pair the ledger changes**:
+  knob keys only, list knobs rendered, a per-knob index instead of per-candidate diff rows.
+  That is a `findings-v3` and its own preregistration; the mixed arm (which uses v2 like its
+  control) is not affected, and its report will read its own novelty claims against the
+  same defect.
+- The Opus arm stays shelved. Item 5 below (a model orchestrator) is recorded, not
+  scheduled.
+
+## 5. `orchestrator`: a local model chooses the parent and operator (added 2026-09-15, future)
+
+Not scaffolded, not scheduled; recorded here so the idea and what it needs are not lost.
+
+**What "the chance one" is.** After the opening drafts, every job is drawn by
+`choose_job` in `tools/lab_campaign.py`: with probability `crossover_p` a crossover of two
+parents, otherwise an improve of one, parents drawn by temperature-scaled rank selection
+over search fitness (AIRA₂). It reads nothing but the fitness column and the random
+stream; it cannot know that a lineage is exhausted, that two candidates differ by one
+knob already covered by the ledger, or that a low-fitness draft carries an idea worth one
+more slot. The knob ledger and the cards give that information to the *worker*, after the
+parent is already chosen.
+
+**The idea.** A small open model, CPU-hosted so it costs no GPU and no Claude usage, with a
+context large enough to hold the whole population, chooses `(operator, parents)` at each
+tick from the same evidence the cards hold: every settled candidate's card, the knob
+ledger, fitness and exec status, the lineage graph. Never labels, never a final score,
+never the search split. Measured 2026-09-15 on D4: the 20 cards plus 20 summaries are
+205 kB, ≈ 51 k tokens by the 4-bytes rule, so a 128 k-context model holds a 20-candidate
+population whole; at 40 candidates it needs the digest to be cards-only (≈ 90 kB). The
+machine has 20 cores and 62 GB; MoE GGUFs already on disk (`/mnt/fast-data/models/ggufs`:
+`gemma-4-26B-A4B`, `gpt-oss-20b-mxfp4`) are the natural first candidates for CPU
+decoding of a few hundred output tokens per decision. A llama.cpp server is not installed
+yet; that is a prerequisite, and its build, model file, quantisation and sampler settings
+are recorded in every candidate's `config.json` and in `REPORT.md`.
+
+**Smallest experiment that can kill it, zero GPU: replay.** Before any campaign, replay
+the recorded ticks of D4 (`engram-drafts4-w0`) and mem2-findings offline: at each tick,
+give the orchestrator the population as it stood at dispatch (the `job.json` snapshots
+already store the cards each job saw; the full digest is rebuilt from `finding.json` of
+the candidates settled by then) and ask for `(operator, parents)` plus a one-line reason.
+Report: parse failures (an answer that is not valid JSON or names a candidate that did not
+exist yet), agreement with the chance choice, how often it would have chosen a parent
+outside the lineage that chance kept feeding, decision latency on CPU, and a blind read of
+the reasons by the operator (sensible / not). Kill criterion for going further: parse
+failures above 10 % of ticks, or median latency above 3 minutes (a decision would then
+cost a quarter of a candidate's wall clock), or reasons that are wrong about the population
+in more than 1 of 10 spot-checked ticks. Nothing about search quality is claimed from a
+replay: the counterfactual children are never run.
+
+**Tooling if the replay passes.** `[selection] mode = "model"` with
+`[selection.model] endpoint, model, context_tokens, temperature = 0, seed, timeout`;
+`choose_job` unchanged for the baseline, the opening drafts, debug retries and deferred
+re-dispatches (the orchestrator takes over only where rank selection would draw a parent);
+its prompt, raw answer, parse result, latency and a fallback flag stored per decision in
+the candidate's `job.json` (`selection` block) and summarised in `REPORT.md` ("selection:
+model X, N decisions, M fallbacks"). Any unparsable or invalid answer falls back to rank
+selection for that tick and is counted; the random stream is consumed only on fallback.
+Variant A (first) only picks; variant B also writes its one-line reason into the job card,
+which changes the worker prompt and is a second treatment, so it is preregistered apart.
+Fake-endpoint acceptance cases like the fake-CLI ones of M3.
+
+**The campaign, if it comes.** A matched pair on w0: chance (the D4 configuration:
+`initial_drafts` 4, findings-v2, seed 3, two GPUs) vs orchestrator, identical except
+`[selection] mode`. Preregistered reads as in the drafts bundle (final vs 0.50 per arm,
+gap descriptive, one seed) plus: best search fitness after 8 and 20, slots spent on the
+frozen candidate's lineage, unacknowledged repeats (the orchestrator sees the ledger, so
+it should never re-dispatch a covered knob), fallback count, decision latency as a share of
+wall clock, and cost: zero Claude usage for selection against the same worker cost. Kill
+criterion: the orchestrator arm's frozen final below chance's by more than .05 and its
+best-after-8 not above chance's; or fallbacks above 20 % of decisions. What it cannot
+show: that model selection beats chance in general; one seed, one world, and D1 vs D4 have
+already shown that a single draft roll moves the final by .15 at the same seed, so a gap
+between two single arms is descriptive until more seeds exist.

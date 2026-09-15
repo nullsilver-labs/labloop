@@ -1,0 +1,2195 @@
+{
+ "arm": "B",
+ "statements": [
+  {
+   "candidate": "c0001",
+   "about": [
+    "c0000"
+   ],
+   "quote": "no parent to diverge from -- this is c0001, the first non-baseline candidate",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "everything else -- table size 50021, 4 heads/order, d_mem 64, gate, attach layer 2, lr schedule, prompt format, batching -- identical to parent c0001",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "c0001's local held-out-wording accuracy (0.8562)",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0001/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "was much higher than its hidden search score (0.52771)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "both slightly higher than c0001's 0.8562/0.0003",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "total trainable memory parameters dropped from 41,301,760 to 28,234,240",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "proj/gate input width also shrank from 12*64=768 to 8*64=512 concatenated dims",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "updated `--seed` in run.sh from c0001's hardcoded 1560994038",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "c0001's summary flagged the gap between its local held-out-wording accuracy (0.8562 ...) and its hidden search score (0.52771) as unexplained",
+   "type": "R",
+   "rating": "unsupported",
+   "source": "pack/B/c0001/summary.md",
+   "note": "c0001's summary contains no hidden search score and flags no such gap; it only notes the holdout shares vocabulary/entities with training"
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "attributing it partly to the held-out wording still sharing vocabulary/entities with training",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0001/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "loss is noisy near convergence as in c0001",
+   "type": "R",
+   "rating": "unsupported",
+   "source": "pack/B/c0001/summary.md",
+   "note": "c0001's summary reports only 6.72 -> 0.00034; it makes no statement about loss noisiness"
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "`engram.py`'s `EngramMemory` already supported an arbitrary `orders` tuple ... no code change was needed",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "This drops the 4 order-3 (trigram) embedding tables entirely: 8 tables (4 heads x 2 orders) ... instead of c0001's 12",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "from parent c0001, dropped order-2 and order-3 hashing, keeping only order-1",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "table size 50021, 4 heads, d_mem 64, attach layer 2, lr schedule, prompt format, batching all identical to c0001",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "c0002's order-drop (which removed only order-3)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "same-pool held-out accuracy is lower than both c0001 (0.8562, orders 1-3) and c0002 (0.8723, orders 1-2)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "c0002 already explored the `orders` knob (dropped order-3, kept 1-2, search score improved 0.52771 -> 0.65759)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "Trainable memory params: 15,166,720 (down from c0001's 41,301,760 and c0002's 28,234,240)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "using this job's own seed (165555140, job card) in place of c0001's 1560994038",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "`engram.py`, `train_and_predict.py` ... is byte-identical to the inherited code",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "the local metric moved in the opposite direction from c0002's local metric relative to c0001, which is itself informative",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/B/c0002/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0003"
+   ],
+   "quote": "from parent c0003, increased the order-1 hash table size from 50021 to 200003",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0003/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0003"
+   ],
+   "quote": "4 heads, d_mem 64, attach layer 2, lr schedule, prompt format, batching all identical to c0003",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0003/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0003"
+   ],
+   "quote": "same-pool held-out accuracy dropped relative to c0003 (0.8145)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0003/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0003"
+   ],
+   "quote": "up from c0003's ~12.8M order-1 table at table_size 50021",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0003/memory_config.json",
+   "note": "4 x 50021 x 64 = 12,805,376 table params (c0003's total trainable is 15,166,720)"
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0003"
+   ],
+   "quote": "c0003 used its own seed 165555140; not matched, so this run and c0003's are not a controlled A/B on seed",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0003"
+   ],
+   "quote": "Built directly on c0003's code (engram.py unchanged, train_and_predict.py unchanged)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0003/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0003"
+   ],
+   "quote": "from parent c0003, increased the order-1 hash heads from 4 to 8",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0003/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0003"
+   ],
+   "quote": "table size 50021, d_mem 64, attach layer 2, orders 1, lr schedule, prompt format, batching, train-seconds all identical to c0003",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0003/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0003",
+    "c0004"
+   ],
+   "quote": "c0004 showed that enlarging the single order-1 table (50021 -> 200003) to cut hash collisions hurt held-out accuracy",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0004"
+   ],
+   "quote": "plausibly because the much larger table converged more slowly in the fixed 360s budget",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/B/c0004/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0003"
+   ],
+   "quote": "28,234,240 trainable memory params, up from c0003's 14.1M for doubling the heads",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0003/memory_config.json",
+   "note": "c0003's trainable_params is 15,166,720 (~15.2M), not 14.1M; and 28.2M is 1.86x, not double"
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0003"
+   ],
+   "quote": "same-pool held-out accuracy rose slightly relative to c0003 (0.8145 -> 0.8418) and final loss is higher (0.1233 vs c0003's 0.0555)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0003/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003"
+   ],
+   "quote": "c0003's holdout was lower than c0001/c0002's yet scored highest on the hidden split",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0003"
+   ],
+   "quote": "c0003 used seed 165555140",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0003"
+   ],
+   "quote": "Built on parent c0003's code unchanged (engram.py, train_and_predict.py)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0003/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0005"
+   ],
+   "quote": "from parent c0005, increased `--train-seconds` from 360 to 540, everything else (orders 1, heads 8, table 50021, d_mem 64, attach layer 2, lr schedule, batch size, prompt format) identical",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0003",
+    "c0005"
+   ],
+   "quote": "c0005's 8-head model (28.2M trainable params, double c0003's 14.1M)",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0003/memory_config.json",
+   "note": "c0003's trainable_params is 15,166,720 (~15.2M); 28,234,240 is 1.86x that, not double"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0003",
+    "c0005"
+   ],
+   "quote": "finished the fixed 360s budget with a much higher final loss than c0003's 4-head model (0.1233 vs 0.0555) despite a similar step count",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005"
+   ],
+   "quote": "same-pool held-out accuracy rose sharply relative to c0005 (0.8418 -> 0.9658) and every other candidate in the lineage",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003"
+   ],
+   "quote": "c0003 had a lower holdout than c0001/c0002 yet the best known search score",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005"
+   ],
+   "quote": "This is a knob (`train_seconds`) never varied by any earlier candidate in this lineage (c0001-c0005 all used 360s)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "the highest held-out accuracy seen in this lineage (previous best was c0001's 0.8562)",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0002/summary.md",
+   "note": "c0002's held-out accuracy was 0.8723, higher than c0001's 0.8562"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005"
+   ],
+   "quote": "reached with 8 epochs instead of the ~6 epochs the fixed-360s runs completed",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0005"
+   ],
+   "quote": "c0005 used seed 956612316",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0005"
+   ],
+   "quote": "Built on parent c0005's code unchanged (`engram.py`, `train_and_predict.py`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0006"
+   ],
+   "quote": "from parent c0006, moved the memory attach point from decoder layer 2 to decoder layer 6; orders [1], heads 8, table 50021, d_mem 64, train-seconds 540, lr schedule, batch size, prompt format all identical to c0006",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006"
+   ],
+   "quote": "no candidate in this lineage (c0001-c0006) has varied the attach point (all used layer 2 of 28)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0006"
+   ],
+   "quote": "same-pool held-out accuracy dropped sharply relative to c0006 (0.9658 -> 0.8540) despite reaching a lower final training loss (0.0550 vs c0006's 0.0914)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003"
+   ],
+   "quote": "this metric has previously anti-correlated with hidden score in this lineage (c0003 vs c0001/c0002)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0006"
+   ],
+   "quote": "Inherited c0006's `engram.py` and `train_and_predict.py` unmodified",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0006"
+   ],
+   "quote": "c0006 used 1221666716",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0006"
+   ],
+   "quote": "from parent c0006, added order-2 (bigram) hashing alongside the existing order-1; heads 8, table 50021, d_mem 64, attach layer 2, train-seconds 540 ... all identical to c0006",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0006"
+   ],
+   "quote": "54,369,280 trainable memory params, up from c0006's 28,234,240",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "No candidate in this lineage (c0001-c0007) had ever varied `orders` away from its default `[1]` -- the knob ledger in the job card shows every prior candidate's `out/memory_config.json` recording `orders: [1]`",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0001/memory_config.json",
+   "note": "c0001 ran orders [1,2,3] and c0002 ran orders [1,2]; both memory_config.json files record that"
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0002"
+   ],
+   "quote": "every prior `run.sh` hardcoded `--orders 1`. This candidate is the first to pass `--orders 1 2`, so it is not a repeat of a previously tried direction",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0002/summary.md",
+   "note": "c0002 passed --orders 1 2 (its summary and memory_config record orders [1,2])"
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0001"
+   ],
+   "quote": "`engram.py` already supported orders >= 2 via `_combine()` ... since c0001",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0006"
+   ],
+   "quote": "final training loss collapsing three orders of magnitude further (0.0914 -> 0.0000859)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0006"
+   ],
+   "quote": "held-out accuracy is essentially flat and slightly lower than c0006 (0.9658 -> 0.9551)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0006"
+   ],
+   "quote": "`engram.py` and `train_and_predict.py` are byte-identical to the inherited parent code (verified with `diff`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0006"
+   ],
+   "quote": "Adding order 2 doubles the number of hash tables from `len(orders)*heads` = 8 to 16",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0003"
+   ],
+   "quote": "from parent c0003 ... orders 1, heads 4, table size 50021, d_mem 64, attach layer 2, lr schedule, batch size, prompt format, train-seconds 360 all identical to c0003, which used weight_decay=0.0",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0003/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003"
+   ],
+   "quote": "c0003 converged to a very low training loss (0.0555) while its same-pool held-out accuracy (0.8145) trailed c0001/c0002",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0003/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0003"
+   ],
+   "quote": "15,166,720 trainable memory params, matching c0003's parameter count",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0003/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0003"
+   ],
+   "quote": "essentially unchanged from c0003 (0.8145 -> 0.8091, a 0.5pp drop ...) and final loss is only modestly higher (0.0555 -> 0.0771)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0003/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0006"
+   ],
+   "quote": "c0003 itself scored best on hidden search despite a lower holdout than c0001/c0002",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/records.json",
+   "note": "by this point c0006 had scored 0.7443 and c0007 0.7253, both above c0003's 0.6837"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0006",
+    "c0008"
+   ],
+   "quote": "even a bare seed change alone can swing hidden search score by >0.08 (c0006 vs c0008) with only a small holdout-accuracy change",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0008/memory_config.json",
+   "note": "c0008 differs from c0006 by the orders knob ([1] vs [1,2]), not by seed alone; the 0.0839 fitness gap is not a seed-only effect"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0003"
+   ],
+   "quote": "Identical architecture and code to c0003 ... The only code change is a new `--weight-decay` CLI argument ... (previously hardcoded to `weight_decay=0.0`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0003/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0003"
+   ],
+   "quote": "c0003's own run used seed 165555140",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0007"
+   ],
+   "quote": "from parent c0007, moved the memory attach point from decoder layer 6 to decoder layer 4; orders [1], heads 8, table 50021, d_mem 64, train-seconds 540 ... all identical to c0007",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006"
+   ],
+   "quote": "layer 2 (c0001-c0006, best search 0.744263 at c0006)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0006",
+    "c0007"
+   ],
+   "quote": "layer 6 (c0007, search 0.725341875, worse than c0006 by -0.0189209)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": "recorded fitness is 0.725341796875; the quoted digits differ at ~1e-7, the delta is right"
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0006",
+    "c0007"
+   ],
+   "quote": "the lineage has only two attach-depth points so far, layer 2 ... and layer 6",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0006",
+    "c0007"
+   ],
+   "quote": "same-pool held-out accuracy at layer 4 (0.9292) landed between layer 2's 0.9658 (c0006) and layer 6's 0.8540 (c0007)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0007"
+   ],
+   "quote": "final training loss (0.0536) was essentially tied with layer 6's (0.0550)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0007"
+   ],
+   "quote": "Inherited c0007's `engram.py` and `train_and_predict.py` unmodified (verified byte-identical via diff)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0007"
+   ],
+   "quote": "c0007's run.sh had 1808251977 hardcoded from its own job card",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0006",
+    "c0007"
+   ],
+   "quote": "c0006 vs c0007's loss-vs-holdout-accuracy disagreement (noted in c0007's summary) recurs here too",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0007/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0006",
+    "c0007"
+   ],
+   "quote": "Seed 517708568 ... differs from c0007's seed 1808251977 and c0006's seed 1221666716",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0004"
+   ],
+   "quote": "from parent c0004 (orders [1], table 200003, heads 4, d_mem 64, attach layer 2), increased `--train-seconds` from 360 to 540",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0004"
+   ],
+   "quote": "c0004 itself flagged that its 200003-row table may not have converged within the fixed 360s budget",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0004/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0005",
+    "c0006"
+   ],
+   "quote": "c0006 already showed raising train-seconds 360->540 sharply raised held-out accuracy (0.8418->0.9658) on a different branch (heads 8, table 50021)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0004"
+   ],
+   "quote": "held-out accuracy rose from c0004's 0.7720 to 0.8293 (+0.0573) with over 2x lower final loss (0.0869->0.0314)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0005",
+    "c0006"
+   ],
+   "quote": "the gain is smaller than c0006's (+0.1240)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0003",
+    "c0006"
+   ],
+   "quote": "and still below c0003's 0.8145 and c0006's 0.9658",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0003/memory_config.json",
+   "note": "0.8293 is above c0003's 0.8145, not below it"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0010"
+   ],
+   "quote": "`train_seconds` (360->540) is already a direction in this ledger, applied by c0006 to the c0005 branch (heads 8, table 50021), and inherited unchanged by c0007/c0008/c0010",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0003",
+    "c0004"
+   ],
+   "quote": "It has never been applied to the c0003/c0004 branch (orders [1] only, table 200003)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0004"
+   ],
+   "quote": "Every other knob is identical to c0004: orders=[1] only, heads=4, table_size=200003, d_mem=64, attach_layer=2, lr_embed=1e-2, lr_head=1e-3, batch_size=32",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0004"
+   ],
+   "quote": "c0004 used seed 147228384",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0004"
+   ],
+   "quote": "53,562,112 trainable memory params, same architecture as c0004 except train_seconds",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0007"
+   ],
+   "quote": "from parent c0007, raised `--lr-head` ... from its default 1e-3 to 3e-3; attach_layer 6, orders [1], heads 8, table 50021, d_mem 64, train-seconds 540, lr-embed 1e-2, batch size, prompt format all identical to c0007",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007"
+   ],
+   "quote": "no candidate in this lineage has varied lr_head or lr_embed",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0006",
+    "c0007",
+    "c0010"
+   ],
+   "quote": "at attach_layer 6 (where c0007 measured the injected signal reaching the output worse than at layer 2/4)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0007"
+   ],
+   "quote": "c0007's run.sh did not override it, so c0007 trained proj+gate at 1e-3 while the embedding tables trained at `--lr-embed`'s default 1e-2",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0007"
+   ],
+   "quote": "held-out accuracy dropped relative to c0007 at the same attach_layer=6 (0.8540 -> 0.7461) despite a very slightly lower final training loss (0.0484 vs 0.0550)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0009",
+    "c0010",
+    "c0011"
+   ],
+   "quote": "lower than every other same-attach-layer-family measurement in the ledger so far",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0007"
+   ],
+   "quote": "Inherited c0007's `engram.py` and `train_and_predict.py` unmodified (byte-identical, confirmed with `diff`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0007/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0007"
+   ],
+   "quote": "c0007 used 1808251977",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0006"
+   ],
+   "quote": "from parent c0006, lowered `--lr-embed` ... from the default 0.01 to 0.003; orders 1, heads 8, table 50021, d_mem 64, attach layer 2, lr_head 1e-3, batch size 32, train-seconds 540 ... all identical to c0006",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0006"
+   ],
+   "quote": "the embedding tables hold 25.6M of the 28.2M trainable memory params",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": "8 x 50021 x 64 = 25,610,752 of 28,234,240"
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0009",
+    "c0010",
+    "c0011",
+    "c0012"
+   ],
+   "quote": "lr_embed has never been changed anywhere in this lineage",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0012/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0007",
+    "c0012"
+   ],
+   "quote": "c0012 showed that raising lr_head 3x (0.001 -> 0.003) on the much smaller head group hurt search score sharply (0.725 -> 0.650)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0006"
+   ],
+   "quote": "both final loss (0.1489 vs c0006's 0.0914) and held-out accuracy (0.7556 vs c0006's 0.9658) moved the same direction, worse, at an identical step count (6852 vs 6851)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0006"
+   ],
+   "quote": "Built on c0006's code unchanged (engram.py, train_and_predict.py identical to parent)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0006"
+   ],
+   "quote": "`code/memory.safetensors` was written (107.7 MB, matches c0006's size)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": "same 28,234,240-param memory, so the same fp32 state-dict size"
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0006"
+   ],
+   "quote": "c0006 used 1221666716",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0009"
+   ],
+   "quote": "from parent c0009, increased --train-seconds from 360 to 540 (orders 1, weight-decay 0.01, attach-layer 2, heads 4 all unchanged)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0005",
+    "c0006"
+   ],
+   "quote": "c0005->c0006 showed train-seconds 360->540 alone raised search fitness by +0.0926 (0.6517->0.7443)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0010",
+    "c0011",
+    "c0012",
+    "c0013"
+   ],
+   "quote": "every 540s run in the ledger so far also used heads=8",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0011/memory_config.json",
+   "note": "c0011 ran 540 s with heads=4 (table 200003)"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0009"
+   ],
+   "quote": "same-pool held-out accuracy jumped sharply from c0009's 0.8091 to 0.9595 (+0.15) alongside a lower final loss (0.0771 -> 0.0352)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0009"
+   ],
+   "quote": "15,166,720 trainable memory params, same architecture as c0009",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0009"
+   ],
+   "quote": "Built on c0009's code (engram.py, train_and_predict.py unchanged byte-for-byte)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0009"
+   ],
+   "quote": "weight_decay=0.01 (carried over from c0009)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0009"
+   ],
+   "quote": "job-card seed 1803763049 vs c0009's 13083208",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010"
+   ],
+   "quote": "from parent c0010, increased the memory's per-head embedding width `--d-mem` from 64 to 128 (attach-layer 4, orders [1], heads 8, table-size 50021, train-seconds 540 all unchanged)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0009",
+    "c0010",
+    "c0011",
+    "c0012",
+    "c0013",
+    "c0014"
+   ],
+   "quote": "d_mem=64 per head (512 total before projection) has never been varied in this lineage",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0014/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010"
+   ],
+   "quote": "54,369,280 trainable memory params, up from c0010's 28,234,240 for doubling d_mem",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010"
+   ],
+   "quote": "same-pool held-out accuracy dropped sharply relative to c0010 (0.9292 -> 0.7839) despite a comparable final training loss (0.0711 vs 0.0536)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010"
+   ],
+   "quote": "Inherited c0010's `engram.py` and `train_and_predict.py` unmodified (verified byte-identical via `diff`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010"
+   ],
+   "quote": "`--seed` corrected from c0010's hardcoded `517708568`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010"
+   ],
+   "quote": "217,478,160 bytes -- roughly double c0010's 112,937,984 bytes",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0003",
+    "c0009"
+   ],
+   "quote": "e.g. c0009 vs c0003's seed-only delta was -0.0054 held-out accuracy",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0009/memory_config.json",
+   "note": "c0009 differs from c0003 by weight_decay 0.01 as well as the seed, so this is not a seed-only comparison"
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0006"
+   ],
+   "quote": "from parent c0006, doubled `--batch-size` from 32 to 64; orders 1, heads 8, table 50021, d_mem 64, attach layer 2, lr_embed 1e-2, lr_head 1e-3, train-seconds 540 ... all identical to c0006",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0009",
+    "c0010",
+    "c0011",
+    "c0012",
+    "c0013",
+    "c0014",
+    "c0015"
+   ],
+   "quote": "batch_size has never been varied anywhere in this lineage (always 32)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0015/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0009",
+    "c0010",
+    "c0011",
+    "c0012",
+    "c0013",
+    "c0014",
+    "c0015"
+   ],
+   "quote": "every prior candidate in the population left it there -- confirmed by grepping every `candidates/*/out/memory_config.json` for `batch_size` ..., all read `32`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0015/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0006"
+   ],
+   "quote": "fewer, larger-batch steps (3499 vs c0006's 6851) still saw slightly more total examples in the same 540s (223,936 vs 219,232 for c0006)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0006"
+   ],
+   "quote": "held-out accuracy is the highest anywhere in this lineage (0.9951 vs c0006's 0.9658)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0006"
+   ],
+   "quote": "final loss is an order of magnitude lower (0.0108 vs 0.0914)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0006",
+    "c0010"
+   ],
+   "quote": "most notably c0006 itself, whose holdout jump to 0.9658 only produced the second-best search score in the lineage, not the best",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": "c0010's 0.7518 exceeded c0006's 0.7443 at that point"
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0006"
+   ],
+   "quote": "relative to c0006's 0.744263",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0006"
+   ],
+   "quote": "both are byte-identical to c0006 (verified with `diff`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0010"
+   ],
+   "quote": "from parent c0010, increased `--batch-size` from 32 to 64 (attach-layer 4, orders [1], heads 8, table 50021, d_mem 64, train-seconds 540, lr/prompt format all unchanged)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0006",
+    "c0016"
+   ],
+   "quote": "c0016 showed batch-size 32->64 raised search fitness sharply (+0.0668) when applied to c0006 (attach_layer 2)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0007",
+    "c0010",
+    "c0012"
+   ],
+   "quote": "attach_layer 4, which is c0010's setting and the only other point on the depth axis measured so far",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0007/memory_config.json",
+   "note": "layer 6 was also measured (c0007 and c0012), so layer 4 is not the only other depth point"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0005",
+    "c0006",
+    "c0016"
+   ],
+   "quote": "c0016 ... produced the single largest jump in the ledger (delta +0.0668, to the current best search score 0.8110)",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/records.json",
+   "note": "c0005->c0006 was a larger parent-to-child jump (+0.0926), as were c0001->c0002 (+0.130) and c0001->c0003 (+0.156); the 0.8110 best-score part is right"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0010"
+   ],
+   "quote": "c0010 (my parent, attach_layer 4) has never had its batch size varied",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0010",
+    "c0016"
+   ],
+   "quote": "ending at loss 0.000621 (much lower than c0010's 0.0536, and lower than c0016's 0.0108)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0010"
+   ],
+   "quote": "accuracy was 0.8127 on 4096 examples -- worse than c0010 (0.9292) despite the much lower training loss",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0006",
+    "c0016"
+   ],
+   "quote": "unlike c0016's result at attach_layer 2 (where batch 64 raised held-out accuracy from 0.9658 to 0.9951)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0016/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0010"
+   ],
+   "quote": "Inherited c0010's code (`engram.py`, `train_and_predict.py`, `run.sh`) unmodified except `code/run.sh`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0010"
+   ],
+   "quote": "c0010's own seed (517708568)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0016"
+   ],
+   "quote": "from parent c0016, increased `--batch-size` from 64 to 128; orders 1, heads 8, table 50021, d_mem 64, attach layer 2, lr_embed 1e-2, lr_head 1e-3, train-seconds 540 ... all identical to c0016",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0016/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0006",
+    "c0016"
+   ],
+   "quote": "batch_size 32->64 raised c0006's search fitness sharply (+0.0668, to c0016's 0.811035, the best in the lineage)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0016",
+    "c0017"
+   ],
+   "quote": "no candidate has yet tried batch_size beyond 64",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0017/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0006",
+    "c0010",
+    "c0016",
+    "c0017"
+   ],
+   "quote": "c0006->c0016: 32->64 at attach_layer 2, delta search +0.0668; c0010->c0017: 32->64 at attach_layer 4, delta search -0.0229",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": null
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0006",
+    "c0016"
+   ],
+   "quote": "unlike the 32->64 step (which raised held-out accuracy from 0.9658 to 0.9951)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0016/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0016"
+   ],
+   "quote": "lowered held-out accuracy sharply (0.9951 -> 0.8657) while training loss still fell to near zero (0.0108 -> 0.0018) and examples seen rose only modestly (223,936 -> 244,096) despite fewer, larger-batch steps (1907 vs 3499)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0016/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0017"
+   ],
+   "quote": "echoing the pattern c0017 saw when the same 64->128-direction knob (there 32->64) was moved to a different attach_layer",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/B/c0017/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0016"
+   ],
+   "quote": "both are byte-identical to c0016 (verified with `diff` before running)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0016/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0018"
+   ],
+   "quote": "from parent c0018, added AdamW `weight_decay` (0.0 -> 0.01) ...; batch-size 128, orders 1, heads 8, table 50021, d_mem 64, attach layer 2, lr_embed 1e-2, lr_head 1e-3, train-seconds 540 ... all identical to c0018",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0018/memory_config.json",
+   "note": null
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0016",
+    "c0018"
+   ],
+   "quote": "c0018 (batch_size 128, same attach_layer 2) drove training loss to near zero (0.0018) while held-out-wording accuracy collapsed (0.9951 at batch 64 -> 0.8657 at batch 128)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0018/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0001",
+    "c0003",
+    "c0005",
+    "c0006",
+    "c0016",
+    "c0018"
+   ],
+   "quote": "weight_decay has never been varied anywhere in this lineage (always hardcoded 0.0)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0018/memory_config.json",
+   "note": "true for c0019's own ancestry (c0001, c0003, c0005, c0006, c0016, c0018); c0009 and c0014 elsewhere in the population did set weight_decay 0.01"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0009",
+    "c0014"
+   ],
+   "quote": "Repeat check: no candidate in the ledger has ever varied `weight_decay` (it has always been the hardcoded 0.0 in every ancestor's optimizer construction); this is a new knob, not a repeat of any prior direction.",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0009/memory_config.json",
+   "note": "c0009 and c0014 both ran weight_decay 0.01, the same knob and direction"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0018"
+   ],
+   "quote": "weight_decay 0.01 raised held-out accuracy sharply versus c0018 at the same batch_size/attach_layer (0.8657 -> 0.9473) while final training loss stayed comparably near zero (0.001844 -> 0.002092) and steps/examples-seen were essentially unchanged (1907/244096 -> 1906/243968)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0018/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0016"
+   ],
+   "quote": "it did not fully recover c0016's batch-64 holdout accuracy (0.9951)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0016/summary.md",
+   "note": null
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0018"
+   ],
+   "quote": "threaded into the single `torch.optim.AdamW(...)` call, which previously hardcoded `weight_decay=0.0`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0018/code/",
+   "note": null
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0016",
+    "c0017",
+    "c0018"
+   ],
+   "quote": "without touching batch_size itself (a knob+direction already fully explored in both directions)",
+   "type": "M",
+   "rating": "unsupported",
+   "source": "pack/B/c0018/memory_config.json",
+   "note": "batch_size was only ever raised in the population (32->64 twice, 64->128); no candidate lowered it, so 'both directions' is not supported"
+  }
+ ],
+ "unrated": [
+  {
+   "candidate": "c0002",
+   "quote": "since person names are exactly two tokens, an order-2 hash over adjacent name tokens should capture entity identity independent of surrounding template wording",
+   "reason": "claim about the task data/tokenizer, not about a prior candidate; the data is not in the pack"
+  },
+  {
+   "candidate": "c0003",
+   "quote": "the task description states name words are unique per person, so order-1 alone should already carry full entity identity",
+   "reason": "claim about task.md and the data, not about a prior attempt"
+  },
+  {
+   "candidate": "c0004",
+   "quote": "a 50021-bucket table smaller than the ~151936-token vocabulary ... the ~2048 unique name tokens",
+   "reason": "claim about the tokenizer/data, not about a prior candidate; not checkable from the pack"
+  },
+  {
+   "candidate": "c0009",
+   "quote": "L2 shrinkage on the memory tables and proj/gate should reduce that overfitting and improve generalization to unseen phrasings",
+   "reason": "forward-looking prediction about this candidate's own run, not a statement about a prior attempt"
+  },
+  {
+   "candidate": "c0016",
+   "quote": "at 32 the fixed-time forward/backward cost of the frozen 0.6B backbone likely dominates each step's wall clock ... so the GPU is probably under-utilized per step",
+   "reason": "mechanism speculation about hardware, not a statement about a prior attempt, and not checkable from the pack"
+  }
+ ],
+ "acknowledgment": [
+  {
+   "candidate": "c0001",
+   "names": [],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0002",
+   "names": [
+    "c0001"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0003",
+   "names": [
+    "c0001",
+    "c0002"
+   ],
+   "cross_branch": [
+    "c0002"
+   ]
+  },
+  {
+   "candidate": "c0004",
+   "names": [
+    "c0003"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0005",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004"
+   ],
+   "cross_branch": [
+    "c0002",
+    "c0004"
+   ]
+  },
+  {
+   "candidate": "c0006",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005"
+   ],
+   "cross_branch": [
+    "c0002",
+    "c0004"
+   ]
+  },
+  {
+   "candidate": "c0007",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006"
+   ],
+   "cross_branch": [
+    "c0002",
+    "c0004"
+   ]
+  },
+  {
+   "candidate": "c0008",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007"
+   ],
+   "cross_branch": [
+    "c0002",
+    "c0004",
+    "c0007"
+   ]
+  },
+  {
+   "candidate": "c0009",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0006",
+    "c0008"
+   ],
+   "cross_branch": [
+    "c0002",
+    "c0006",
+    "c0008"
+   ]
+  },
+  {
+   "candidate": "c0010",
+   "names": [
+    "c0001",
+    "c0006",
+    "c0007"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0011",
+   "names": [
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0010"
+   ],
+   "cross_branch": [
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0010"
+   ]
+  },
+  {
+   "candidate": "c0012",
+   "names": [
+    "c0007",
+    "c0010"
+   ],
+   "cross_branch": [
+    "c0010"
+   ]
+  },
+  {
+   "candidate": "c0013",
+   "names": [
+    "c0006",
+    "c0012"
+   ],
+   "cross_branch": [
+    "c0012"
+   ]
+  },
+  {
+   "candidate": "c0014",
+   "names": [
+    "c0005",
+    "c0006",
+    "c0009"
+   ],
+   "cross_branch": [
+    "c0005",
+    "c0006"
+   ]
+  },
+  {
+   "candidate": "c0015",
+   "names": [
+    "c0003",
+    "c0009",
+    "c0010"
+   ],
+   "cross_branch": [
+    "c0009"
+   ]
+  },
+  {
+   "candidate": "c0016",
+   "names": [
+    "c0006"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0017",
+   "names": [
+    "c0006",
+    "c0010",
+    "c0016"
+   ],
+   "cross_branch": [
+    "c0016"
+   ]
+  },
+  {
+   "candidate": "c0018",
+   "names": [
+    "c0006",
+    "c0010",
+    "c0016",
+    "c0017"
+   ],
+   "cross_branch": [
+    "c0010",
+    "c0017"
+   ]
+  },
+  {
+   "candidate": "c0019",
+   "names": [
+    "c0016",
+    "c0018"
+   ],
+   "cross_branch": []
+  }
+ ],
+ "repeats": [
+  {
+   "candidate": "c0008",
+   "earlier": "c0002",
+   "knob": "orders set to [1,2] (c0002 reached [1,2] by dropping order-3; c0008 reaches it by adding order-2) -- same knob, same resulting setting, opposite approach direction",
+   "acknowledged": false
+  },
+  {
+   "candidate": "c0011",
+   "earlier": "c0006",
+   "knob": "train_seconds 360 -> 540 (raise)",
+   "acknowledged": true
+  },
+  {
+   "candidate": "c0014",
+   "earlier": "c0006",
+   "knob": "train_seconds 360 -> 540 (raise)",
+   "acknowledged": true
+  },
+  {
+   "candidate": "c0017",
+   "earlier": "c0016",
+   "knob": "batch_size 32 -> 64 (raise)",
+   "acknowledged": true
+  },
+  {
+   "candidate": "c0019",
+   "earlier": "c0009",
+   "knob": "AdamW weight_decay 0.0 -> 0.01 (add); also matches c0014, which carried the same value",
+   "acknowledged": false
+  }
+ ],
+ "totals": {
+  "M": {
+   "correct": 135,
+   "incorrect": 13,
+   "unsupported": 1
+  },
+  "R": {
+   "correct": 4,
+   "incorrect": 0,
+   "unsupported": 2
+  },
+  "C": {
+   "correct": 3,
+   "incorrect": 0,
+   "unsupported": 0
+  },
+  "rated_MR": 155,
+  "bad_MR": 16,
+  "fraction_bad": 0.1032
+ }
+}

@@ -17,6 +17,7 @@
    "served_models": {
     "claude-haiku-4-5-20251001|claude-sonnet-5": 19
    },
+   "sessions_never_ran": [],
    "turns_median": 16,
    "turns_max": 23,
    "best_search_after_8": 0.7442626953125,
@@ -40,9 +41,11 @@
    "wall_hours": 4.794,
    "valid_per_gpu_hour": 4.72,
    "served_models": {
-    "claude-haiku-4-5-20251001|claude-sonnet-5": 19,
-    "": 1
+    "claude-haiku-4-5-20251001|claude-sonnet-5": 19
    },
+   "sessions_never_ran": [
+    "c0008"
+   ],
    "turns_median": 22.0,
    "turns_max": 32,
    "best_search_after_8": 0.3577880859375,
@@ -321,14 +324,26 @@
   ]
  },
  "prompt_cost": {
-  "findings": null,
-  "legacy": null
+  "findings": {
+   "tokenizer": "tiktoken 0.14.0, encoding cl100k_base (a proxy: Claude's tokenizer is not public)",
+   "jobs": 19,
+   "mean": 5229.4,
+   "median": 5809,
+   "max": 6208,
+   "total": 99359
+  },
+  "legacy": {
+   "tokenizer": "tiktoken 0.14.0, encoding cl100k_base (a proxy: Claude's tokenizer is not public)",
+   "jobs": 20,
+   "mean": 2824.7,
+   "median": 2871.0,
+   "max": 3409,
+   "total": 56494
+  }
  },
- "prompt_ratio_findings_over_legacy": null,
+ "prompt_ratio_findings_over_legacy": 1.851,
  "prompt_bound": 2.2,
- "prompt_within_bound": null,
- "same_served_models": false,
- "mechanical_pending_reasons": [
-  "served models differ between the arms"
- ]
+ "prompt_within_bound": true,
+ "same_served_models": true,
+ "mechanical_pending_reasons": []
 }

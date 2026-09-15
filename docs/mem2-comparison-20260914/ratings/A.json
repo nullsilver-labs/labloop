@@ -1,0 +1,3228 @@
+{
+ "arm": "A",
+ "statements": [
+  {
+   "candidate": "c0001",
+   "about": [
+    "c0000"
+   ],
+   "quote": "c0000 is the trivial most-frequent-value predictor",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json + task.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0001",
+   "about": [
+    "c0000"
+   ],
+   "quote": "That is ~5x the 0.0625 trivial baseline and clearly non-chance",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "Parent: c0001 (fitness 0.217041015625)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "Inherited code unchanged except for this one change",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0001/code/",
+   "note": "diff shows only dropout, the memory.eval() call the summary declares as necessary, and the seed"
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "Same Engram-style memory attached after decoder block 2 (of 28) ... 4 hash heads (tables 50,021 rows x 64 dims), orders [1, 2, 3, 3] ... gate bias -3",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0001/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "same optimizer (AdamW on `memory.parameters()` only, lr 2e-3, no weight decay), same batch size (64), same train budget (480 s), same train/held-out wording split",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0001/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "c0001's own summary reported: train loss collapsed to ~0.003 within ~7 epochs",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0001/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "its self-measured held-out-*wording* accuracy (1 of the 8 training wordings withheld, n=4096) plateaued at 0.311",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0001/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "the true hidden-split fitness ... came back lower still at 0.217",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "That ordering ... is the signature of overfitting: the memory is fitting incidental token co-occurrences specific to the training wordings' surface form",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/A/c0001/summary.md",
+   "note": "c0001's own summary draws the same overfitting reading"
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "the parent script never toggled the standalone `memory` module's train/eval mode",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0001/code/train_predict.py",
+   "note": "only model.eval() is called"
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "I also updated `--seed` from c0001's job-card seed (26729988)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "[table column c0001] steps 3115 | epochs 7 | examples seen 199,360 | final train loss 0.0032 | held-out 0.3110 | train_seconds 480.1 | wall_seconds 492.8",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0001/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "the un-regularized c0001 memory was fitting training-wording-specific noise past the point that helped it generalize",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/A/c0001/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "c0001's own held-out-wording estimate (0.311) overstated its actual hidden-split fitness (0.217) by a similar margin",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json + pack/A/c0001/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Parent: c0002 (fitness 0.314208984375)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Same Engram-style memory ... dropout on the projected vector -> gated by sigmoid(Linear(hidden_state)) (gate bias -3)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/code/engram_memory.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "c0002's one change was dropout(p=0.2) on the memory pathway",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0002/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "which raised hidden-split fitness from c0001's 0.217",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "... to 0.314",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "raised c0002's self-measured held-out-wording accuracy from 0.311",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0001/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "... to 0.503",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "the ratio of true hidden-split fitness to that self-measured held-out-wording accuracy actually fell from c0001 to c0002 (0.217/0.311 = 0.70 vs 0.314/0.503 = 0.62)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json + memory_config.json of both",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "consistent with the memory still overfitting to something shared by the 7 seen + 1 held-out training wordings ... that the 2 genuinely-unseen hidden-split wordings do not share",
+   "type": "C",
+   "rating": "unsupported",
+   "source": "pack/A/c0002/summary.md",
+   "note": "no source in the pack can confirm what c0002's memory was fitting"
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "I also updated `--seed` from c0002's job-card seed (1060029370)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "[table column c0002] steps 3124 | examples 199,936 | loss 0.0587 | held-out 0.5034 | 480.1 s | 492.8 s",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0002"
+   ],
+   "quote": "c0002's own held-out-wording estimate (0.503) *overstated* its hidden-split fitness (0.314)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0003"
+   ],
+   "quote": "Parent A: c0003 (fitness 0.3577880859375), code inherited unchanged and used as the base",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Parent B: c0002 (fitness 0.314208984375), read only, not inherited",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0003"
+   ],
+   "quote": "From c0003 (parent A), unchanged: the entire architecture ... 4 hash heads (tables 50,021 rows x 64 dims), orders [1,2,3,3] ... AdamW lr 2e-3 ... batch size 64; train budget 480 s; the 7-seen/1-held-out training-wording split",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json + pack/A/c0003/code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "the dropout value 0.2, which c0002 used as a fixed probability throughout training",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "which gave c0002 both the fastest loss descent (final loss 0.0587) and the best same-wording-pool held-out accuracy (0.5034) of the two parents",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0003"
+   ],
+   "quote": "the dropout value 0.4, which c0003 used as a fixed probability throughout training",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0003"
+   ],
+   "quote": "which gave c0003 a worse held-out-wording accuracy (0.4041) and a higher final loss (0.1242, still descending at the 480 s cutoff) than c0002",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json + summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002",
+    "c0003"
+   ],
+   "quote": "but nonetheless a *higher* hidden-split fitness (0.358 vs 0.314)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0003"
+   ],
+   "quote": "c0003's own summary suggested 0.4 \"needs more steps to reach where 0.2 got to.\"",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0003/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "0.2 (c0002) optimizes fastest within the fixed 480 s budget and scores best on the same-8-wording-pool held-out metric",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0003"
+   ],
+   "quote": "0.4 (c0003) generalizes better to the true hidden split despite a worse held-out-wording number and a still-descending train loss at the cutoff",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/A/records.json + pack/A/c0003/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "[table column c0002] 3124 steps | 199,936 examples | loss 0.0587 | held-out 0.5034 | dropout 0.2 constant",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0003"
+   ],
+   "quote": "[table column c0003] 3123 steps | 199,872 examples | loss 0.1242 | held-out 0.4041 | dropout 0.4 constant | 480.0 s | 492.7 s",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "c0004 never gets close to c0002's 0.0587",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0003"
+   ],
+   "quote": "step ~1382/epoch 4: c0004 loss 0.6200 vs the loss level c0003 reported around the same step count",
+   "type": "M",
+   "rating": "unsupported",
+   "source": "pack/A/c0003/summary.md",
+   "note": "c0003's summary reports no per-step loss at that step; only the last two 30 s windows"
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "c0002: held-out 0.503 vs fitness 0.314, an overstatement",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0003"
+   ],
+   "quote": "c0003: held-out 0.404 vs fitness 0.358, a milder understatement",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/A/records.json",
+   "note": "0.404 > 0.358, so the proxy overstated fitness here too; 'understatement' reverses the direction"
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002",
+    "c0003"
+   ],
+   "quote": "14,118,144 trainable memory parameters, 596,049,920 frozen backbone parameters - unchanged counts from both parents",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/memory_config.json + pack/A/c0003/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0003"
+   ],
+   "quote": "Parent: c0003 (fitness 0.3577880859375)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0001"
+   ],
+   "quote": "c0001 (dropout 0) -> 0.217",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0002"
+   ],
+   "quote": "c0002 (dropout 0.2) -> 0.314",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0003"
+   ],
+   "quote": "c0003 (dropout 0.4) -> 0.358",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003"
+   ],
+   "quote": "Dropout on the memory pathway has now been raised twice in a row and both times raised true hidden-split fitness",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0003"
+   ],
+   "quote": "c0003 (dropout 0.4, same 480s budget, same 3123 steps) reached final loss 0.1242 and held-out-wording accuracy 0.404",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0003"
+   ],
+   "quote": "Step counts being almost identical (3121 vs 3123)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "the held-out-wording signal, which tracked hidden-split fitness directionally for c0001->c0002",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json + memory_config.json",
+   "note": "c0001->c0002: both proxy and fitness rose"
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0002",
+    "c0003"
+   ],
+   "quote": "the held-out-wording signal, which tracked hidden-split fitness directionally for ... c0002->c0003",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/A/records.json + memory_config.json",
+   "note": "c0002->c0003 the proxy fell (0.503->0.404) while fitness rose (0.314->0.358)"
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0003"
+   ],
+   "quote": "c0003's 0.4 looks like the better operating point in this pathway",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0003"
+   ],
+   "quote": "in place of c0003's inherited 737850252",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004"
+   ],
+   "quote": "Parent: c0004 (fitness 0.3427734375)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004"
+   ],
+   "quote": "`engram_memory.py` is byte-for-byte unchanged from c0004",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0004/code/engram_memory.py",
+   "note": "diff is empty"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004"
+   ],
+   "quote": "c0004's change (crossover of c0003 x c0002) replaced fixed dropout with a schedule linearly annealed from c0002's 0.2 at step 0 to c0003's 0.4 at the train-seconds cutoff",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0004/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004"
+   ],
+   "quote": "It scored fitness 0.343",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0003"
+   ],
+   "quote": "worse than c0003's fixed-0.4 fitness of 0.358",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004"
+   ],
+   "quote": "c0004's own summary diagnosed a likely reason: because the ramp started immediately at step 0 ... its per-step training loss sat consistently above even c0003's constant-0.4 trajectory for most of training",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0004/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0002"
+   ],
+   "quote": "giving the pathway a long uninterrupted run at c0002's fast-converging dropout level",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0003"
+   ],
+   "quote": "still finishing at c0003's regularization level [0.4]",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0003",
+    "c0004"
+   ],
+   "quote": "`engram_memory.py` (the memory module itself) was not touched - same as c0004's relationship to c0003",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/A/c0004/code/engram_memory.py",
+   "note": "c0004 did edit engram_memory.py (attach_memory gained dropout_p, default changed 0.4->0.2), as c0004's own summary says"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004"
+   ],
+   "quote": "I also updated `--seed` ... from c0004's job-card seed (564068270)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004"
+   ],
+   "quote": "[table column c0004] 3127 steps | 200,128 examples | loss@1382 0.6200 | final 0.2230 | dropout_p 0.39998 | held-out 0.5088 | 480.1 s",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0004/memory_config.json + summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0003"
+   ],
+   "quote": "below c0003's fixed-0.4 result (0.4041 < 0.4500, so still above c0003)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json",
+   "note": "the lead-in wording is self-contradictory but the number and the parenthetical comparison are right"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0002"
+   ],
+   "quote": "well short of c0002's 0.5034",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004"
+   ],
+   "quote": "and c0004's 0.5088",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0004/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Both c0002 and c0003's held-out-wording estimates were unreliable predictors of their own hidden-split fitness in different directions [c0002]",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0003"
+   ],
+   "quote": "Both c0002 and c0003's held-out-wording estimates were unreliable predictors of their own hidden-split fitness in different directions [c0003]",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/A/records.json",
+   "note": "both proxies overstated fitness (0.503>0.314 and 0.404>0.358); the directions were not different"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004",
+    "c0003"
+   ],
+   "quote": "c0004's held-out number (0.5088, the best of the population so far by that metric) still scored below c0003 on hidden-split fitness",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json + memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0004"
+   ],
+   "quote": "Parent: c0004 (fitness 0.3427734375)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0004"
+   ],
+   "quote": "`engram_memory.py` is byte-for-byte unchanged from c0004",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0004/code/engram_memory.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0004"
+   ],
+   "quote": "The dropout *schedule* itself (linear ramp over the full training-time budget ...) is also unchanged from c0004",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0004/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0004"
+   ],
+   "quote": "c0004 ... replaced fixed dropout with a schedule ... and scored fitness 0.343",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0003"
+   ],
+   "quote": "worse than c0003's fixed-0.4 fitness of 0.358",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0004"
+   ],
+   "quote": "c0004's own summary diagnosed a likely reason: because the ramp started at 0.2 (not 0), its average dropout exposure across training was already higher than c0002's constant 0.2 for most of the run",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0004/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0006"
+   ],
+   "quote": "c0006 (a sibling of this candidate, also a child of c0004)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0006"
+   ],
+   "quote": "tried fixing this by changing the schedule's *timing* - holding at 0.2 for 60% of the budget, then ramping steeply over the last 40%",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0006/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0006"
+   ],
+   "quote": "and that scored worse still (fitness 0.248)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0006"
+   ],
+   "quote": "with held-out-wording accuracy falling to 0.450",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0006/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0004"
+   ],
+   "quote": "from c0004's 0.509",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0004/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0006"
+   ],
+   "quote": "plausibly because cramming the same rise into a shorter window produced a steeper, noisier late ramp",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/A/c0006/summary.md",
+   "note": "c0006's own summary offers this reading"
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0006"
+   ],
+   "quote": "instead of touching the schedule's *timing* (already tried by c0006, and it hurt)",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0006/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0004"
+   ],
+   "quote": "[table column c0004] 3127 steps | 200,128 | 0.6200 | 0.2230 | 0.39998 | 0.5088 | 480.1 | 492.8",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0004/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0006"
+   ],
+   "quote": "[table column c0006] 3121 steps | 199,744 | 0.5213 | 0.2429 | 0.39997 | 0.4500 | 480.1 | 492.8",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0006/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0003"
+   ],
+   "quote": "closer to c0003's fixed-0.4 final loss (0.1242) than either c0004 or c0006 got",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0004"
+   ],
+   "quote": "well below c0004 (0.5088)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0004/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0006"
+   ],
+   "quote": "below c0006 (0.4500)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0006/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0003"
+   ],
+   "quote": "below c0003's fixed-0.4 (0.4041)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0002"
+   ],
+   "quote": "and below c0002's fixed-0.2 (0.5034)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0004",
+    "c0006"
+   ],
+   "quote": "It is the lowest held-out-wording number in this entire dropout-schedule lineage",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/memory_config.json of c0004/c0006",
+   "note": "true among the schedule variants c0004/c0006/c0007; c0001 (0.311, no dropout) is lower but is not a schedule candidate"
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0006"
+   ],
+   "quote": "This is the same qualitative failure mode c0006 hit from the opposite direction",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/A/c0006/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0004"
+   ],
+   "quote": "Between c0004, c0006 and c0007, three different schedule shapes have now each been beaten by fixed dropout at either 0.2 or 0.4 on the held-out-wording metric",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/A/c0004/memory_config.json",
+   "note": "c0004's 0.5088 beats both fixed values (0.5034 and 0.4041); only c0006 and c0007 were beaten"
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0004",
+    "c0006"
+   ],
+   "quote": "and none has beaten c0003's simple fixed-0.4 on fitness",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0004"
+   ],
+   "quote": "none has beaten c0004's own 0.5088",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0004/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0004",
+    "c0003"
+   ],
+   "quote": "c0004's held-out 0.509, the best of the population by that metric, still scored below c0003 on fitness",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json + memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0001"
+   ],
+   "quote": "Parent A: c0001 (fitness 0.217041015625)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "Parent B: c0005 (fitness 0.3253173828125)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0003"
+   ],
+   "quote": "I did not read c0003 (best in population, fitness 0.3577880859375)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0001"
+   ],
+   "quote": "From parent A (c0001), unchanged: ... 4 hash heads (tables 50,021 rows x 64 dims, fp32) with orders [1,2,3,3] ... gate bias -3 ... AdamW lr 2e-3 ... batch size 64, 480 s train budget, 7-seen/1-held-out wording split",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0001/memory_config.json + code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "14,118,144 trainable parameters, same as both parents",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0001/memory_config.json + pack/A/c0005/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0001"
+   ],
+   "quote": "c0001's own summary reported loss falling to 0.0032 ... while held-out-wording accuracy plateaued at 0.311",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0001/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0001"
+   ],
+   "quote": "the memory was overfitting to literal training phrasing rather than generalizing the entity+attribute addressing",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/A/c0001/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "From parent B (c0005): the mechanism ... dropout on the projected memory vector before gating",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0005/code/engram_memory.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "and the accompanying `memory.eval()` fix in `predict()`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0005/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0001"
+   ],
+   "quote": "this fix is a no-op under c0001's own dropout=0",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0001/code/engram_memory.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "c0005's own summary documents the lineage's dosage-response [including c0005 dropout=0.6 -> 0.325]",
+   "type": "R",
+   "rating": "unsupported",
+   "source": "pack/A/c0005/summary.md",
+   "note": "c0005's summary lists c0001/c0002/c0003 fitness but contains no hidden-split number for itself"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0001"
+   ],
+   "quote": "c0001 dropout=0 -> 0.217",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0002"
+   ],
+   "quote": "c0002 dropout=0.2 -> 0.314",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0003"
+   ],
+   "quote": "c0003 dropout=0.4 -> 0.358 (best in the population)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "c0005 (parent B itself) dropout=0.6 -> 0.325",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json + pack/A/c0005/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "a regression c0005's own summary attributes to underfitting (final loss 0.4172 ... not to useful regularization)",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0005/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0003"
+   ],
+   "quote": "... vs c0003's 0.1242 at almost the same step count",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0001"
+   ],
+   "quote": "parent A had zero regularization (overfits to literal wordings)",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/A/c0001/summary.md + code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "parent B (as run) had too much (underfits within the fixed 480 s budget)",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/A/c0005/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "Setting dropout=0.4 - informed by parent B's own account of c0003",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0005/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0003"
+   ],
+   "quote": "an independent replication under a different seed (job card 548755516, vs c0003's original run)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0002"
+   ],
+   "quote": "This is higher than every dropout value in the c0001->c0002->c0003->c0005 lineage",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/A/c0002/memory_config.json",
+   "note": "c0002's held-out-wording accuracy was 0.5034, above c0009's 0.4856"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0003"
+   ],
+   "quote": "including c0003's disclosed 0.404 at the same nominal dropout (0.4)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0000"
+   ],
+   "quote": "c0000, the trivial baseline (most-frequent-training-value predictor, fitness 0.0625)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json + task.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0000"
+   ],
+   "quote": "The baseline has no model and no memory mechanism",
+   "type": "M",
+   "rating": "correct",
+   "source": "task.md + pack/A/records.json",
+   "note": "c0000 has no dir in the pack; rated against the task's definition of the trivial baseline"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0003"
+   ],
+   "quote": "Parent: c0003 (fitness 0.3577880859375)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0003"
+   ],
+   "quote": "inherited from c0003, unchanged ... 4 hash heads (50,021 x 64), orders [1,2,3,3], dropout(p=0.4) ... batch size 64, train budget 480 s",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0003"
+   ],
+   "quote": "c0003's one change was raising dropout on the memory pathway from 0.2 (c0002) to 0.4",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0003/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0002"
+   ],
+   "quote": "... from 0.2 (c0002)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0002"
+   ],
+   "quote": "self-measured held-out-wording accuracy fell from 0.503",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0003"
+   ],
+   "quote": "... to 0.404, and final train loss was higher (0.0587 -> 0.1242)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0003"
+   ],
+   "quote": "c0003's own summary noted loss was still descending at the 480 s cutoff (0.1682 -> 0.1242 in the last two 30 s windows)",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0003/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0003"
+   ],
+   "quote": "I also updated `--seed` from c0003's job-card seed (737850252)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0002"
+   ],
+   "quote": "[table column c0002] 3124 | 199,936 | 0.0587 | 0.5034 | 480.1 | 492.8",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0003"
+   ],
+   "quote": "[table column c0003] 3123 | 199,872 | 0.1242 | 0.4041 | 480.0 | 492.7",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0003"
+   ],
+   "quote": "This confirms the diagnosis in c0003's own summary: dropout=0.4 was not inherently worse than 0.2, it just needed more effective optimizer progress per second",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/A/c0003/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0002",
+    "c0003"
+   ],
+   "quote": "c0003's own held-out-wording estimate for c0002 (0.5034) *overstated* c0002's hidden-split fitness (0.3142)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/summary.md + records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0002",
+    "c0003"
+   ],
+   "quote": "held-out-wording accuracy on this exact eval protocol is the highest seen yet across c0002/c0003/c0011",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/memory_config.json of c0002/c0003",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0010"
+   ],
+   "quote": "parent B (c0010, fitness 0.6319580078125 - best in the population)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0010"
+   ],
+   "quote": "One large shared nn.Embedding(500_000, 64) hash table, addressed by 3 orders ({1,2,3}) x 4 independent hash heads = 12 lookups per position, concatenated to a 768-dim vector",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0010/memory_config.json + code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0003"
+   ],
+   "quote": "far more capacity and hash diversity than A's four small separate tables (50,021 rows each, 4 total lookups, 256-dim concat)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json + code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0010"
+   ],
+   "quote": "Padding masked to a fixed sentinel id (from attention_mask) before hashing",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0010/code/engram.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0003"
+   ],
+   "quote": "A's lineage hashes the literal input_ids including whatever pad token id sits there, so it sees different context at train time vs. predict time near sequence boundaries",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/code/engram_memory.py",
+   "note": "hashes raw input_ids with zero left-padding, no attention_mask"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0010"
+   ],
+   "quote": "a real train/predict skew that B's summary called out and fixed",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0010/summary.md",
+   "note": "c0010's summary states the sentinel fix and its train/predict-consistency purpose, though not with reference to the other lineage"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0010"
+   ],
+   "quote": "Greedy decoding with use_cache=False, so the memory hook runs on every generated token",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0010/summary.md + code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0003"
+   ],
+   "quote": "A's MemoryLayerWrapper only injects when the incoming hidden-state chunk has length > 1",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/code/engram_memory.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0003"
+   ],
+   "quote": "A's lineage silently drops memory injection for any answer whose second-or-later BPE token needs it",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/A/c0003/code/train_predict.py",
+   "note": "generate() is called without use_cache=False, so only the prefill has length > 1"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0010"
+   ],
+   "quote": "Gate bias -2, zero-initialised proj/gate weights, attach after decoder block 2, lr 3e-3, batch size 64, train budget 540 s ... All B's, unchanged",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0010/memory_config.json + summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0003"
+   ],
+   "quote": "From parent A (c0003, fitness 0.3577880859375)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0001"
+   ],
+   "quote": "c0001 dropout=0 -> fitness 0.217",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0002"
+   ],
+   "quote": "c0002 dropout=0.2 -> fitness 0.314",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0003"
+   ],
+   "quote": "c0003 dropout=0.4 -> fitness 0.358",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0002",
+    "c0003"
+   ],
+   "quote": "even though c0003's *self-measured* held-out-wording accuracy fell relative to c0002 (0.404 vs 0.503)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/memory_config.json of c0002/c0003",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003"
+   ],
+   "quote": "more dropout traded a worse proxy signal for better real generalisation in that architecture family",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/A/records.json + memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0005"
+   ],
+   "quote": "since going past 0.4 was never tested and would have been a second untested variable",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/A/c0005/memory_config.json",
+   "note": "c0005 had already run dropout 0.6 on the same small-table architecture"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0003"
+   ],
+   "quote": "higher than both parents' own self-measured numbers (A/c0003: 0.404)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0010"
+   ],
+   "quote": "... (B/c0010: 0.9641)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0010/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0010"
+   ],
+   "quote": "B's original predict() never needed this since B had no dropout",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0010/code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "Parent: c0009 (fitness 0.349609375)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0012"
+   ],
+   "quote": "not c0012 (best in population, 0.7840576171875)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "Everything from c0009's architecture, verbatim: ... 4 hash heads (50,021 x 64) orders [1,2,3,3] ... dropout (p=0.4) ... AdamW lr 2e-3 ... batch size 64 ... 14,118,144 trainable parameters",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0009/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0001",
+    "c0009"
+   ],
+   "quote": "not the 480s c0009 (and its whole lineage back to c0001) used",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/memory_config.json of c0001/c0009",
+   "note": ""
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "c0009's own summary.md and out/memory_config.json report that its 480s run stopped after almost exactly 7 epochs (3135 steps, 200,640 examples) with final training loss 0.1932",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0009/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0001"
+   ],
+   "quote": "well above c0001's near-zero (~0.0032) memorization floor reached under the same 7-seen-wording setup",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0001/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "should raise held-out-wording accuracy above c0009's 0.4855957031250",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0009/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "Not c0009's seed (548755516)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0012"
+   ],
+   "quote": "Parent: c0012 (fitness 0.7840576171875, best in the population)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0012"
+   ],
+   "quote": "inherited from c0012, unchanged: one large shared nn.Embedding hash table ... orders {1,2,3} x 4 heads = 12 lookups ... gate bias -2 ... dropout p=0.4 ... lr 3e-3, batch size 64, train budget 540 s ... use_cache=False",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json + code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0012"
+   ],
+   "quote": "**lower** than c0012's own self-measured 0.9919",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0003"
+   ],
+   "quote": "the same phenomenon c0003 documented - a lower held-out-wording proxy does not necessarily predict lower true hidden-split fitness",
+   "type": "R",
+   "rating": "unsupported",
+   "source": "pack/A/c0003/summary.md",
+   "note": "c0003's summary documents no hidden-split fitness of its own; it expected not to beat c0002"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0012"
+   ],
+   "quote": "495 MB - up from c0012's 129 MB ... 129,837,056 trainable params now vs. c0012's 33,837,056",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json + summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0012"
+   ],
+   "quote": "Backbone frozen params: 596,049,920, unchanged from c0012",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0012"
+   ],
+   "quote": "different from c0012's inherited seed (671046071)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0012"
+   ],
+   "quote": "`--train-seconds 540 --batch-size 64 --lr 3e-3 --dropout-p 0.4` unchanged from c0012",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/code/run.sh",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0012"
+   ],
+   "quote": "Parent: c0012 (fitness 0.7840576171875)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0012"
+   ],
+   "quote": "Inherited c0012's code dir verbatim ... same shared 500,000x64 hash table, 3 orders x 4 heads (12 lookups/position, 768-dim concat), sentinel-masked padding, attach after decoder block 2, gate bias -2 ... lr 3e-3, batch 64, 540 s train budget",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json + code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0001"
+   ],
+   "quote": "c0001 dropout=0 -> fitness 0.217",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0002"
+   ],
+   "quote": "c0002 dropout=0.2 -> 0.314",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0003"
+   ],
+   "quote": "c0003 dropout=0.4 -> 0.358",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003"
+   ],
+   "quote": "showed hidden-split fitness rising monotonically with more dropout ... even as the self-measured held-out-wording accuracy fell",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/A/memory_config.json of c0001/c0002/c0003",
+   "note": "the proxy rose from c0001 to c0002 (0.311->0.503); it fell only from c0002 to c0003"
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0010",
+    "c0012"
+   ],
+   "quote": "it did transfer: fitness rose from parent B's (c0010) 0.632 to 0.784",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0012"
+   ],
+   "quote": "well above what either single-parent architecture reached alone",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0012"
+   ],
+   "quote": "c0012's own held-out-wording accuracy was 0.9919 - higher than every ancestor",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0002"
+   ],
+   "quote": "including c0002's 0.503",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0002/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0003"
+   ],
+   "quote": "and c0003's 0.404",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0003/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0005"
+   ],
+   "quote": "the smaller table, which was only tested up to 0.4 too",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/A/c0005/memory_config.json",
+   "note": "c0005 tested dropout 0.6 on the small-table architecture"
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0002",
+    "c0003"
+   ],
+   "quote": "a larger drop than c0002->c0003's 0.503->0.404 in relative terms",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/A/memory_config.json of c0002/c0003",
+   "note": "0.9919->0.8967 is -9.6% relative; 0.503->0.404 is -19.7% relative, i.e. the earlier drop was larger"
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003"
+   ],
+   "quote": "the c0001-c0003 evidence was three points on a much smaller, more collision-prone table",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/memory_config.json of c0001/c0002/c0003",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0012"
+   ],
+   "quote": "this 520k-row table",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/A/c0012/memory_config.json",
+   "note": "the inherited table is 500,000 rows, as this summary itself says earlier"
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0012"
+   ],
+   "quote": "final loss 0.074 vs c0012's 0.013",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0012"
+   ],
+   "quote": "a leftover seed from the inherited run.sh (671046071, c0012's job-card seed)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0012"
+   ],
+   "quote": "what c0012's own summary reports about c0003/c0010, read transitively",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0012/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0014"
+   ],
+   "quote": "Parent: c0014 (fitness 0.795166015625, best in the population)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0014"
+   ],
+   "quote": "inherited from c0014, unchanged: one large shared nn.Embedding hash table (2,000,000 rows x 64 dims) ... 12 lookups per position ... gate bias -2",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0014/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0014"
+   ],
+   "quote": "c0014's own summary flagged that going from 500,000 to 2,000,000 table rows *lowered* held-out-wording accuracy (0.9919 -> 0.9458)",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0014/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0012",
+    "c0014"
+   ],
+   "quote": "despite raising fitness only marginally (0.7841 -> 0.7952)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": "the fitness pair is right, though c0014's summary does not itself report a fitness"
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0014"
+   ],
+   "quote": "and offered two readings: a genuine capacity-vs-generalisation tradeoff, or the table being under-trained within the same 540 s wall-clock budget",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0014/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0014"
+   ],
+   "quote": "the ~3,264 steps c0014 ran in 540 s",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0014/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0014"
+   ],
+   "quote": "up from c0014's 3,264 steps / 208,896 examples in the identical 540 s",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0014/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0014"
+   ],
+   "quote": "a lower final loss than c0014's 0.0585",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0014/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0014"
+   ],
+   "quote": "up from c0014's 0.9458",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0014/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0012"
+   ],
+   "quote": "most of the way back toward c0012's 0.9919",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0014"
+   ],
+   "quote": "495 MB, same size as c0014's",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0014/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0014"
+   ],
+   "quote": "different from c0014's inherited seed (17983854)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0014"
+   ],
+   "quote": "Backbone frozen params: 596,049,920, unchanged from c0014",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0014/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0014"
+   ],
+   "quote": "`--train-seconds 540 --batch-size 64 --lr 3e-3 --dropout-p 0.4` unchanged from c0014",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0014/code/run.sh",
+   "note": ""
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0014"
+   ],
+   "quote": "more effective steps in the same wall clock recovered most of the held-out-accuracy regression c0014 introduced",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/A/c0014/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0012"
+   ],
+   "quote": "Parent: c0012 (fitness 0.7840576171875)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0012"
+   ],
+   "quote": "inherited from c0012, unchanged: one shared nn.Embedding hash table ... orders {1,2,3}, 4 heads per order (12 lookups), sentinel-masked padding, gate bias -2, dropout p=0.4, use_cache=False, lr 3e-3, batch size 64, 540 s",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json + code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0012"
+   ],
+   "quote": "dropout p=0.4 ... (c0012's own hypothesised addition over c0010)",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0012/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0001"
+   ],
+   "quote": "c0001->c0010 (many small tables -> one large shared table ... 0.217->0.632) [c0001 = 0.217]",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0010"
+   ],
+   "quote": "... [c0010 = 0.632]",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0012"
+   ],
+   "quote": "c0010->c0012 (adding dropout to curb overfitting ..., 0.632->0.784)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0010",
+    "c0012"
+   ],
+   "quote": "Both parents in this lineage kept TABLE_ROWS fixed at 500,000 since c0010 introduced it",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/memory_config.json of c0010/c0012",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0012"
+   ],
+   "quote": "as c0012's ... summaries note, this proxy has not moved consistently with true hidden-split fitness in this lineage",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0012/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0003"
+   ],
+   "quote": "as ... c0003's summaries note, this proxy has not moved consistently with true hidden-split fitness",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0003/summary.md",
+   "note": "c0003's summary records that c0002's proxy overstated its fitness"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0012"
+   ],
+   "quote": "c0012 (same budget, 500,000-row table) ran 3,477 steps / 222,528 examples in the same 540 s window and finished at loss 0.013",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0012"
+   ],
+   "quote": "this is *lower* than c0012's own self-measured 0.9919 on the identical held-out set",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0012"
+   ],
+   "quote": "same held-out split as c0012's since the split is by wording index, not by seed",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0012"
+   ],
+   "quote": "495 MB - 4x c0012's 129 MB",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0012"
+   ],
+   "quote": "129,837,056 trainable memory params (up from c0012's 33,837,056)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0012"
+   ],
+   "quote": "Parent: c0012 (fitness 0.7840576171875)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0012"
+   ],
+   "quote": "inherited from c0012, unchanged: one large shared nn.Embedding(500_000, 64) hash table ... 12 lookups ... gate bias -2 ... use_cache=False ... AdamW lr 3e-3, batch size 64, train budget 540 s",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json + code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0012"
+   ],
+   "quote": "c0012's own summary explicitly stopped at dropout=0.4, calling anything higher \"a second untested variable\" it deliberately avoided",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0012/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0001"
+   ],
+   "quote": "That value came from parent c0003's lineage, which showed true hidden-split fitness rising monotonically with dropout (0 -> 0.217)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0002"
+   ],
+   "quote": "(0.2 -> 0.314)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0003"
+   ],
+   "quote": "(0.4 -> 0.358)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0002",
+    "c0003"
+   ],
+   "quote": "even while c0003's own self-measured held-out-wording accuracy *fell* relative to c0002 (0.404 vs 0.503)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/memory_config.json of c0002/c0003",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0012"
+   ],
+   "quote": "c0012 combined dropout=0.4 with a far larger/stronger table and got both a much higher held-out-wording accuracy (0.9919) and a much higher true fitness (0.784) than either parent",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json + records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0002",
+    "c0003"
+   ],
+   "quote": "unlike the small-table case (A's lineage) where a proxy drop from more dropout co-occurred with a true-fitness *rise*",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json + memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0012"
+   ],
+   "quote": "the loss curve also converged to a higher final value (0.033 vs c0012's 0.013)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0012"
+   ],
+   "quote": "c0012's inherited run.sh hardcoded its own job's seed (671046071)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json + pack/A/c0012/code/run.sh",
+   "note": ""
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0012"
+   ],
+   "quote": "33,837,056 params ... unchanged count from c0012",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0017"
+   ],
+   "quote": "Parent: c0017 (fitness 0.6920166015625)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0012",
+    "c0017"
+   ],
+   "quote": "inherited from c0017/c0012, unchanged: one shared nn.Embedding hash table, orders {1,2,3}, 4 heads per order, sentinel masking, gate bias -2, dropout p=0.4, use_cache=False, lr 3e-3, batch 64, 540 s",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0017/memory_config.json + code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0017"
+   ],
+   "quote": "c0017 hypothesised that a 4x larger table (500k -> 2M rows) would cut hash collisions ... and raise fitness above c0012's 0.7841",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0017/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0012",
+    "c0017"
+   ],
+   "quote": "c0017 measured *lower* held-out wording accuracy (0.9644 vs c0012's 0.9919)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/memory_config.json of c0012/c0017",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0012",
+    "c0017"
+   ],
+   "quote": "and *lower* fitness (0.6920 vs c0012's 0.7841)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0012",
+    "c0017"
+   ],
+   "quote": "with ~6% fewer optimizer steps in the same 540 s budget (3,263 vs c0012's 3,477 steps)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/memory_config.json of c0012/c0017",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0017"
+   ],
+   "quote": "which c0017's own summary attributed partly to the larger table's optimizer overhead",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0017/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0012",
+    "c0017"
+   ],
+   "quote": "TABLE_ROWS: 2,000,000 -> 500,000 (revert to c0012's value, undoing c0017's 4x increase)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/memory_config.json of c0012/c0017",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0012"
+   ],
+   "quote": "This matches c0012's own step count almost exactly (3,479 vs c0012's 3,477 steps, 222,656 vs 222,528 examples)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0017"
+   ],
+   "quote": "noticeably more than c0017's 3,263 steps / 208,832 examples in the same 540 s window",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0017/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0017"
+   ],
+   "quote": "consistent with the smaller table costing less per optimizer step, as c0017's summary predicted",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/A/c0017/summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0017"
+   ],
+   "quote": "well above c0017's 0.96436 (2,000,000-row table)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0017/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0012"
+   ],
+   "quote": "though still below c0012's own reported 0.9919",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0012/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0017"
+   ],
+   "quote": "same caveat c0017 itself noted about seed effects",
+   "type": "R",
+   "rating": "unsupported",
+   "source": "pack/A/c0017/summary.md",
+   "note": "c0017's summary contains no seed-effect caveat"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0017"
+   ],
+   "quote": "back down from c0017's 129,837,056",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0017/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0005"
+   ],
+   "quote": "Parents: c0005 (fitness 0.3253173828125, inherited code)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0010"
+   ],
+   "quote": "and c0010 (fitness 0.6319580078125, read-only)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0001",
+    "c0003",
+    "c0005"
+   ],
+   "quote": "c0005's branch (c0001->c0003->c0005) used 4 small, separately-initialized tables (50,021 rows x 64 dims each, 200,084 rows total) each addressed by one fixed hash per n-gram order",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0005/memory_config.json + code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0010"
+   ],
+   "quote": "c0010 used a single *shared* table (500,000 rows x 64 dims) addressed by 4 independent (multiplier, offset) hash heads per order over orders {1,2,3} (12 heads total) ... plus SENTINEL-based masking of padded positions",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0010/memory_config.json + code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0005",
+    "c0010"
+   ],
+   "quote": "c0010 scored 0.632 in isolation versus c0005's 0.325 - a 2.5x gap a four-point dropout sweep never closed",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0005"
+   ],
+   "quote": "c0005's MemoryLayerWrapper only injects the memory when the wrapped layer receives more than one token at once (h.shape[1] > 1)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0005/code/engram_memory.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0001",
+    "c0003",
+    "c0005"
+   ],
+   "quote": "every token generated *after* the first got zero memory contribution, silently, for the entire c0001->c0005 lineage",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/A/c0005/code/train_predict.py",
+   "note": "generate() runs with the default use_cache=True"
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0010"
+   ],
+   "quote": "c0010 avoids this by generating with use_cache=False",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0010/code/ + summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0010"
+   ],
+   "quote": "c0010 used dropout=0 throughout",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0010/memory_config.json + code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0001"
+   ],
+   "quote": "dropout 0 -> 0.217",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0002"
+   ],
+   "quote": "0.2 -> 0.314",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0003"
+   ],
+   "quote": "0.4 -> 0.358 (best)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0005"
+   ],
+   "quote": "0.6 -> 0.325 (worse, the point c0005 itself tested and overshot)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/records.json + pack/A/c0005/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0010"
+   ],
+   "quote": "c0010 never tried dropout",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0010/code/",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0005"
+   ],
+   "quote": "c0005 never tried it at this capacity",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0005/memory_config.json",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0010"
+   ],
+   "quote": "Hyperparameters (lr=3e-3, batch_size=64, train_seconds=540, gate bias -2.0) are c0010's",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0010/memory_config.json + summary.md",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0005",
+    "c0010"
+   ],
+   "quote": "The prompt format (`Question: {q}\\nAnswer:`, answer-only loss) and attach point (after decoder block 2 of 28) are unchanged and shared by both parents",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/memory_config.json + code/ of c0005/c0010",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0005"
+   ],
+   "quote": "rewritten from c0005's original assertion (which compared parameter counts and required memory to be a registered submodule of `model`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0005/code/train_predict.py",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0005",
+    "c0010"
+   ],
+   "quote": "well above both parents' architectures at comparable training budgets [held-out 0.9875]",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/memory_config.json of c0005/c0010",
+   "note": ""
+  },
+  {
+   "candidate": "c0020",
+   "about": [
+    "c0005"
+   ],
+   "quote": "the `--save`/`weights_path` logic inherited unchanged from c0005",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/A/c0005/code/train_predict.py",
+   "note": ""
+  }
+ ],
+ "unrated": [
+  {
+   "candidate": "c0001",
+   "quote": "well short of the reference points on the same 600 s budget (LoRA 0.9653, full fine-tune 0.9961 on the actual search split)",
+   "reason": "about the operator reference runs, which task.md states are not candidates; no source for them in the pack"
+  },
+  {
+   "candidate": "c0008",
+   "quote": "(whole summary: 'c0008 - no summary left by the worker ... You've hit your session limit')",
+   "reason": "deferred candidate, no prose about prior attempts; the quoted session text is not a statement about an earlier candidate"
+  }
+ ],
+ "acknowledgment": [
+  {
+   "candidate": "c0001",
+   "names": [
+    "c0000"
+   ],
+   "cross_branch": [
+    "c0000"
+   ]
+  },
+  {
+   "candidate": "c0002",
+   "names": [
+    "c0001"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0003",
+   "names": [
+    "c0001",
+    "c0002"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0004",
+   "names": [
+    "c0002",
+    "c0003"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0005",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0003"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0006",
+   "names": [
+    "c0002",
+    "c0003",
+    "c0004"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0007",
+   "names": [
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0006"
+   ],
+   "cross_branch": [
+    "c0006"
+   ]
+  },
+  {
+   "candidate": "c0008",
+   "names": [],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0009",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0005"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0010",
+   "names": [
+    "c0000"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0011",
+   "names": [
+    "c0002",
+    "c0003"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0012",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0010"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0013",
+   "names": [
+    "c0001",
+    "c0009",
+    "c0012"
+   ],
+   "cross_branch": [
+    "c0012"
+   ]
+  },
+  {
+   "candidate": "c0014",
+   "names": [
+    "c0003",
+    "c0012"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0015",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0010",
+    "c0012"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0016",
+   "names": [
+    "c0012",
+    "c0014"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0017",
+   "names": [
+    "c0001",
+    "c0003",
+    "c0010",
+    "c0012"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0018",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0012"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0019",
+   "names": [
+    "c0012",
+    "c0017"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0020",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0005",
+    "c0010"
+   ],
+   "cross_branch": []
+  }
+ ],
+ "repeats": [
+  {
+   "candidate": "c0009",
+   "earlier": "c0003",
+   "knob": "dropout_p set to 0.4 (the lineage's tested best) - named and justified as a deliberate replication under a new seed",
+   "acknowledged": true
+  },
+  {
+   "candidate": "c0015",
+   "earlier": "c0005",
+   "knob": "dropout_p raised 0.4 -> 0.6",
+   "acknowledged": false
+  },
+  {
+   "candidate": "c0017",
+   "earlier": "c0014",
+   "knob": "table rows raised 500,000 -> 2,000,000 from the same parent c0012",
+   "acknowledged": false
+  },
+  {
+   "candidate": "c0018",
+   "earlier": "c0015",
+   "knob": "dropout_p raised 0.4 -> 0.6 from the same parent c0012",
+   "acknowledged": false
+  },
+  {
+   "candidate": "c0020",
+   "earlier": "c0012",
+   "knob": "add dropout 0.4 to c0010's shared-table architecture (same crossover recipe)",
+   "acknowledged": false
+  }
+ ],
+ "totals": {
+  "M": {
+   "correct": 212,
+   "incorrect": 11,
+   "unsupported": 1
+  },
+  "R": {
+   "correct": 25,
+   "incorrect": 0,
+   "unsupported": 3
+  },
+  "C": {
+   "correct": 14,
+   "incorrect": 0,
+   "unsupported": 1
+  },
+  "rated_MR": 252,
+  "bad_MR": 15,
+  "fraction_bad": 0.0595
+ }
+}
