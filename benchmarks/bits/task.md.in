@@ -1,0 +1,40 @@
+# Task: predict the next symbol
+
+A hidden source emits documents: sequences over 16 symbols, written as the hex
+characters `0`–`f`. Documents are independent of each other and all come from the
+same source. Nothing about the source is given; what it does is for you to find in
+the data. For every document of the split, you get all of it but its last symbol and
+predict a probability distribution over that symbol.
+
+**Score**, higher is better: the mean code length in bits of the true symbols under
+your distributions, read as the fraction of the gap closed between the training
+unigram (score 0, the baseline `c0000`) and the source itself (score 1). Every
+distribution is mixed with 0.1% of the uniform one before scoring, so one confident
+miss costs at most about 14 bits, not infinity. A score below 0 is worse than the
+unigram.
+
+## Data (read-only)
+- `$LAB_TRAIN/train.txt` — 1200 complete documents, one per line, 600–2400 symbols each.
+- `$LAB_SPLIT_INPUTS/inputs.txt` — one document per line, its last symbol removed,
+  63–2047 symbols. The labels are hidden; never look for them.
+
+## Output
+`$LAB_PREDICTIONS_OUT`: a JSON list with one entry per line of `inputs.txt`, in order;
+each entry a list of 16 non-negative numbers, the distribution over symbols `0`…`f`
+(normalised by the evaluator).
+
+## Environment
+- Interpreter for `code/run.sh`: `@PYTHON@` (has numpy). No network, no installs.
+- CPU only, no GPU. Use at most @THREADS@ threads: export `OMP_NUM_THREADS`,
+  `OPENBLAS_NUM_THREADS` and `MKL_NUM_THREADS` = @THREADS@ in `run.sh`, and start at
+  most @THREADS@ processes. Another job runs beside yours.
+
+## What `code/run.sh` must do
+1. Fit whatever it fits on `$LAB_TRAIN` (save state inside the candidate dir), or load it.
+2. Predict every line of `$LAB_SPLIT_INPUTS/inputs.txt`, in order.
+3. Write `$LAB_PREDICTIONS_OUT`.
+4. Finish in under @MINUTES@ minutes of wall clock, fitting and predicting together.
+
+Seed with the job card's seed. Write `summary.md`: what you built or changed, the
+hypothesis, what you measured (on a slice of the training documents you held out),
+and what happened.
