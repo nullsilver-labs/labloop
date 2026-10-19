@@ -181,6 +181,8 @@ scripted_repo "$WSRC" acc-seed-src 3 "initial_drafts = 2"
 ( cd "$WSRC" && LAB_ROOT="$WSRC" timeout 300 "$WSRC/tools/lab" run --poll-sec 1 >/dev/null 2>&1 )
 # a worker's bytecode cache names the source dir; it is neither scanned nor copied
 mkdir -p "$WSRC/candidates/c0001/scratch/__pycache__" && printf '%s' "$WSRC/candidates/c0001/scratch/x.py" > "$WSRC/candidates/c0001/scratch/__pycache__/x.cpython-312.pyc"
+# a scratch script hardcoding the verified dev data and its own code/ is allowed: both read bytes the seeded copy holds
+printf "D='%s/data/train/'\nC='%s/candidates/c0001/code/run.sh'\n" "$WSRC" "$WSRC" > "$WSRC/candidates/c0001/scratch/load.py"
 WSEED="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-seeded.XXXXXX")"
 scripted_repo "$WSEED" acc-seeded 7 "seed_from = \"$WSRC\"|seed_upto = \"c0002\""
 cd "$WSEED" || return 1
@@ -226,6 +228,12 @@ assert_ok   "B2 refuses: search labels that are not the source's (by re-scoring,
 ln -s /etc/hostname "$WSRC/candidates/c0001/code/link"
 _refuse "a symlink in the prefix" "seed_from = \"$WSRC\"|seed_upto = \"c0002\"" "holds a symlink"
 rm -f "$WSRC/candidates/c0001/code/link"
+# any other path into the source refuses: another candidate's dir, or a verified input climbed out of with ..
+printf "P='%s/candidates/c0002/out/'\n" "$WSRC" > "$WSRC/candidates/c0001/scratch/bad.py"
+_refuse "a script naming another source candidate" "seed_from = \"$WSRC\"|seed_upto = \"c0002\"" "scratch/bad.py names the source dir"
+printf "P='%s/data/train/../../candidates/c0002'\n" "$WSRC" > "$WSRC/candidates/c0001/scratch/bad.py"
+_refuse "a verified-input path climbing out with .." "seed_from = \"$WSRC\"|seed_upto = \"c0002\"" "scratch/bad.py names the source dir"
+rm -f "$WSRC/candidates/c0001/scratch/bad.py"
 [ "${KEEP:-0}" = "1" ] || rm -rf "$_d" "$_badlab"
 assert_fail "B2: campaign check refuses seed_from without seed_upto" bash -c 'd=$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-seedck.XXXXXX"); cp campaign.toml "$d/c.toml"; sed -i "/^seed_upto/d" "$d/c.toml"; "$0" campaign check "$d/c.toml"' "$LABS"
 [ "${KEEP:-0}" = "1" ] || rm -rf "$WSRC" "$WSEED"

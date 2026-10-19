@@ -696,6 +696,13 @@ SEED_SKIP_CACHE = ("__pycache__", ".pyc")
 
 def seed_skipped(n: str) -> bool:
     return n in SEED_SKIP or n == SEED_SKIP_CACHE[0] or n.endswith(SEED_SKIP_CACHE[1])
+
+
+def _names_source(b: bytes, names: set[bytes], ok_ref: re.Pattern) -> bool:
+    """True when b names the source dir outside a path ok_ref allows; an allowed path with a
+    `..` segment in its tail could climb out of it, so it is not stripped."""
+    rest = ok_ref.sub(lambda m: m[0] if re.search(rb"(^|/)\.\.(/|$)", m[0]) else b"", b)
+    return any(x in b for x in names) and any(x in rest for x in names)
 # what records a job rather than runs it: these name the source dir by design
 SEED_PROVENANCE = {"config.json", "job.json", "session.json", "session.stderr", "summary.md", "seeded.json"}
 
@@ -778,6 +785,7 @@ def seed_checks(cfg: dict) -> tuple[list[str], dict]:
         if req != mine:
             why.append(f"{i} was made by {req!r}, but this campaign's {sc[i]['operator']} model is {mine!r}")
     scfg, err = _source_cfg(src, spop)
+    verified: list[str] = []      # source inputs proven byte-identical to this campaign's
     if err:
         why.append(err)
     else:
@@ -794,17 +802,26 @@ def seed_checks(cfg: dict) -> tuple[list[str], dict]:
             try:
                 if tree_sha256(sp) != tree_sha256(mp):
                     why.append(f"the {k} differ from the source's")
+                else:
+                    verified += [str(sp), str(sp.resolve())]
             except OSError as e:
                 why.append(f"cannot read the source's {k}: {e}")
         if d.get("baseline") != cfg["data"]["baseline"]:
             why.append("the baseline command differs from the source's")
     # no link may survive the copy, and no file the final re-run could execute or read may
     # name the source dir: everything is scanned but the provenance records, which name it
-    # by design (workers persist weights anywhere in the candidate dir: work/, scratch/...)
+    # by design (workers persist weights anywhere in the candidate dir: work/, scratch/...).
+    # A path into one of the inputs verified above is allowed (workers hardcode the dev data
+    # path in scratch scripts), and so is a path into the candidate's own code/, copied byte
+    # for byte: either reads bytes this campaign holds too. Anything else that names the
+    # source (another candidate, out/ with its final read, the -private sibling) refuses.
     names = {str(src).encode(), str(src.resolve()).encode()}
     for i in ids:
         if sc[i].get("fitness") is not None and not (src / "candidates" / i / "fitness.json").exists():
             why.append(f"{i} has a fitness but no fitness.json in the source")
+        own = src / "candidates" / i / "code"
+        ok = sorted({*verified, str(own), str(own.resolve())}, key=len, reverse=True)
+        ok_ref = re.compile(b"(?:" + b"|".join(re.escape(q.encode()) for q in ok) + rb")(?![\w.-])(?:/[\w./-]*)?")
         for dp, dns, fns in os.walk(src / "candidates" / i):
             dns[:] = [n for n in dns if n != SEED_SKIP_CACHE[0]]
             for n in dns + fns:
@@ -812,7 +829,7 @@ def seed_checks(cfg: dict) -> tuple[list[str], dict]:
                 if f.is_symlink():
                     why.append(f"{i} holds a symlink ({f.relative_to(src)}): a copy would still point at the source")
                 elif f.is_file() and not seed_skipped(n) and n not in SEED_PROVENANCE \
-                        and f.stat().st_size < 256_000_000 and any(x in f.read_bytes() for x in names):
+                        and f.stat().st_size < 256_000_000 and _names_source(f.read_bytes(), names, ok_ref):
                     why.append(f"{f.relative_to(src)} names the source dir: its final re-run would read the source")
     return why, {"spop": spop, "ids": ids}
 
