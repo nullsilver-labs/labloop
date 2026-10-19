@@ -208,6 +208,12 @@ def load_campaign(path: Path) -> dict:
                   f"candidate id like c0003 (got {sf!r}, {su!r})")
     cfg["campaign"]["seed_from"] = Path(sf) if sf else None
     cfg["campaign"]["seed_upto"] = su
+    # an evaluator that re-runs the candidate's code scores a nondeterministic learner a little
+    # differently each time: seeded non-baseline candidates may re-score within this (c0000 never)
+    tol = raw["campaign"].get("seed_rescore_tol", 0.0)
+    if isinstance(tol, bool) or not isinstance(tol, (int, float)) or not 0 <= tol < 0.05 or (tol and sf is None):
+        L.die(f"{path.name}: [campaign] seed_rescore_tol is a number in [0, 0.05), with seed_from (got {tol!r})")
+    cfg["campaign"]["seed_rescore_tol"] = float(tol)
 
     d = raw.get("data", {})
     for k in ("train", "evaluator", "baseline"):
@@ -855,6 +861,7 @@ def seed_population(cfg: dict, pop: dict) -> str:
     spop, ids = ctx["spop"], ctx["ids"]
     sc = spop["candidates"]
     ev_sha = sha256_file(cfg["data"]["evaluator"])
+    rescored: dict[str, float] = {}     # within seed_rescore_tol but not exact: said in the note
     stage.mkdir(parents=True)
     for i in ids:
         sdir, sdst = src / "candidates" / i, stage / i
@@ -874,7 +881,10 @@ def seed_population(cfg: dict, pop: dict) -> str:
             why.append(f"{i} was scored by another evaluator")
             continue
         again = run_evaluator(cfg, sdst / "out" / "predictions-search.json", "search")
-        if again.get("score") is None or abs(again["score"] - sc[i]["fitness"]) > 1e-9 * max(1.0, abs(sc[i]["fitness"])):
+        tol = 0.0 if sc[i]["operator"] == "baseline" else cfg["campaign"].get("seed_rescore_tol", 0.0)
+        if again.get("score") is not None and abs(again["score"] - sc[i]["fitness"]) > 1e-9 * max(1.0, abs(sc[i]["fitness"])):
+            rescored[i] = again["score"]
+        if again.get("score") is None or abs(again["score"] - sc[i]["fitness"]) > max(tol, 1e-9 * max(1.0, abs(sc[i]["fitness"]))):
             why.append(f"{i} re-scores here to {again.get('score')}, not its recorded {sc[i]['fitness']} (other "
                        "search labels, other evaluator helpers, or a nondeterministic evaluator)")
     if why:
@@ -900,6 +910,8 @@ def seed_population(cfg: dict, pop: dict) -> str:
             pop["settled_at_best"] = pop["settled"]
     pop["seeded"] = {"from": str(src), "campaign": spop["campaign"], "campaign_sha256": spop.get("campaign_sha256"),
                      "upto": upto, "n": len(ids)}
+    if rescored:
+        pop["seeded"]["rescored_within_tol"] = {"tol": cfg["campaign"]["seed_rescore_tol"], "scores": rescored}
     with ledger_lock():
         for i in ids:
             v = pop["candidates"][i]
@@ -2185,7 +2197,11 @@ def write_report(cfg: dict, pop: dict) -> None:
         f"| baseline search fitness | {fmt(base['fitness']) if base else '—'} |",
         f"| candidates settled | {pop['settled']} ({', '.join(f'{k} {v}' for k, v in sorted(counts.items()))}) |",
         *([f"| seeded (B2) | c0000–{pop['seeded']['upto']} copied from {pop['seeded']['campaign']}; "
-           "their sessions are not in this report's costs |"] if pop.get("seeded") else []),
+           "their sessions are not in this report's costs"
+           + ("".join(f"; {k} re-scored {fmt(v)} here (recorded {fmt(pop['candidates'][k]['fitness'])}, "
+                      f"tol {pop['seeded']['rescored_within_tol']['tol']})"
+                      for k, v in sorted(pop["seeded"].get("rescored_within_tol", {}).get("scores", {}).items()))
+              if pop["seeded"].get("rescored_within_tol") else "") + " |"] if pop.get("seeded") else []),
         *([f"| improves/crossovers with their parent's output (B1) | "
             f"{sum(1 for c in pop['candidates'].values() if c.get('same_output_as_parent'))} of "
             f"{sum(1 for c in pop['candidates'].values() if c.get('same_output_as_parent') is not None)} |"]

@@ -234,7 +234,22 @@ _refuse "a script naming another source candidate" "seed_from = \"$WSRC\"|seed_u
 printf "P='%s/data/train/../../candidates/c0002'\n" "$WSRC" > "$WSRC/candidates/c0001/scratch/bad.py"
 _refuse "a verified-input path climbing out with .." "seed_from = \"$WSRC\"|seed_upto = \"c0002\"" "scratch/bad.py names the source dir"
 rm -f "$WSRC/candidates/c0001/scratch/bad.py"
+# seed_rescore_tol: an evaluator re-running a nondeterministic learner scores it a hair differently
+# each time (a copy of the source with c0001's predictions nudged stands in); the baseline never may
+_nudge() { python3 -c "import json,sys;f=sys.argv[1];json.dump([float(v)+0.001 for v in json.load(open(f))],open(f,'w'))" "$1"; }
+WSRC2="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-seedsrc2.XXXXXX")"; cp -a "$WSRC/." "$WSRC2/"
+_nudge "$WSRC2/candidates/c0001/out/predictions-search.json"
+_refuse "a re-score off by a hair, with no seed_rescore_tol" "seed_from = \"$WSRC2\"|seed_upto = \"c0002\"" "c0001 re-scores here to"
+_d="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-seedtol.XXXXXX")"
+scripted_repo "$_d" acc-seed-tol 5 "seed_from = \"$WSRC2\"|seed_upto = \"c0002\"|seed_rescore_tol = 0.01"
+assert_ok   "B2: a draft re-scoring within seed_rescore_tol seeds, and population.json and REPORT say so" \
+  bash -c 'cd "$0" && LAB_ROOT="$0" timeout 120 tools/lab run --once --poll-sec 1 >out.txt 2>&1; python3 -c "import json,sys;p=json.load(open(\"population.json\"));sys.exit(0 if list(p[\"seeded\"][\"rescored_within_tol\"][\"scores\"])==[\"c0001\"] else 1)"' "$_d"
+[ "${KEEP:-0}" = "1" ] || rm -rf "$_d"
+_nudge "$WSRC2/candidates/c0000/out/predictions-search.json"
+_refuse "a baseline off by a hair, even with seed_rescore_tol" "seed_from = \"$WSRC2\"|seed_upto = \"c0002\"|seed_rescore_tol = 0.01" "c0000 re-scores here to"
+[ "${KEEP:-0}" = "1" ] || rm -rf "$WSRC2"
 [ "${KEEP:-0}" = "1" ] || rm -rf "$_d" "$_badlab"
+assert_fail "B2: campaign check refuses seed_rescore_tol without seed_from, or past 0.05" bash -c 'd=$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-seedck.XXXXXX"); cp campaign.toml "$d/c.toml"; sed -i "s/^seed_upto.*/&\nseed_rescore_tol = 0.06/" "$d/c.toml"; "$0" campaign check "$d/c.toml"' "$LABS"
 assert_fail "B2: campaign check refuses seed_from without seed_upto" bash -c 'd=$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-seedck.XXXXXX"); cp campaign.toml "$d/c.toml"; sed -i "/^seed_upto/d" "$d/c.toml"; "$0" campaign check "$d/c.toml"' "$LABS"
 [ "${KEEP:-0}" = "1" ] || rm -rf "$WSRC" "$WSEED"
 
