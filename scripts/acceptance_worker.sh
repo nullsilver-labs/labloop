@@ -235,8 +235,9 @@ printf "P='%s/data/train/../../candidates/c0002'\n" "$WSRC" > "$WSRC/candidates/
 _refuse "a verified-input path climbing out with .." "seed_from = \"$WSRC\"|seed_upto = \"c0002\"" "scratch/bad.py names the source dir"
 rm -f "$WSRC/candidates/c0001/scratch/bad.py"
 # seed_rescore_tol: an evaluator re-running a nondeterministic learner scores it a hair differently
-# each time (a copy of the source with c0001's predictions nudged stands in); the baseline never may
-_nudge() { python3 -c "import json,sys;f=sys.argv[1];json.dump([float(v)+0.001 for v in json.load(open(f))],open(f,'w'))" "$1"; }
+# each time (a copy of the source with c0001's predictions nudged by 1e-5 stands in: about 1e-3 on this
+# fixture's -mse of ~5500, inside 0.01, far past the exact check); the baseline never may
+_nudge() { python3 -c "import json,sys;f=sys.argv[1];json.dump([float(v)+1e-5 for v in json.load(open(f))],open(f,'w'))" "$1"; }
 WSRC2="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-seedsrc2.XXXXXX")"; cp -a "$WSRC/." "$WSRC2/"
 _nudge "$WSRC2/candidates/c0001/out/predictions-search.json"
 _refuse "a re-score off by a hair, with no seed_rescore_tol" "seed_from = \"$WSRC2\"|seed_upto = \"c0002\"" "c0001 re-scores here to"
