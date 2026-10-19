@@ -20,9 +20,10 @@ WORKR="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-recovery.XXXXXX")"
 WORKB="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-binary.XXXXXX")"
 WORKL="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-legacy.XXXXXX")"
 WORKV="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-unknown-policy.XXXXXX")"
+WORKX="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-index.XXXXXX")"
 cleanup_findings() {
-  if [ "${KEEP:-0}" = "1" ]; then echo "kept: $WORKF $PRIVF $CAPF $WORKR $WORKB $WORKL $WORKV"
-  else rm -rf "$WORKF" "$PRIVF" "$CAPF" "$WORKR" "$WORKB" "$WORKL" "$WORKV"; fi
+  if [ "${KEEP:-0}" = "1" ]; then echo "kept: $WORKF $PRIVF $CAPF $WORKR $WORKB $WORKL $WORKV $WORKX"
+  else rm -rf "$WORKF" "$PRIVF" "$CAPF" "$WORKR" "$WORKB" "$WORKL" "$WORKV" "$WORKX"; fi
 }
 _saved_root_f="$LAB_ROOT"
 
@@ -163,7 +164,8 @@ KNOBS = {
               "trainable_params": 100},
     "c0002": {"lr": 0.003, "orders": [1, 2], "final_loss": 0.3, "seed": 13,
               "holdout_acc": 0.9},
-    "c0003": {"lr": 0.003, "orders": [1, 2, 3], "final_loss": 0.2, "seed": 14},
+    "c0003": {"lr": 0.003, "orders": [1, 2, 3], "final_loss": 0.2, "seed": 14,
+              "last_logged_loss": 0.21, "last_logged_step": 400},
     "c0004": {"lr": 0.003, "orders": [1, 2, 3], "wall_seconds": 3.5},
     "c0005": {"lr": 0.01, "orders": [1, 2, 3], "sched": {"warmup": 10}},
 }
@@ -201,7 +203,8 @@ $2" "$WORKF/tools"; }
 
 v3py "no outcome key reaches the v3 index" '
 assert sorted(ROWS) == ["lr", "orders", "sched"], sorted(ROWS)
-for k in ("final_loss", "seed", "trainable_params", "wall_seconds", "holdout_acc"):
+for k in ("final_loss", "seed", "trainable_params", "wall_seconds", "holdout_acc",
+          "last_logged_loss", "last_logged_step"):
     assert k + ":" not in TEXT, k
 assert REC["knobs"] == ["lr", "orders", "sched"], REC
 '
@@ -737,6 +740,55 @@ assert_ok   "lab validate accepts the campaign"               "$LABB" validate
 assert_ok   "the next job card renders around the unreadable summary" \
             bash -c 'for d in candidates/c*; do "$0" job card "$d" >/dev/null || exit 1; done' "$LABB"
 unset FINDING_BAD
+
+# --- index-v1: parents' cards, a constant digest, and `lab index` ---------------
+findings_repo "$WORKX"
+sed -e 's|mode = "findings-v1"|mode = "index-v1"\nknobs = "out/memory_config.json"|' \
+    -e 's/id   = "acc-findings"/id   = "acc-index"/' \
+    -e 's/max_candidates = 10/max_candidates = 6/' "$WORKF/campaign.toml" > "$WORKX/campaign.toml"
+cd "$WORKX" || return 1
+export LAB_ROOT="$WORKX"
+unset FAIL_ON FINDING_BAD FINDING_PRIVATE_PATH
+LABX="$WORKX/tools/lab"
+assert_ok   "campaign check accepts index-v1 with a knobs file" "$LABX" campaign check campaign.toml
+printf '\n[memory.embedder]\nurl = "http://127.0.0.1:9"\nmodel = "none"\n' | cat campaign.toml - > emb-down.toml
+assert_ok   "campaign check accepts an embedder and warns that it is down" bash -c '"$0" campaign check emb-down.toml 2>&1 | grep -q "embedder: http://127.0.0.1:9"' "$LABX"
+sed 's|mode = "index-v1"|mode = "findings-v3"|' emb-down.toml > emb-v3.toml
+assert_fail "an embedder under another memory mode is refused"  "$LABX" campaign check emb-v3.toml
+printf '\n[memory.embedder]\nurl = "http://127.0.0.1:9"\nmodel = "none"\ntemperature = 1\n' | cat campaign.toml - > emb-bad.toml
+assert_fail "an unknown embedder key is refused"              "$LABX" campaign check emb-bad.toml
+rm -f emb-down.toml emb-v3.toml emb-bad.toml
+assert_ok   "an index-v1 campaign runs to completion"         timeout 300 "$LABX" run --poll-sec 1
+assert_eq   "it records the index-v1 policy" \
+  "$(python3 -c "import json;print(json.load(open('population.json'))['memory']['policy'])")" index-v1
+assert_eq   "every settled candidate has a card" \
+  "$(ls candidates/*/finding.json | wc -l)" "$(ls -d candidates/c0* | wc -l)"
+assert_ok   "the loop wrote the index, and it holds every settled candidate" python3 -c "
+import json, sqlite3
+n = len(json.load(open('population.json'))['candidates'])
+con = sqlite3.connect('index/experiments.sqlite3')
+assert con.execute('select count(*) from candidates').fetchone()[0] == n, n"
+assert_ok   "a rebuild by hand is byte-identical to the loop's" bash -c 'cp index/experiments.sqlite3 .idx && "$0" index build >/dev/null && cmp -s .idx index/experiments.sqlite3' "$LABX"
+assert_ok   "a job with a parent carries only its parents' cards, the digest and the instruction" python3 -c "
+import glob, json
+seen = 0
+for f in sorted(glob.glob('candidates/*/job.json')):
+    j = json.load(open(f)); fd = j['findings']
+    if not j['parents']:
+        continue
+    seen += 1
+    assert fd['policy'] == 'index-v1', f
+    assert [c['id'] for c in fd['cards']] == sorted(p['id'] for p in j['parents']), (f, fd['cards'])
+    assert 'tools/lab index knob' in fd['rendered'] and 'The population, in brief' in fd['rendered'], f
+    assert 'Knob ledger' not in fd['rendered'], f
+assert seen, 'no job with a parent'"
+assert_ok   "the digest does not grow with the population" python3 -c "
+import glob, json
+sizes = [(len(j['parents']), j['findings']['bytes']) for j in (json.load(open(f)) for f in sorted(glob.glob('candidates/*/job.json'))) if j.get('findings') and j['parents']]
+one = [b for n, b in sizes if n == 1]
+assert one and max(one) - min(one) < 1500, sizes"
+assert_ok   "an index-v1 job card renders"                    bash -c 'for d in candidates/c*; do "$0" job card "$d" >/dev/null || exit 1; done' "$LABX"
+assert_ok   "lab validate passes on an index-v1 campaign"     "$LABX" validate
 
 # --- legacy: a campaign without [memory] is untouched -------------------------
 findings_repo "$WORKL"

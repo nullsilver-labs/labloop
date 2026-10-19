@@ -1,0 +1,3118 @@
+{
+ "arm": "B",
+ "statements": [
+  {
+   "candidate": "c0001",
+   "about": [
+    "c0000"
+   ],
+   "quote": "This is well above the trivial\n  baseline (0.0625)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "c0001's own summary reported a training loss of **0.0007** (near-total memorization of\nthe training batches)",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0001/summary.md"
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "together with a **held-out-wording self-score of 0.8945** (wording\n7 of 8, held out of training)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "but an actual hidden-split fitness of only **0.562255859375**",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "c0001's optimizer used `weight_decay=0.0`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/train_predict.py"
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "same architecture (hashed n-gram Engram memory, orders 1/2/3, 4 hash\nheads per order, `50021 \u00d7 128` tables, single attach point gated into the residual\nstream after decoder block 2, dense AdamW over the engram parameters only, frozen\nQwen3-0.6B backbone)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/engram.py + pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "`train_predict.py`\ngains a `--weight-decay` CLI argument (default 0.01, previously hardcoded 0.0)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/train_predict.py"
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "Everything else (orders, heads, table size, embed dim,\nlayer index, batch size, lr, train-seconds, holdout-wordings) is held identical to\nc0001's run",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "essentially the same near-zero training loss\n  as c0001's 0.0007",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "**Held-out wording accuracy 0.6104** on the same 4096 held-out wordings (wording 7 of\n  8) c0001 was scored on",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "identical architecture, identical training budget \u2014 the only\n  difference is `weight_decay=0.0 \u2192 0.01`",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/records.json + pack/B/c0001/memory_config.json",
+   "note": "The job-card seed also differs (1624675336 vs c0001's 1367112184), which this lineage later shows matters (see c0003's own report)."
+  },
+  {
+   "candidate": "c0002",
+   "about": [
+    "c0001"
+   ],
+   "quote": "c0001 remains the best result in the population (held-out self-score 0.8945, fitness 0.562255859375)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": "True of every candidate with a lower id at the time (c0000, c0001)."
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "the engram\nalone (c0001) sometimes emits a malformed or off-menu answer, which is *guaranteed*\nwrong",
+   "type": "M",
+   "rating": "unsupported",
+   "source": "pack/B/c0001/summary.md",
+   "note": "c0001 reported zero malformed answers on all 8192 predictions; off-menu output is not recorded in any of its artifacts."
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0000"
+   ],
+   "quote": "c0000's only strength is that it is *always* a well-formed, in-domain answer\n(the per-attribute training majority), just usually wrong (chance, 1/16)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + task.md"
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "`code/engram.py` in full (hashed n-gram `EngramMemory`,\n  3 orders \u00d7 4 hash heads, `50021\u00d7128` tables, zero-init projection, sigmoid gate into\n  the residual stream after decoder block 2)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/engram.py",
+   "note": "Verified byte-identical."
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "`train_predict.py`'s data loading, left-padded collation, dense AdamW training loop,\n  `predict()`'s greedy decode / first-word truncation, `assert_frozen()`, and all\n  hyperparameters (batch 64, lr 3e-3,\n  480s training budget, holdout-wordings 1, layer-idx 2, orders 1/2/3, 4 heads, table\n  size 50021, embed dim 128)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/train_predict.py + pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "that is c0001's stated strength (0.89 held-out-wording accuracy in its own run)",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0001/summary.md"
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0000"
+   ],
+   "quote": "`attribute_stats()` (per-attribute majority training\n  answer + the observed 16-value set, both computed from `facts.json` only \u2014 the exact\n  logic c0000's `run.sh` inlines)",
+   "type": "M",
+   "rating": "unsupported",
+   "source": "task.md",
+   "note": "c0000's code is not in the pack, so the claim about what its run.sh inlines cannot be checked; task.md's description of the trivial baseline is consistent with it."
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "c0001's hardcoded `0` was for its own job",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/run.sh + pack/B/c0001/config.json"
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "**The raw engram's held-out-wording accuracy on this run (0.6628) is well below\n  c0001's own run of the identical architecture and hyperparameters (0.8945)**, despite\n  a comparably low final training loss (0.0004 vs 0.0007)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "The only deliberate differences are the job-card seed\n  (1809667739 vs c0001's 1367112184, which changes weight init, hash salts and data\n  shuffling) and the assigned GPU",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0003/config.json"
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "It also explains why the fallback fired far more often here (44.7% of final\n  predictions) than in c0001's run",
+   "type": "M",
+   "rating": "unsupported",
+   "source": "pack/B/c0001/summary.md",
+   "note": "c0001 has no fallback and reports no such number, so there is nothing to compare against."
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "this looks like the near-zero-loss/high-\n  held-out-accuracy relationship is seed-sensitive for this architecture",
+   "type": "C",
+   "rating": "unsupported",
+   "source": "pack/B/c0001/summary.md",
+   "note": "One run per seed; no source can confirm seed sensitivity (hardware also differed, as the summary says)."
+  },
+  {
+   "candidate": "c0003",
+   "about": [
+    "c0001"
+   ],
+   "quote": "This is exactly the kind of gap a single-attach-point\n  architecture with only 480s of training was flagged as sensitive to in c0001's own\n  summary",
+   "type": "R",
+   "rating": "unsupported",
+   "source": "pack/B/c0001/summary.md",
+   "note": "c0001 listed the single attach point as a possible cause of its gap to the LoRA reference; it never flagged sensitivity to run-to-run/seed variation."
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "c0002 added `weight_decay=0.01` to the AdamW optimizer, applied uniformly to every\nengram parameter including the three `50021 \u00d7 128` hash tables",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py"
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "hidden-split fitness went **up** slightly (0.562255859375 \u2192 0.5941162109375)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "but the held-out-wording\nself-score went **down sharply** (0.8945 \u2192 0.6104), a large regression on the same\narchitecture and budget",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json + pack/B/c0002/memory_config.json"
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "c0002's own write-up proposed a mechanism and a fix it did not\ntry: decoupled AdamW weight decay shrinks **every** row of a sparse lookup table on\n**every** optimizer step",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0002/summary.md"
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Most rows are touched by only a handful of the 3109 training steps",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json"
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "which itself\nadded `weight_decay=0.01` on top of c0001's `weight_decay=0.0`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json + pack/B/c0001/code/train_predict.py"
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "`engram.py` is untouched (tables were already a distinct\n`nn.ParameterList`, so no architecture change was needed)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/engram.py",
+   "note": "Verified byte-identical."
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0002"
+   ],
+   "quote": "c0002's `run.sh` had its own job-card seed\n(`1624675336`) hardcoded into the training invocation",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/run.sh + pack/B/records.json"
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "essentially the same near-zero training loss as c0001 (0.0007) and c0002\n  (0.0012)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json + pack/B/c0002/memory_config.json"
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "**Held-out wording accuracy 0.7205** on the same 4096 held-out wordings (wording 7 of\n  8, identical holdout split by construction) c0001 (0.8945) and c0002 (0.6104) were\n  scored on. This is **between the two**",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json + pack/B/c0002/memory_config.json"
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "exempting the tables from\n  decay closed about half of c0002's regression from c0001 (0.6104 \u2192 0.7205, versus the\n  0.8945 target)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json + pack/B/c0002/memory_config.json",
+   "note": "Arithmetically 39% of the gap, so 'about half' is loose but the three numbers are right."
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "some other difference between c0001 and c0002\nruns (different job-card seed only; architecture and schedule were identical)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0002/code/"
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "c0002's held-out regression coincided with a hidden-fitness *improvement* over c0001",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0004",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "same training budget as c0001/c0002",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json + pack/B/c0002/memory_config.json"
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0001"
+   ],
+   "quote": "c0001's own numbers show a large gap between its held-out-*wording* self-score\n(0.8945, on wording 7/8 held from training) and its actual hidden-split fitness\n(0.5623)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json + pack/B/records.json"
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0001"
+   ],
+   "quote": "So c0001's held-out\nwording 7 was never seen *for that entity*, but was seen (with 1023 other names)\nduring training \u2014 it is not a fair test of generalising to a genuinely unseen\ntemplate.",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0001/summary.md + pack/B/c0009/code/train_predict.py",
+   "note": "The held-out wording is template index 7, withheld for every entity (train uses wordings 0-6), so it is an unseen template on known entities - the opposite of 'known template, unseen entity'. c0001's summary and train_predict.py's split confirm this, and B/c0015 states it correctly."
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0001"
+   ],
+   "quote": "`EngramMemory` looks up n-grams (orders\n1\u20133) of the tokens *immediately preceding* each position. At the answer-generation\nposition, the preceding tokens are just `Answer:`/`:`, not the person's name",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/engram.py"
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0001"
+   ],
+   "quote": "attach point (layer 2), gate, optimizer (dense AdamW), lr (3e-3), batch size (64),\ntraining budget (480s), and orders 1\u20133 mechanism are all unchanged from c0001",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/ + pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0001"
+   ],
+   "quote": "The entity table adds ~262K params (~1.3% on\ntop of c0001's 20.65M)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json + pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0001"
+   ],
+   "quote": "more steps than c0001's 3140 in the same 480s",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0001"
+   ],
+   "quote": "final training loss **0.00023** \u2014 lower than c0001's 0.0007",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0001"
+   ],
+   "quote": "this\n  is a **drop from c0001's 0.8945 on the same self-scored metric**",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0001"
+   ],
+   "quote": "this metric only tests a *known* template (wording 7 was trained on with the other 1023\n  entities) applied to a *new* entity for that fact",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0001/summary.md + pack/B/c0009/code/train_predict.py",
+   "note": "The held-out wording is template index 7, withheld for every entity (train uses wordings 0-6), so it is an unseen template on known entities - the opposite of 'known template, unseen entity'. c0001's summary and train_predict.py's split confirm this, and B/c0015 states it correctly."
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0001"
+   ],
+   "quote": "**1 malformed answer** (empty string, for\n  `e_a123c1:keepsake:dev1`, \"What token does Wonen Lurdus hold on to?\") out of 8192 \u2014\n  c0001 had zero malformed",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/summary.md"
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0004"
+   ],
+   "quote": "hardcoded `CUDA_VISIBLE_DEVICES=0`, which would\nhave collided with `c0004`'s job then running on GPU 0",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/config.json + pack/B/c0001/code/run.sh",
+   "note": "c0004's config.json records gpu 0 and c0005's records gpu 1."
+  },
+  {
+   "candidate": "c0005",
+   "about": [
+    "c0001"
+   ],
+   "quote": "20,651,904 in c0001's three orders/gate/proj",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Parent A (inherited code): c0002 (fitness 0.5941162109375, uniform `weight_decay=0.01`\nover every engram parameter)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0002/memory_config.json"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004"
+   ],
+   "quote": "Parent B (read-only): c0004 (fitness 0.563720703125, two AdamW param groups \u2014 tables\nat `table_weight_decay=0.0`, dense `proj`/`gate` at `weight_decay=0.01`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0004/memory_config.json"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0002",
+    "c0004"
+   ],
+   "quote": "Same architecture as both: hashed n-gram Engram memory, orders\n1/2/3, 4 hash heads per order, `50021 \u00d7 128` tables, single attach point gated into\nthe residual stream after decoder block 2",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/engram.py + pack/B/c0004/code/engram.py"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0002",
+    "c0005"
+   ],
+   "quote": "c0002 is the best-fitness candidate in the\n  population (0.5941)",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/records.json",
+   "note": "records.json: c0005, an earlier candidate, has fitness 0.5988. (c0005 may not have settled when this job was dispatched, but the lab's record contradicts the claim.)"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0002",
+    "c0004"
+   ],
+   "quote": "the diagnosis, stated in c0004's own summary, of *why*\n  c0002's held-out score fell so far: decoupled AdamW decay multiplies **every** row of\n  a sparse hash table by `(1 - lr\u00b7wd)` on **every** step",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0004/summary.md"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004"
+   ],
+   "quote": "c0004 tested the extreme fix (exempt tables from decay entirely) and only partially\n  recovered (0.6104 \u2192 0.7205 against a 0.8945 ceiling), concluding the sparse-forgetting\n  story was only a partial explanation.",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0004/summary.md"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0002"
+   ],
+   "quote": "c0002's own write-up named the untried alternative \u2014 \"a regularizer that only decays rows actually looked\n  up in a given step (true sparse weight decay) ... would not have this failure mode\"",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0002/summary.md"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0002"
+   ],
+   "quote": "the hardcoded seed `1624675336` (c0002's own job-card seed, not this\n  candidate's) is replaced with this candidate's actual job-card seed `2132127351`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0002/code/run.sh"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004"
+   ],
+   "quote": "recover most or all of c0004's remaining held-out-wording gap (0.7205 vs. c0001's 0.8945 ceiling) while keeping or improving on c0002's hidden-split\nfitness gain over c0001 (0.5941)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/memory_config.json, pack/B/c0001/memory_config.json, pack/B/records.json"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004"
+   ],
+   "quote": "essentially the\n  same near-zero training loss as c0001 (0.0007), c0002 (0.0012), c0004 (0.0008)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json, pack/B/c0002/memory_config.json, pack/B/c0004/memory_config.json"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004"
+   ],
+   "quote": "**Held-out wording accuracy 0.8054** on the same 4096 held-out wordings (wording 7 of\n  8, identical holdout split by construction) c0001 (0.8945), c0002 (0.6104) and c0004\n  (0.7205) were scored on",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json, pack/B/c0002/memory_config.json, pack/B/c0004/memory_config.json"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005"
+   ],
+   "quote": "This is the **best held-out score of any candidate except\n  c0001 itself** (which used no decay at all)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json, pack/B/c0003/memory_config.json, pack/B/c0004/memory_config.json, pack/B/c0005/memory_config.json",
+   "note": "True over all earlier candidates: 0.6104, 0.6772, 0.7205, 0.7898."
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004"
+   ],
+   "quote": "closing most of the gap c0002 opened\n  (0.6104 \u2192 0.8054, vs. the 0.8945 ceiling) and clearly ahead of c0004's partial fix\n  (0.7205)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json, pack/B/c0004/memory_config.json, pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0004"
+   ],
+   "quote": "touched-row-only decay removes\nessentially all of the gradient-free forgetting c0004 diagnosed",
+   "type": "C",
+   "rating": "unsupported",
+   "source": "pack/B/c0004/summary.md",
+   "note": "A single run with its own seed; no source establishes the mechanism."
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004"
+   ],
+   "quote": "c0004's own lineage already showed held-out\nself-score direction has not reliably predicted hidden-split fitness direction (c0002's\nheld-out regression coincided with a hidden-fitness *improvement* over c0001)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0002/memory_config.json"
+  },
+  {
+   "candidate": "c0006",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "which is the part of c0002's change\nthis candidate's hypothesis credits with c0002's hidden-fitness gain over c0001",
+   "type": "C",
+   "rating": "unsupported",
+   "source": "pack/B/c0002/summary.md",
+   "note": "c0002's artifacts do not attribute its fitness gain to decay on the dense combiner."
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "c0005 added a phrasing-invariant \"entity identity\" table (one flat 128-dim vector per\nentity, forward-filled from the name to every later position) and it raised fitness\nover c0001 (0.5623 \u2192 0.5987)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0005/code/engram.py"
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "c0005's own held-out-wording self-score *dropped*\n(0.8945 \u2192 0.7898) despite a lower training loss",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json + pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0005"
+   ],
+   "quote": "c0005's summary proposed, but did not test, an explanation: a single flat per-entity vector is nearly injective (one vector\nuniquely identifies the person), so gradient descent can drive training loss toward\nzero by leaning on that channel alone",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0005/summary.md"
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "near their uniform(-0.02,0.02) init, effectively untrained",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/code/engram.py"
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0005"
+   ],
+   "quote": "Attach\npoint (layer 2), gate, optimizer (dense AdamW), lr (3e-3), batch size (64), training\nbudget (480s), and orders 1-3 mechanism are all unchanged from c0005.",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/code/ + pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0005"
+   ],
+   "quote": "1 tail-3-token collision across 1024 entities, unchanged from\nc0005",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0005"
+   ],
+   "quote": "fixed the value inherited verbatim from c0005's `run.sh`, which\nstill had c0005's job-card seed `375742728` hardcoded",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/code/run.sh + pack/B/records.json"
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0005"
+   ],
+   "quote": "essentially the same step count as c0005's 4252, so the\n  extra router/reshaped-table math did not meaningfully slow training",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0005/memory_config.json",
+   "note": "c0005 ran 4255 steps, not 4252 (4252 is this candidate's own step count)."
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0005"
+   ],
+   "quote": "Final training loss **0.00028** \u2014 almost\n  identical to c0005's 0.00023",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "this is **lower than c0005's 0.7898**,\n  continuing the same direction c0005 saw relative to c0001 (0.8945 \u2192 0.7898 \u2192 0.7153)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json + pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "this metric tests a *known* template on\n  a *new* entity, which mostly rewards models that can shortcut via the easy,\n  near-injective identity signal",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0001/summary.md + pack/B/c0009/code/train_predict.py",
+   "note": "The held-out wording is template index 7, withheld for every entity (train uses wordings 0-6), so it is an unseen template on known entities - the opposite of 'known template, unseen entity'. c0001's summary and train_predict.py's split confirm this, and B/c0015 states it correctly."
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0005"
+   ],
+   "quote": "the same 1-malformed rate c0005 reported (different\n  question)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/summary.md"
+  },
+  {
+   "candidate": "c0007",
+   "about": [
+    "c0005"
+   ],
+   "quote": "Per c0005's own analysis (which this candidate's result is\n  consistent with, not proof of), this metric measures something different from what\n  the hidden split needs",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0005/summary.md"
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0004"
+   ],
+   "quote": "c0004 exempted the sparse hash tables from weight decay (`table_weight_decay=0.0`) but\nleft `weight_decay=0.01` on the dense `proj`/`gate` combiner",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/memory_config.json"
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004"
+   ],
+   "quote": "held-out-wording self-score recovered only partway (0.6104 \u2192 0.7205)\ntoward c0001's zero-decay ceiling of 0.8945 \u2014 about half the regression c0002 introduced",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json, pack/B/c0002/memory_config.json, pack/B/c0004/memory_config.json",
+   "note": "'About half' is loose (39%); the numbers are right."
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0004"
+   ],
+   "quote": "c0004's own write-up named the untested half of the explanation as the next single-variable step: \"decay on proj/gate alone versus none at all, isolated from the table-decay question this candidate\nanswers.\"",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0004/summary.md"
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004"
+   ],
+   "quote": "which itself set `table_weight_decay=0.0` while keeping `weight_decay=0.01`\non `proj`/`gate`, on top of c0002's uniform `weight_decay=0.01`, on top of c0001's\n`weight_decay=0.0`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/memory_config.json, pack/B/c0002/memory_config.json, pack/B/c0001/code/train_predict.py"
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0004"
+   ],
+   "quote": "`engram.py` is untouched. `train_predict.py` is untouched (the\n`--table-weight-decay` two-group AdamW plumbing from c0004 already supports this",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/code/",
+   "note": "Verified byte-identical."
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0004"
+   ],
+   "quote": "`run.sh` changes `--weight-decay 0.01` to `--weight-decay 0.0`\n(dense `proj`/`gate` group), keeping `--table-weight-decay 0.0`\n(sparse tables) unchanged from c0004, and uses this candidate's own job-card seed\n`1962037190` in place of c0004's `1121120681`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0004/code/run.sh"
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004"
+   ],
+   "quote": "same near-zero range as c0001 (0.0007), c0002\n  (0.0012), c0004 (0.0008)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json, pack/B/c0002/memory_config.json, pack/B/c0004/memory_config.json"
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004"
+   ],
+   "quote": "**Held-out wording accuracy 0.8010** on the same 4096 held-out wordings (wording 7 of\n  8, identical holdout split by construction) c0001 (0.8945), c0002 (0.6104), and c0004\n  (0.7205) were scored on",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json, pack/B/c0002/memory_config.json, pack/B/c0004/memory_config.json"
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004"
+   ],
+   "quote": "This is **the highest of the three decay variants after c0001\n  itself**",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json + pack/B/c0004/memory_config.json",
+   "note": "True of the three variants enumerated here (c0002, c0004, c0008); c0006's touched-row-only decay reached 0.8054."
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0002",
+    "c0004"
+   ],
+   "quote": "bought a further +0.0805 over c0004, roughly\n  matching or slightly exceeding the table-decay fix's own contribution (+0.1101 over\n  c0002)",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0002/memory_config.json + pack/B/c0004/memory_config.json",
+   "note": "Both deltas are right, but +0.0805 is smaller than +0.1101, so it neither matches nor exceeds it."
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0001"
+   ],
+   "quote": "0.8010 is close to but still 0.0935 below\n  c0001's 0.8945 zero-decay-by-construction ceiling",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0001"
+   ],
+   "quote": "with the only remaining known difference between this run and c0001 being the job-card seed",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/ + pack/B/records.json"
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0002",
+    "c0004"
+   ],
+   "quote": "higher than either single-mechanism fix tried so far (c0004's\ntable-only exemption alone reached 0.7205)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0004/memory_config.json",
+   "note": "Scoped to the two fixes enumerated (c0002's and c0004's); c0006's sparse-decay fix, on another branch, reached 0.8054."
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004"
+   ],
+   "quote": "c0004 already noted that held-out self-score direction has not\nreliably predicted hidden-split fitness direction in this lineage (c0002's held-out\nregression coincided with a hidden-fitness *improvement* over c0001)",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0004/summary.md"
+  },
+  {
+   "candidate": "c0008",
+   "about": [
+    "c0002"
+   ],
+   "quote": "This confirms decay on the dense combiner was a real,\nindependent contributor to c0002's regression",
+   "type": "C",
+   "rating": "unsupported",
+   "source": "pack/B/c0002/summary.md",
+   "note": "Single run, different seed from both c0001 and c0002; the sources cannot confirm the attribution."
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005",
+    "c0008"
+   ],
+   "quote": "Parent: `c0005` (fitness 0.5987548828125, best so far)",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/records.json",
+   "note": "records.json: c0008, an earlier candidate, has fitness 0.6351. (c0008 may not have settled at dispatch time, but the lab's record contradicts 'best so far'.)"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "c0005 added a phrasing-invariant entity-identity channel and improved fitness\n(0.5623 \u2192 0.5988)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "held-out-wording accuracy\n(same 8 templates, unseen entity) *dropped* relative to c0001 (0.8945 \u2192 0.7898)\ndespite lower training loss",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0001/summary.md + pack/B/c0009/code/train_predict.py",
+   "note": "The held-out wording is template index 7, withheld for every entity (train uses wordings 0-6), so it is an unseen template on known entities - the opposite of 'known template, unseen entity'. c0001's summary and train_predict.py's split confirm this, and B/c0015 states it correctly. The two accuracy numbers themselves are correct."
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "speculated \u2014 without testing \u2014 that the new easy,\nnear-injective entity channel may have starved the harder attribute-discriminating\nlocal n-gram channels (orders 1-3) of learning signal",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0005/summary.md"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "`EngramMemory`'s orders 1-3 only ever look up a window (1-3 tokens) ending at the\n*current* position",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/code/engram.py"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "This is exactly the same structural gap c0005 identified and fixed for\n*entity identity* (via forward-filling from the name's position) \u2014 but left unfixed\nfor the *attribute* signal.",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0005/summary.md"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "Everything else \u2014 attach point (layer 2),\ngate, optimizer (dense AdamW), lr (3e-3), batch size (64), training budget (480s),\norders 1-3 mechanism, and c0005's entity channel \u2014 is unchanged.",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/code/ + pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "`run.sh` had c0005's own job-card seed (`375742728`) hardcoded",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/code/run.sh + pack/B/records.json"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "The new table adds 6,402,688 params (`bag_table`, 50021\u00d7128) plus 131,072 to `proj`'s\ninput weight (mem_dim grew by one `embed_dim`) = 6,533,760 new params on top of\nc0005's 20,914,176",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json + pack/B/c0009/memory_config.json"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "confirms same 1 tail-bigram collision as c0005",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "close to c0005's 272,320 in the\n  same 480s",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "a\n  large jump from c0005's 0.7898 and above even c0001's 0.8945",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json + pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "this metric (known templates, unseen entity) is explicitly *not* the hidden-split metric",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0001/summary.md + pack/B/c0009/code/train_predict.py",
+   "note": "The held-out wording is template index 7, withheld for every entity (train uses wordings 0-6), so it is an unseen template on known entities - the opposite of 'known template, unseen entity'. c0001's summary and train_predict.py's split confirm this, and B/c0015 states it correctly."
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "malformed-answer count went down, not up (0 vs c0005's 1)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/summary.md"
+  },
+  {
+   "candidate": "c0009",
+   "about": [
+    "c0005"
+   ],
+   "quote": "if\n  the bag channel gives the attribute-discriminating signal a direct, position-independent\n  path to the answer position, orders 1-3 (and now the bag channel too) no longer have\n  to depend on attention relaying a signal that may have gotten crowded out",
+   "type": "C",
+   "rating": "unsupported",
+   "source": "pack/B/c0005/summary.md",
+   "note": "Explicitly unablated; no source confirms the mechanism."
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0008",
+    "c0009"
+   ],
+   "quote": "Parent A: **c0008** (fitness 0.6351318359375, best in the\npopulation)",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/records.json",
+   "note": "records.json: c0009, an earlier candidate, has fitness 0.7712."
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0005"
+   ],
+   "quote": "Parent B: **c0005** (fitness 0.5987548828125), read-only",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0008"
+   ],
+   "quote": "zero\n  AdamW weight decay on both the sparse hash tables (`--table-weight-decay 0.0`) and\n  the dense `proj`/`gate` combiner (`--weight-decay 0.0`), in c0008's two-parameter-group\n  AdamW",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0008/memory_config.json"
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0006",
+    "c0008",
+    "c0009"
+   ],
+   "quote": "produced the best held-out-wording self-score (0.8010) and best hidden fitness (0.6351) seen in the population so far",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/records.json + pack/B/c0001/memory_config.json + pack/B/c0006/memory_config.json",
+   "note": "c0001 (0.8945), c0006 (0.8054) and c0009 (0.9990) all have higher held-out scores, and c0009's fitness is 0.7712."
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0005"
+   ],
+   "quote": "a 4th,\n  phrasing-invariant \"entity identity\" table addressed by an exact match of the tail\n  (last 3 tokens) of each entity's tokenized name, forward-filled causally",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/code/engram.py + pack/B/c0005/summary.md"
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "c0005's\n  own held-out-wording self-score dropped relative to its parent c0001 (0.8945 \u2192 0.7898),\n  but its **hidden-split fitness improved over its own parent** (c0001: 0.5623 \u2192 c0005:\n  0.5987, +0.0365)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "held-out wording tests a *known* template on an unseen entity",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0001/summary.md + pack/B/c0009/code/train_predict.py",
+   "note": "The held-out wording is template index 7, withheld for every entity (train uses wordings 0-6), so it is an unseen template on known entities - the opposite of 'known template, unseen entity'. c0001's summary and train_predict.py's split confirm this, and B/c0015 states it correctly."
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0004",
+    "c0008"
+   ],
+   "quote": "the same rationale c0004/c0008 used for exempting the n-gram tables\n  applies to it",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0004/summary.md + pack/B/c0008/summary.md"
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0005",
+    "c0008"
+   ],
+   "quote": "I also kept c0005's fix of not hardcoding `CUDA_VISIBLE_DEVICES=0` in\n  `run.sh` (c0008 still hardcodes it; c0005's write-up notes this caused a real GPU\n  collision with a concurrently-running job in that lineage)",
+   "type": "M",
+   "rating": "unsupported",
+   "source": "pack/B/c0005/summary.md + pack/B/c0008/code/run.sh",
+   "note": "'c0008 still hardcodes it' is right; c0005's write-up says the hardcoded value *would have* collided, not that a collision occurred."
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0005",
+    "c0008"
+   ],
+   "quote": "Everything else \u2014 attach point (residual stream after decoder block 2, gated\nsigmoid), orders 1-3 hash tables (`50021 \u00d7 128`, 4 heads/order), lr `3e-3`, batch size\n64, 480s training budget, holdout-wordings 1 \u2014 is unchanged from both parents",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0008/memory_config.json + pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0005",
+    "c0008"
+   ],
+   "quote": "Seed: this candidate's own job-card seed **2082426983** (not c0008's `1962037190` nor\nc0005's `375742728`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0005",
+    "c0008"
+   ],
+   "quote": "Final training loss\n  **0.0019** \u2014 same near-zero range as both parents (c0008: 0.0026, c0005: 0.00023)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0008/memory_config.json + pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0005"
+   ],
+   "quote": "Entity index: 1024 entities, 1 tail-bigram collision (same as c0005's build",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0005",
+    "c0008"
+   ],
+   "quote": "This is **higher\n  than both parents' held-out numbers** (c0008: 0.8010, c0005: 0.7898)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0008/memory_config.json + pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0005",
+    "c0007",
+    "c0009"
+   ],
+   "quote": "is the best held-out score of any candidate that includes the entity channel",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0009/memory_config.json",
+   "note": "c0009 also carries c0005's entity channel and scored 0.9990 held-out."
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0005"
+   ],
+   "quote": "c0002's held-out regression coincided with a hidden-fitness improvement over c0001;\nc0005's held-out regression coincided with a hidden-fitness improvement over c0001 too",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0010",
+   "about": [
+    "c0005"
+   ],
+   "quote": "20,914,176 trainable params, same as c0005's",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0010"
+   ],
+   "quote": "Parent: **c0010** (fitness 0.6219482421875)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0005",
+    "c0008",
+    "c0010"
+   ],
+   "quote": "c0010 combined c0008's zero-weight-decay-everywhere (`weight_decay=0.0`,\n`table_weight_decay=0.0`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/memory_config.json + pack/B/c0008/memory_config.json"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0008",
+    "c0009"
+   ],
+   "quote": "fitness 0.6351318359375, best in the population) with\nc0005's entity-identity table",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/records.json",
+   "note": "c0009, an earlier candidate, has fitness 0.7712."
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0005",
+    "c0008",
+    "c0010"
+   ],
+   "quote": "c0010's held-out-wording self-score (0.8518)\nbeat both parents (c0008: 0.8010, c0005: 0.7898)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/memory_config.json, pack/B/c0008/memory_config.json, pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0008",
+    "c0010"
+   ],
+   "quote": "yet its hidden-split fitness\n(0.6219482421875) was WORSE than c0008 alone (0.6351318359375)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0002",
+    "c0005"
+   ],
+   "quote": "the held-out/hidden divergence this lineage has already seen twice (c0002, c0005)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0002/memory_config.json + pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0002",
+    "c0004",
+    "c0008"
+   ],
+   "quote": "`entity_weight_decay=0.01` (the value used lineage-wide by c0002/c0004 before c0008's zero-decay experiment)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json, pack/B/c0004/memory_config.json, pack/B/c0008/memory_config.json"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0008",
+    "c0010"
+   ],
+   "quote": "a THIRD group alongside the n-gram tables\n(`table_weight_decay=0.0`, unchanged from c0008/c0010) and the dense proj/gate combiner\n(`weight_decay=0.0`, unchanged from c0008/c0010)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0008/memory_config.json + pack/B/c0010/memory_config.json"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0008"
+   ],
+   "quote": "This isolates the one group\nhypothesised to overfit without touching the two settings c0008 already showed help",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0008/summary.md"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0010"
+   ],
+   "quote": "Everything else \u2014 architecture (orders 1-3, 4 heads/order, `50021\u00d7128` tables, entity\nanchor mechanism, attach point after decoder block 2, gated residual add), lr `3e-3`,\nbatch size 64, 480s training budget, holdout-wordings 1 \u2014 is unchanged from c0010.",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/code/ + pack/B/c0010/memory_config.json"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0010"
+   ],
+   "quote": "Trainable params: 20,914,176 \u2014 identical count to c0010",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/memory_config.json"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0005",
+    "c0010"
+   ],
+   "quote": "Entity index: 1024 entities, 1 tail-bigram collision \u2014 identical to c0005/c0010",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json + pack/B/c0010/memory_config.json"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0008",
+    "c0010"
+   ],
+   "quote": "same\n  near-zero range as c0010 (0.0019) and c0008 (0.0026)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/memory_config.json + pack/B/c0008/memory_config.json"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0010"
+   ],
+   "quote": "This is **higher**\n  than c0010's 0.8518",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/memory_config.json"
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0001",
+    "c0005",
+    "c0008",
+    "c0010"
+   ],
+   "quote": "the best\nheld-out-wording self-score of any candidate in this lineage so far (0.8811, beating\nc0010's 0.8518, c0008's 0.8010, c0005's 0.7898, and approaching c0001's zero-decay,\nno-entity-table ceiling of 0.8945)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0010/memory_config.json, pack/B/c0008/memory_config.json, pack/B/c0005/memory_config.json, pack/B/c0001/memory_config.json",
+   "note": "True of the enumerated ancestors; c0009, on a different branch, scored 0.9990."
+  },
+  {
+   "candidate": "c0011",
+   "about": [
+    "c0002",
+    "c0005",
+    "c0010"
+   ],
+   "quote": "held-out wording and hidden-split\ngeneralization have repeatedly moved independently in this lineage\n(c0002, c0005, c0010 itself)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0002",
+    "c0004",
+    "c0006"
+   ],
+   "quote": "Parent (inherited code): c0006 (fitness 0.5672607421875), crossover of c0002 \u00d7 c0004,\nwhich introduced sparse (touched-row-only) weight decay on the engram tables.",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0006/memory_config.json"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0006"
+   ],
+   "quote": "Same architecture as c0006: hashed n-gram Engram memory, orders 1/2/3, 4 hash heads per\norder, `50021 \u00d7 128` tables, single attach point gated into the residual stream after\ndecoder block 2, frozen Qwen3-0.6B backbone, `weight_decay=0.01` (dense proj/gate,\nordinary decoupled AdamW decay), `table_weight_decay=0.01` (tables, touched-row-only",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json + pack/B/c0006/code/"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0006"
+   ],
+   "quote": "Same batch size (64), lr (3e-3), train-seconds\n(480), holdout-wordings (1), prompt format as c0006.",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0006"
+   ],
+   "quote": "instead of `torch.empty(table_size, embed_dim).uniform_(-0.02, 0.02)` \u2014 the\ninitialisation every ancestor back to c0001 used",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/engram.py + pack/B/c0006/code/engram.py"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0006"
+   ],
+   "quote": "c0006's own write-up named an untried follow-up: tuning the sparse-decay mechanism\nfurther.",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0006/summary.md"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0006"
+   ],
+   "quote": "a table row that is **never** hashed-to during training receives no gradient *and* is now (since c0006) exempt from decay",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/code/train_predict.py"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0006"
+   ],
+   "quote": "I expect held-out-wording accuracy to be flat-to-better than c0006's\n0.8054",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0006"
+   ],
+   "quote": "as c0006 itself noted and I repeat here \u2014 held-out\nself-score has not reliably predicted hidden-split fitness direction in this lineage\n(c0002 regressed held-out but improved fitness over c0001)",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0006/summary.md + pack/B/records.json"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0006"
+   ],
+   "quote": "`run.sh`'s hardcoded `--seed 2132127351` (c0006's own job-card seed, left over in the\n  inherited script)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0006/code/run.sh"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0006"
+   ],
+   "quote": "**final\n  training loss 0.2332** \u2014 far above c0006's 0.0009 and every other ancestor's\n  near-zero final loss",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0006"
+   ],
+   "quote": "a large regression from c0006's 0.8054, and below every ancestor in\n  this lineage except the 0.0625 trivial baseline",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json, pack/B/c0004/memory_config.json, pack/B/c0002/memory_config.json, pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0001",
+    "c0006"
+   ],
+   "quote": "`EngramMemory.__init__` already zero-initialises `proj.weight` (and\n`proj.bias`), a pre-existing \"zero-init the residual branch\" stabilisation choice\npresent unchanged since c0001.",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/engram.py"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0001",
+    "c0006"
+   ],
+   "quote": "the parent and every ancestor back\nto c0001 always had non-zero table values (from `uniform(-0.02, 0.02)` init) breaking\nthe symmetry from step 0, so this trap was latent in the architecture the whole time\nand never triggered until this change",
+   "type": "C",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/engram.py + pack/B/c0006/code/engram.py"
+  },
+  {
+   "candidate": "c0012",
+   "about": [
+    "c0006"
+   ],
+   "quote": "Nothing else in `engram.py` or\n`train_predict.py`'s training loop changed.",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/code/",
+   "note": "train_predict.py differs only by a docstring and one extra logged field."
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "Parent: `c0009` (fitness 0.771240234375, best so far)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "c0009 added a 5th \"bag of tokens seen so far\" channel \u2014 a causal running mean of a\nper-token hashed embedding, pooled over the whole prompt prefix",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/engram.py"
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0005",
+    "c0009"
+   ],
+   "quote": "It worked (held-out-wording accuracy 0.7898 \u2192\n0.9990 relative to c0005)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json + pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "c0009's bag channel hashed tokens into a table\n(`bag_table`) trained entirely **from scratch**",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/engram.py"
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "6,402,688\nparams removed",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/engram.py"
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "Net effect on trainable parameter count: 21,176,448 (down from c0009's 27,447,936 \u2014\nabout 23% *fewer* trainable params",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json"
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0005",
+    "c0009"
+   ],
+   "quote": "confirms the same\n1 tail-bigram collision c0005/c0009 found",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json + pack/B/c0009/memory_config.json"
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "fewer than c0009's 267,584 in\n  the same 480s budget",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json"
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "Final training loss **0.000773** (c0009: 0.000526 \u2014 same order of magnitude,\n  both near floor)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json"
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "this\n  is *lower* than c0009's 0.9990 on the same self-scored metric",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json"
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "this\n  metric (known templates, unseen entity) is not the mechanism my hypothesis targets",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0001/summary.md + pack/B/c0009/code/train_predict.py",
+   "note": "The held-out wording is template index 7, withheld for every entity (train uses wordings 0-6), so it is an unseen template on known entities - the opposite of 'known template, unseen entity'. c0001's summary and train_predict.py's split confirm this, and B/c0015 states it correctly."
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "roughly a third fewer\n  trainable parameters (21.2M vs 27.4M)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json"
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "**4 malformed answers**\n  (empty strings; more than c0009's 0)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/summary.md"
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0005",
+    "c0009"
+   ],
+   "quote": "the same kind of inherited-seed bug fix c0009 itself made relative to c0005",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0009/summary.md"
+  },
+  {
+   "candidate": "c0013",
+   "about": [
+    "c0009"
+   ],
+   "quote": "same as c0009's own `_smoke` dir",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0009/summary.md"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0006"
+   ],
+   "quote": "Parent A (inherited code): c0006 (fitness 0.5672607421875, touched-row-only sparse\nweight decay on the engram tables at `table_weight_decay=0.01`, `weight_decay=0.01` on\ndense `proj`/`gate`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0006/memory_config.json"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0004"
+   ],
+   "quote": "Parent B (read-only): c0004 (fitness 0.563720703125, tables fully\nexempt from decay, `table_weight_decay=0.0`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0004/memory_config.json"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0004",
+    "c0006"
+   ],
+   "quote": "Same architecture as both, unchanged:\nhashed n-gram Engram memory, orders 1/2/3, 4 hash heads per order, `50021 \u00d7 128` tables,\nsingle attach point gated into the residual stream after decoder block 2",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/code/engram.py + pack/B/c0004/code/engram.py"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0006"
+   ],
+   "quote": "the touched-row-only decay *mechanism*\n  itself \u2014 `engram.py`'s `forward()` recording `last_touched_indices` per\n  table, and `train_predict.py` applying `table.data[idx] *= (1 - lr * table_weight_decay)`\n  only to rows actually hashed-to that step",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/code/"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004"
+   ],
+   "quote": "exempting tables from decay entirely only recovered about half of c0002's held-out regression (0.6104 \u2192 0.7205 against a 0.8945\n  ceiling)",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0004/summary.md"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0004"
+   ],
+   "quote": "c0004 explicitly left tuning that magnitude untried",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0004/summary.md"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0006"
+   ],
+   "quote": "c0006's rate (0.01, chosen \"for comparability\" with the dense rate, per c0006's own\n\"future work\" note)",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0006/summary.md"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0006"
+   ],
+   "quote": "c0006 recovered most of c0001's held-out ceiling (0.8054 vs 0.8945) while still\nunder-performing c0002 on hidden fitness\n(0.5672 vs 0.5941)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json + pack/B/c0001/memory_config.json + pack/B/records.json"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0004"
+   ],
+   "quote": "c0004's (weaker, 0.5637) fitness regime",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0004",
+    "c0006"
+   ],
+   "quote": "this run completed only **1500 steps** in the same\n  `train_seconds=480` budget that gave c0006 3097 steps and c0004 3130 steps",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/memory_config.json + pack/B/c0004/memory_config.json"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0006"
+   ],
+   "quote": "an order of magnitude higher than c0006 (0.0012), c0004 (0.0008),\n  or c0001/c0002 (~0.0007\u20130.0012)",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0006/memory_config.json",
+   "note": "c0006's final training loss is 0.00094 (0.0009 in its own summary); 0.0012 is c0002's figure."
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0006"
+   ],
+   "quote": "**Held-out wording accuracy 0.6670** on the same 4096 held-out wordings (wording 7 of\n  8) c0001 (0.8945), c0002 (0.6104), c0004 (0.7205), and c0006 (0.8054) were scored on.",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json, pack/B/c0002/memory_config.json, pack/B/c0004/memory_config.json, pack/B/c0006/memory_config.json"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0002",
+    "c0006"
+   ],
+   "quote": "This sits close to c0002's regime and well below c0006's",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json + pack/B/c0006/memory_config.json"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0006"
+   ],
+   "quote": "the same direction c0002 showed relative to c0001/c0004/c0006",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json, pack/B/c0001/memory_config.json, pack/B/c0004/memory_config.json, pack/B/c0006/memory_config.json"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0006"
+   ],
+   "quote": "this run also saw about half the optimizer\n  steps of every prior candidate in this lineage",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json, pack/B/c0002/memory_config.json, pack/B/c0004/memory_config.json, pack/B/c0006/memory_config.json"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0002",
+    "c0008",
+    "c0011"
+   ],
+   "quote": "c0002 (0.5941162109375, best known among\ndecay variants)",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/records.json + pack/B/c0011/memory_config.json",
+   "note": "Earlier weight-decay-lineage candidates score higher: c0008 (zero decay everywhere) 0.6351 and c0011 (entity decay 0.01) 0.6206."
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0002",
+    "c0006"
+   ],
+   "quote": "c0006's held-out recovery coincided with a hidden-fitness\nregression relative to c0002",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0006"
+   ],
+   "quote": "`engram.py` and `train_predict.py` are byte-identical to c0006's",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0006/code/",
+   "note": "Verified byte-identical."
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0006"
+   ],
+   "quote": "the only change in\n  this candidate is `run.sh`'s `--table-weight-decay` value (0.01 \u2192 0.1) and `--seed`\n  (corrected to this candidate's own job-card seed `202264281`, replacing c0006's\n  hardcoded `2132127351`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0006/code/run.sh"
+  },
+  {
+   "candidate": "c0014",
+   "about": [
+    "c0013"
+   ],
+   "quote": "c0013 was `running` in the population table at job start",
+   "type": "M",
+   "rating": "unsupported",
+   "source": "pack/B/records.json",
+   "note": "records.json records only the settled status ('evaluated'); the pack has no dispatch-time population table."
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0009"
+   ],
+   "quote": "Parent: `c0009` (fitness 0.771240234375, best so far)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0009"
+   ],
+   "quote": "held-out-wording\naccuracy hit **0.9990** (4096 examples \u2014 wording index 7, a whole template held out of\ntraining for every entity: train uses wordings 0-6, so this checkpoint never saw\nwording-7's phrasing during training, for any entity)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json + pack/B/c0009/code/train_predict.py"
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0009"
+   ],
+   "quote": "while the actual hidden-split fitness was only\n**0.7712**",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0009"
+   ],
+   "quote": "c0009 flagged this as suspicious but did not have\nbudget in that job to investigate further.",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0009/summary.md"
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0009"
+   ],
+   "quote": "It trains for the *entire* `--train-seconds` wall-clock\nbudget (480s) regardless of when loss converges, and always saves whatever checkpoint\nhappens to be current when the clock runs out \u2014 there is no early stopping or\ncheckpoint selection anywhere in the lineage.",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/train_predict.py"
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0001",
+    "c0009"
+   ],
+   "quote": "the training loop in\n`candidates/c0009/code/train_predict.py` (unchanged since c0001)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/train_predict.py + pack/B/c0001/code/train_predict.py",
+   "note": "The file as a whole differs (entity/bag plumbing); the budget/checkpoint logic of the loop is unchanged."
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0009"
+   ],
+   "quote": "c0009's own logged final training loss was **0.000526** after 4181 steps (~10 epochs)\nover 28,672 examples",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json"
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0009"
+   ],
+   "quote": "c0009\nonly *measured* held-out accuracy once, after training finished, for reporting, and\nstill saved the final (most-trained) weights regardless of what that number said",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/train_predict.py"
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0009"
+   ],
+   "quote": "Everything else is byte-for-byte\nunchanged from c0009: architecture (5 channels \u2014 orders 1-3, entity identity, bag),\nattach point (layer 2), gate, optimizer (dense AdamW), lr (3e-3), batch size (64),\ntraining budget (480s), the holdout split definition itself (wordings 0-6 train / 7\nval), prompt format, and prediction/generation code.",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/",
+   "note": "engram.py differs from c0009's only by an added docstring paragraph; all listed items are unchanged."
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0009"
+   ],
+   "quote": "versus c0009's **4181 steps** (10 epochs, 267,584 examples seen) in the same\n  480s",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json"
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0009"
+   ],
+   "quote": "Final training loss was\n  correspondingly much higher (**0.00347** vs c0009's 0.000526) and final\n  held-out-wording accuracy correspondingly lower (**0.9551** vs c0009's **0.9990**)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json"
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0009"
+   ],
+   "quote": "checked programmatically (matches c0009's 0)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/summary.md"
+  },
+  {
+   "candidate": "c0015",
+   "about": [
+    "c0009"
+   ],
+   "quote": "27,447,936\n  parameters (identical count and architecture to c0009",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json"
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0008"
+   ],
+   "quote": "Parent: c0008 (fitness 0.6351318359375)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0008"
+   ],
+   "quote": "dense AdamW in two parameter\ngroups \u2014 sparse tables and dense proj/gate, both at `weight_decay=0.0` as c0008 set\nthem",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0008/memory_config.json"
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0002",
+    "c0004",
+    "c0008"
+   ],
+   "quote": "zero decay everywhere, which itself closed most of the held-out regression c0002 and\nc0004 introduced by adding decay",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0008/memory_config.json, pack/B/c0002/memory_config.json, pack/B/c0004/memory_config.json"
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0008"
+   ],
+   "quote": "Across the whole c0001\u2192c0008 decay lineage, `--holdout-wordings 1` has held out the\n8th of 8 training wordings per fact as an in-session diagnostic, so every candidate so\nfar trained on only 7/8 wordings (28,672 of 32,768 records)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0008/code/train_predict.py + pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0008"
+   ],
+   "quote": "Training loss in that lineage is already near-zero by the end of training (c0008: 0.0026, c0004: 0.0008,\nc0002: 0.0012, c0001: 0.0007)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0008/memory_config.json, pack/B/c0004/memory_config.json, pack/B/c0002/memory_config.json, pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0008"
+   ],
+   "quote": "**No code change was needed** in `train_predict.py` or `engram.py` \u2014 the\n`--holdout-wordings` CLI argument already exists from earlier candidates and the `val`\nempty-list path is already handled",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0008/code/",
+   "note": "Verified byte-identical to c0008's files."
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0008"
+   ],
+   "quote": "The only change is in `run.sh`:\n`--holdout-wordings 1` \u2192 `--holdout-wordings 0`, and this candidate's own job-card seed\n`1939969160` in place of c0008's `1962037190`",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0008/code/run.sh"
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0008"
+   ],
+   "quote": "I cannot report\na held-out self-score to compare against c0008's 0.8010, c0004's 0.7205, c0002's\n0.6104, or c0001's 0.8945",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0008/memory_config.json, pack/B/c0004/memory_config.json, pack/B/c0002/memory_config.json, pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0002",
+    "c0004"
+   ],
+   "quote": "per c0004's own earlier note this lineage's held-out self-score direction has not\nreliably predicted hidden-split fitness direction",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0004/summary.md"
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0008"
+   ],
+   "quote": "higher than c0008's 0.0026 (and c0001/c0002/c0004's 0.0007\u20130.0012)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0008/memory_config.json, pack/B/c0001/memory_config.json, pack/B/c0002/memory_config.json, pack/B/c0004/memory_config.json"
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0008"
+   ],
+   "quote": "fewer completed epochs (4 vs 7) and a higher final training loss\n(0.0134 vs 0.0026) than c0008",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0008/memory_config.json"
+  },
+  {
+   "candidate": "c0016",
+   "about": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0008"
+   ],
+   "quote": "unlike every prior candidate in this lineage",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json, pack/B/c0002/memory_config.json, pack/B/c0004/memory_config.json, pack/B/c0008/memory_config.json"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0013"
+   ],
+   "quote": "Parent: `c0013` (fitness 0.6708984375)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0009",
+    "c0013"
+   ],
+   "quote": "c0013 changed the bag channel (introduced by c0009: a causal running mean of a\nper-token embedding pooled over the whole prompt prefix, concatenated with orders\n1-3 and the entity channel, then gated into the residual stream) to source its\nper-token embedding from Qwen's own frozen pretrained input-embedding table instead\nof a from-scratch hashed table, projected down to `embed_dim` with a small trainable\nlinear layer (`bag_proj`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0013/code/engram.py + pack/B/c0009/code/engram.py"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0009",
+    "c0013"
+   ],
+   "quote": "That change was fitness-**negative** relative to its own\nparent c0009 (0.7712 \u2192 0.6709)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0009",
+    "c0013"
+   ],
+   "quote": "c0013's own held-out-wording accuracy (known\ntemplates, unseen entity) also regressed relative to c0009 on the same metric\n(0.9990 \u2192 0.9189)",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0001/summary.md + pack/B/c0009/code/train_predict.py",
+   "note": "The held-out wording is template index 7, withheld for every entity (train uses wordings 0-6), so it is an unseen template on known entities - the opposite of 'known template, unseen entity'. c0001's summary and train_predict.py's split confirm this, and B/c0015 states it correctly. The two accuracy numbers are correct."
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0009",
+    "c0013"
+   ],
+   "quote": "c0013's postmortem flagged, but could not test for lack of\nremaining budget, a plausible confound",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0013/summary.md"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0009",
+    "c0013"
+   ],
+   "quote": "c0013 saw fewer optimizer steps fit in the same fixed 480s training budget (113,536 examples seen vs\nc0009's 267,584)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0013/memory_config.json + pack/B/c0009/memory_config.json"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0009"
+   ],
+   "quote": "whereas c0009's bag channel did a cheap gather from a small from-scratch table at every position",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/code/engram.py"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0013"
+   ],
+   "quote": "Trainable params: **21,176,448** \u2014 identical to c0013",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0013/memory_config.json"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0013"
+   ],
+   "quote": "up from c0013's 1,774 steps / 113,536 examples in the\n  same 480.1s budget (\u22482.4x more steps)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0013/memory_config.json"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0009"
+   ],
+   "quote": "slightly above c0009's 267,584 (which\n  used the cheap from-scratch `bag_table` gather, no per-token matmul at all)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0009/memory_config.json + pack/B/c0009/code/engram.py"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0009",
+    "c0013"
+   ],
+   "quote": "Final training loss **0.0000914** (c0013: 0.000773; c0009: 0.000526) \u2014 lowest of\n  the three",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0013/memory_config.json + pack/B/c0009/memory_config.json"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0009",
+    "c0013"
+   ],
+   "quote": "up\n  from c0013's 0.9189 on the same self-scored metric, most of the way back toward\n  c0009's 0.9990",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0013/memory_config.json + pack/B/c0009/memory_config.json"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0009",
+    "c0013"
+   ],
+   "quote": "recovering ~90% of the gap by fixing the\n  throughput issue",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0013/memory_config.json + pack/B/c0009/memory_config.json",
+   "note": "0.9758 recovers 0.0569 of the 0.0801 gap between c0013 and c0009, i.e. 71%, not ~90%."
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0009"
+   ],
+   "quote": "4,244 vs c0009's steps,\n  which I do not have \u2014 c0009's summary reports examples not steps",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0009/summary.md + pack/B/c0009/memory_config.json",
+   "note": "c0009's summary and memory_config.json both report 4181 steps."
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0013"
+   ],
+   "quote": "the inherited hardcoded seed in `run.sh` (c0013's own job seed,\n`1417406486`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json + pack/B/c0013/code/run.sh"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0009",
+    "c0013"
+   ],
+   "quote": "the same kind of inherited-seed bug fix c0013\n  itself made relative to c0009",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0013/summary.md"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0013"
+   ],
+   "quote": "**0 malformed answers** (empty, multi-word, or >40 chars) \u2014 down from c0013's 4",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0013/summary.md"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0013"
+   ],
+   "quote": "only the 5 trainable components already present in c0013 (`tables`, `entity_table`,\n  `bag_proj`, `proj`, `gate`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0013/code/engram.py"
+  },
+  {
+   "candidate": "c0017",
+   "about": [
+    "c0009",
+    "c0013"
+   ],
+   "quote": "this metric reuses the 8\n  *known* training templates on unseen entities",
+   "type": "M",
+   "rating": "incorrect",
+   "source": "pack/B/c0001/summary.md + pack/B/c0009/code/train_predict.py",
+   "note": "The held-out wording is template index 7, withheld for every entity (train uses wordings 0-6), so it is an unseen template on known entities - the opposite of 'known template, unseen entity'. c0001's summary and train_predict.py's split confirm this, and B/c0015 states it correctly."
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0002"
+   ],
+   "quote": "Parent: c0002 (fitness 0.5941162109375)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "c0002's own summary diagnosed *why* adding uniform weight decay (0.01) regressed its\nheld-out-wording accuracy relative to c0001 (0.8945 \u2192 0.6104), even though training\nloss barely moved (0.0007 \u2192 0.0012)",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0002/summary.md + pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0002"
+   ],
+   "quote": "`torch.optim.AdamW`'s decoupled weight decay\nshrinks *every* parameter toward zero on *every* step, regardless of whether that\nparameter received a gradient that step",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0002/summary.md"
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0002"
+   ],
+   "quote": "most rows are touched by only a handful of the 3109 training steps",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json"
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0002"
+   ],
+   "quote": "`train_predict.py`'s optimizer construction changes from a single flat parameter list\ninto two `AdamW` parameter groups",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/code/train_predict.py"
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0002"
+   ],
+   "quote": "No other hyperparameter, table size, attach point, n-gram\norder, hash-head count, learning rate, batch size, or training-time budget changed\nfrom c0002's run",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json + pack/B/c0002/code/"
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "essentially identical to c0002's 0.0012 and c0001's 0.0007",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0002/memory_config.json + pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "on the same 4096 held-out wordings (wording 7 of\n  8) c0001 and c0002 were scored on",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json + pack/B/c0002/memory_config.json"
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "c0001 (no decay) 0.8945 \u2192 c0002 (uniform decay) 0.6104",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json + pack/B/c0002/memory_config.json"
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "recovered roughly 68% of the gap c0002 opened up\n  (0.6104 \u2192 0.7937 out of the 0.6104 \u2192 0.8945 range)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json + pack/B/c0002/memory_config.json",
+   "note": "The exact figure is 64.5%; 'roughly 68%' is close and the endpoints are right."
+  },
+  {
+   "candidate": "c0018",
+   "about": [
+    "c0001",
+    "c0002"
+   ],
+   "quote": "c0001 had zero decay everywhere; here dense params still decay",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/code/train_predict.py"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0005"
+   ],
+   "quote": "Parent: `c0005` (fitness 0.5987548828125)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0009",
+    "c0013",
+    "c0015"
+   ],
+   "quote": "so this candidate improves directly on c0005, independent\nof the `c0009`/`c0013`/`c0015` line (higher fitness but unreadable under this job's\ncontract)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/records.json",
+   "note": "c0009 0.7712, c0013 0.6709 and c0015 0.7150 are all above c0005's 0.5988."
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0005"
+   ],
+   "quote": "c0005 added a 4th \"entity identity\" table: an exact-match lookup of each entity's\ntokenized name tail, forward-filled causally so the answer-generation position always\ncarries a direct, phrasing-invariant \"who\" signal, concatenated with the existing\nlocal n-gram orders (1-3) before the shared zero-init projection and sigmoid gate.",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/code/engram.py"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "c0005's own numbers: training loss dropped to 0.00023 (tighter than c0001's 0.0007)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json + pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "held-out wording 7 is a genuine unseen-template test, the same nature as the real\n`dev0`/`dev1` split",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/summary.md + pack/B/c0009/code/train_predict.py",
+   "note": "Agrees with c0001's stated split (train wordings 0-6) and contradicts c0005/c0007/c0009/c0013/c0017's 'known template, unseen entity' framing."
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "*dropped* from c0001's 0.8945 to 0.7898, even though c0005's\nactual hidden-split fitness *rose* (0.5623 \u2192 0.5987)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json + pack/B/c0001/memory_config.json + pack/B/records.json"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0005"
+   ],
+   "quote": "c0005 speculated, without being\nable to test it in its own job, that gradient descent may be leaning on the\nnear-injective entity channel to drive per-token loss toward zero, at the expense of\nthe local order-1-3 channels",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0005/summary.md"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0005"
+   ],
+   "quote": "i.e. 0.25 \u00d7 the shared `3e-3` used by the order-1-3 tables,\n`proj` and `gate`, all otherwise unchanged from c0005 \u2014 same attach\npoint, gate, batch size 64, training budget 480s, table sizes, orders 1-3 mechanism,\nentity anchoring (`ANCHOR_LEN=3`)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/code/ + pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0005"
+   ],
+   "quote": "I re-checked the concern from c0005's summary\nthat the entity-tail anchor match (last 3 tokens of the tokenized name) might silently\nfail to fire",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0005/summary.md"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0005"
+   ],
+   "quote": "`run.sh` inherited from c0005 had\n`--seed 375742728` hardcoded \u2014 that was c0005's *own* job-card seed, not mine.",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/code/run.sh + pack/B/records.json"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0001"
+   ],
+   "quote": "the same class of fix c0005 made to\nc0001's hardcoded `CUDA_VISIBLE_DEVICES`",
+   "type": "R",
+   "rating": "correct",
+   "source": "pack/B/c0005/summary.md + pack/B/c0001/code/run.sh"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0005"
+   ],
+   "quote": "**Fewer steps than c0005's 4255 in the same 480s**",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0005"
+   ],
+   "quote": "the per-step training-loop code is otherwise identical to c0005 (the only change is\n  which optimizer param group a tensor belongs to",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/code/train_predict.py"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "Final training loss **0.00049** \u2014 between c0001's 0.0007 and c0005's 0.00023",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0001/memory_config.json + pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0001",
+    "c0005"
+   ],
+   "quote": "it is **lower than c0005's\n  0.7898**, not higher, and further from c0001's 0.8945",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json + pack/B/c0001/memory_config.json"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0005"
+   ],
+   "quote": "with fewer total steps in the same wall\n  budget (3125 vs 4255, see above)",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0005"
+   ],
+   "quote": "c0005 already\n  showed this proxy and the real hidden-split fitness can move in opposite directions",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json + pack/B/records.json"
+  },
+  {
+   "candidate": "c0019",
+   "about": [
+    "c0005"
+   ],
+   "quote": "only `EngramMemory`'s parameters (same architecture and count as c0005,\n  20,914,176) were ever in the optimizer",
+   "type": "M",
+   "rating": "correct",
+   "source": "pack/B/c0005/memory_config.json"
+  }
+ ],
+ "unrated": [
+  {
+   "candidate": "c0001",
+   "quote": "approaches \u2014 but is below \u2014 the reference LoRA run's held-out number (0.9910)",
+   "reason": "About an operator reference run (reference/RESULTS.md), not a campaign candidate; not in the pack."
+  },
+  {
+   "candidate": "c0001",
+   "quote": "only 3140 steps vs LoRA's 5779 in 600s",
+   "reason": "Reference-run number; not a candidate and not in the pack."
+  },
+  {
+   "candidate": "c0001",
+   "quote": "about 2x\n  LoRA's reference run",
+   "reason": "Reference-run number; not a candidate and not in the pack."
+  },
+  {
+   "candidate": "c0005",
+   "quote": "The reference LoRA run shows a much smaller gap at the same budget (0.9910\nheld-out vs 0.9653 search)",
+   "reason": "Reference-run numbers; not a candidate and not in the pack."
+  },
+  {
+   "candidate": "c0005",
+   "quote": "the 8 training wordings are **fixed templates shared across all 1024 entities**",
+   "reason": "A statement about the task's data (facts.json), not about an earlier candidate; facts.json is not in the pack."
+  },
+  {
+   "candidate": "c0013",
+   "quote": "training says only live / home / dwelling / place (8 wordings, checked all)",
+   "reason": "A statement about the task's data, not about an earlier candidate; the data files are not in the pack."
+  }
+ ],
+ "acknowledgment": [
+  {
+   "candidate": "c0002",
+   "names": [
+    "c0001"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0003",
+   "names": [
+    "c0000",
+    "c0001"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0004",
+   "names": [
+    "c0001",
+    "c0002"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0005",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004"
+   ],
+   "cross_branch": [
+    "c0002",
+    "c0003",
+    "c0004"
+   ]
+  },
+  {
+   "candidate": "c0006",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0004"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0007",
+   "names": [
+    "c0001",
+    "c0005"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0008",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0004"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0009",
+   "names": [
+    "c0001",
+    "c0005"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0010",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0005",
+    "c0008"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0011",
+   "names": [
+    "c0002",
+    "c0005",
+    "c0008",
+    "c0010"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0012",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0006"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0013",
+   "names": [
+    "c0005",
+    "c0009"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0014",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0006",
+    "c0013"
+   ],
+   "cross_branch": [
+    "c0013"
+   ]
+  },
+  {
+   "candidate": "c0015",
+   "names": [
+    "c0001",
+    "c0009"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0016",
+   "names": [
+    "c0001",
+    "c0002",
+    "c0004",
+    "c0008"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0017",
+   "names": [
+    "c0009",
+    "c0013"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0018",
+   "names": [
+    "c0001",
+    "c0002"
+   ],
+   "cross_branch": []
+  },
+  {
+   "candidate": "c0019",
+   "names": [
+    "c0001",
+    "c0005",
+    "c0009",
+    "c0013",
+    "c0015"
+   ],
+   "cross_branch": [
+    "c0009",
+    "c0013",
+    "c0015"
+   ]
+  }
+ ],
+ "repeats": [
+  {
+   "candidate": "c0018",
+   "earlier": "c0004",
+   "knob": "exempt the sparse engram tables from AdamW weight decay (table_weight_decay 0.0) while keeping weight_decay 0.01 on the dense proj/gate - c0004's stated single change, repeated knob and direction",
+   "acknowledged": false,
+   "note": "c0018 is an improve off c0002 and never names c0004, whose summary states exactly this change and its result (0.7205)."
+  },
+  {
+   "candidate": "c0008",
+   "earlier": "c0001",
+   "knob": "weight_decay 0.0 on the dense proj/gate (back to c0001's setting)",
+   "acknowledged": true
+  },
+  {
+   "candidate": "c0011",
+   "earlier": "c0002",
+   "knob": "weight decay 0.01, applied to the entity table",
+   "acknowledged": true
+  },
+  {
+   "candidate": "c0014",
+   "earlier": "c0006",
+   "knob": "touched-row-only table decay, magnitude raised 0.01 -> 0.1",
+   "acknowledged": true
+  }
+ ],
+ "totals": {
+  "M": {
+   "correct": 200,
+   "incorrect": 22,
+   "unsupported": 5
+  },
+  "R": {
+   "correct": 30,
+   "incorrect": 0,
+   "unsupported": 1
+  },
+  "C": {
+   "correct": 1,
+   "incorrect": 0,
+   "unsupported": 5
+  },
+  "rated_MR": 258,
+  "bad_MR": 28,
+  "fraction_bad": 0.1085
+ }
+}

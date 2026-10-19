@@ -1,0 +1,54 @@
+{
+ "campaign": "engram-drafts4-w0",
+ "ticks": 15,
+ "calls": 33,
+ "errors": 0,
+ "error_samples": [],
+ "latency_median_s": 0.732,
+ "latency_p95_s": 0.969,
+ "state_bytes_median": 22290,
+ "state_bytes_max": 36329,
+ "est_input_tokens_total": 184582,
+ "est_cost_usd": 0.0078,
+ "parent_agreement_argmax": 0.2,
+ "parent_agreement_sampled": 0.133,
+ "operator_agreement_argmax": 0.8,
+ "full_agreement_argmax": 0.133,
+ "argmax_is_best_so_far": 0.867,
+ "chance_took_best_so_far": 0.267,
+ "mean_p_on_chance_parents": 0.155,
+ "mean_p_on_frozen_lineage": 0.461,
+ "chance_parent_in_frozen_lineage": 0.533,
+ "argmax_in_frozen_lineage": 0.267,
+ "crossover_rate_chance": 0.2,
+ "crossover_rate_argmax": 0.0,
+ "crossover_rate_sampled": 0.2,
+ "confidence_median": 0.23,
+ "calibration_terciles": [
+  {
+   "confidence_range": [
+    0.14,
+    0.22
+   ],
+   "n": 5,
+   "agreement": 0.4
+  },
+  {
+   "confidence_range": [
+    0.22,
+    0.27
+   ],
+   "n": 5,
+   "agreement": 0.2
+  },
+  {
+   "confidence_range": [
+    0.27,
+    0.58
+   ],
+   "n": 5,
+   "agreement": 0.0
+  }
+ ],
+ "model": "jev-1.13.0"
+}

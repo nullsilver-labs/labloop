@@ -34,3 +34,5 @@ fitness on the c0002 → c0003 step, not with it; findings B 187: batch_size was
 raised, never lowered, so "explored in both directions" is wrong). Counting them gives
 legacy 16 / 252 = .063 and findings 19 / 190 = .100, ratio 1.57; the decision is unchanged.
 The human spot-check in `spot-check.md` remains open.
+
+**2026-09-17:** the human decided that the blinded second-rater check stands in for the human spot check of this pair (a deviation from the PREREG, stated as one). The sheet in `spot-check.md` stays unmarked.

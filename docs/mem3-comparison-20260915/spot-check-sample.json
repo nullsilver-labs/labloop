@@ -1,0 +1,30 @@
+{
+ "seed": 20260916,
+ "method": "random.Random(seed).sample(range(n_statements), 10) per letter, drawn before unsealing",
+ "A": [
+  10,
+  27,
+  40,
+  61,
+  94,
+  97,
+  129,
+  164,
+  169,
+  174
+ ],
+ "n_A": 219,
+ "B": [
+  88,
+  124,
+  127,
+  137,
+  210,
+  213,
+  223,
+  224,
+  232,
+  256
+ ],
+ "n_B": 264
+}

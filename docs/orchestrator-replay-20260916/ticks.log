@@ -1,0 +1,56 @@
+../labloop-drafts-4-20260914
+  c0005: chance improve ['c0002'] | argmax c0004 improve conf 0.48 0.75s 7994 B
+  c0006: chance improve ['c0004'] | argmax c0004 improve conf 0.29 0.66s 9725 B
+  c0007: chance improve ['c0003'] | argmax c0004 improve conf 0.4 0.72s 11449 B
+  c0008: chance improve ['c0005'] | argmax c0004 improve conf 0.19 1.27s 13125 B
+  c0009: chance improve ['c0004'] | argmax c0006 improve conf 0.38 0.93s 14778 B
+  c0010: chance improve ['c0003'] | argmax c0006 improve conf 0.28 0.93s 16438 B
+  c0011: chance improve ['c0006'] | argmax c0006 improve conf 0.28 0.89s 18089 B
+  c0012: chance crossover ['c0003', 'c0006'] | argmax c0006 improve conf 0.24 0.93s 19760 B
+  c0013: chance improve ['c0006'] | argmax c0006 improve conf 0.3 0.96s 21433 B
+  c0014: chance improve ['c0010'] | argmax c0006 improve conf 0.27 0.96s 23090 B
+  c0015: chance crossover ['c0007', 'c0013'] | argmax c0006 improve conf 0.33 0.93s 24762 B
+  c0016: chance improve ['c0013'] | argmax c0006 improve conf 0.35 0.96s 26417 B
+  c0017: chance crossover ['c0004', 'c0010'] | argmax c0006 improve conf 0.41 0.95s 28150 B
+  c0018: chance improve ['c0015'] | argmax c0006 improve conf 0.33 0.97s 29906 B
+  c0019: chance improve ['c0004'] | argmax c0017 improve conf 0.47 1.07s 31686 B
+../labloop-mem2-findings-20260914
+  c0002: chance improve ['c0001'] | argmax c0001 improve conf 0.87 0.75s 4918 B
+  c0003: chance improve ['c0001'] | argmax c0001 improve conf 0.4 0.71s 6605 B
+  c0004: chance improve ['c0003'] | argmax c0001 improve conf 0.34 0.71s 8310 B
+  c0005: chance improve ['c0003'] | argmax c0001 improve conf 0.45 0.71s 9993 B
+  c0006: chance improve ['c0005'] | argmax c0001 improve conf 0.37 0.89s 11684 B
+  c0007: chance improve ['c0006'] | argmax c0006 improve conf 0.32 0.87s 13366 B
+  c0008: chance improve ['c0006'] | argmax c0006 improve conf 0.38 0.91s 15049 B
+  c0009: chance improve ['c0003'] | argmax c0006 improve conf 0.39 0.94s 16730 B
+  c0010: chance improve ['c0007'] | argmax c0006 improve conf 0.48 0.90s 18432 B
+  c0011: chance improve ['c0004'] | argmax c0010 improve conf 0.39 0.92s 20110 B
+  c0012: chance improve ['c0007'] | argmax c0010 improve conf 0.44 0.95s 21784 B
+  c0013: chance improve ['c0006'] | argmax c0010 improve conf 0.48 0.91s 23471 B
+  c0014: chance improve ['c0009'] | argmax c0010 improve conf 0.58 0.93s 25153 B
+  c0015: chance improve ['c0010'] | argmax c0010 improve conf 0.51 0.92s 26832 B
+  c0016: chance improve ['c0006'] | argmax c0010 improve conf 0.58 0.95s 28522 B
+  c0017: chance improve ['c0010'] | argmax c0016 improve conf 0.4 0.98s 30193 B
+  c0018: chance improve ['c0016'] | argmax c0016 improve conf 0.51 0.97s 31872 B
+  c0019: chance improve ['c0018'] | argmax c0016 improve conf 0.54 0.90s 33550 B
+../labloop-mem3-findings-20260915
+  c0002: chance improve ['c0001'] | argmax c0001 improve conf 0.88 0.66s 5260 B
+  c0003: chance crossover ['c0001', 'c0000'] | argmax c0001 improve conf 0.89 0.70s 5260 B
+  c0004: chance improve ['c0001'] | argmax c0001 improve conf 0.9 0.72s 6514 B
+  c0005: chance improve ['c0000'] | argmax c0003 improve conf 0.49 0.68s 8328 B
+  c0006: chance crossover ['c0002', 'c0001'] | argmax c0003 improve conf 0.5 0.72s 9825 B
+  c0007: chance improve ['c0003'] | argmax c0003 improve conf 0.65 0.91s 11579 B
+  c0008: chance improve ['c0001'] | argmax c0005 improve conf 0.53 0.96s 13316 B
+  c0009: chance improve ['c0006'] | argmax c0005 improve conf 0.52 0.96s 15004 B
+  c0010: chance crossover ['c0008', 'c0003'] | argmax c0005 improve conf 0.5 0.93s 16723 B
+  c0011: chance crossover ['c0005', 'c0008'] | argmax c0005 improve conf 0.42 0.90s 18422 B
+  c0012: chance improve ['c0003'] | argmax c0005 improve conf 0.52 0.97s 19712 B
+  c0013: chance improve ['c0010'] | argmax c0005 improve conf 0.47 0.92s 21488 B
+  c0014: chance improve ['c0000'] | argmax c0005 improve conf 0.43 0.92s 23136 B
+  c0015: chance improve ['c0013'] | argmax c0005 improve conf 0.41 0.95s 24632 B
+  c0016: chance improve ['c0012'] | argmax c0005 improve conf 0.47 0.96s 26334 B
+  c0017: chance crossover ['c0009', 'c0002'] | argmax c0005 improve conf 0.47 0.92s 27888 B
+  c0018: chance improve ['c0016'] | argmax c0005 improve conf 0.44 0.95s 29600 B
+  c0019: chance improve ['c0001'] | argmax c0005 improve conf 0.49 0.97s 31284 B
+/mnt/data/projects/nullsilver/labloop/scripts/orchestrator_replay.py:374: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  lines = [f"# Orchestrator replay ({args.backend}), {datetime.utcnow().strftime('%Y-%m-%d %H:%MZ')}", "",

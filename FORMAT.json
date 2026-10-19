@@ -1,5 +1,5 @@
 {
-  "format": "2.1",
+  "format": "2.2",
   "generator": "nullsilver-lab",
   "generated_by": "tools/lab format sync",
   "note": "Generated file \u2014 do not edit. Regenerate with `tools/lab format sync`; `tools/lab validate` fails if it has drifted from the code.",
@@ -41,7 +41,8 @@
       "claim",
       "usage",
       "memory",
-      "updated_at"
+      "updated_at",
+      "seeded"
     ],
     "statuses": [
       "running",
@@ -104,7 +105,9 @@
       "path",
       "session",
       "redispatch_of",
-      "defers"
+      "defers",
+      "seeded_from",
+      "same_output_as_parent"
     ],
     "fitness_note": "`fitness` is the search-split score, read by `lab eval` only; higher or lower is better per campaign.toml [report].higher_is_better. It is optimistic by construction; the final score in population.json `final` is one read of the untouched final split."
   },
@@ -154,13 +157,15 @@
       "legacy",
       "findings-v1",
       "findings-v2",
-      "findings-v3"
+      "findings-v3",
+      "index-v1"
     ],
     "card_schema": "finding-card/1",
     "card_schemas": {
       "findings-v1": "finding-card/1",
       "findings-v2": "finding-card/2",
-      "findings-v3": "finding-card/2"
+      "findings-v3": "finding-card/2",
+      "index-v1": "finding-card/2"
     },
     "card_keys": [
       "schema",
@@ -245,7 +250,9 @@
       "final_",
       "eval_",
       "test_",
-      "measured_"
+      "measured_",
+      "last_logged_",
+      "logged_"
     ]
   },
   "ledger": {

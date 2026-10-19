@@ -350,6 +350,19 @@ jumps larger than the claimed +0.0668 sit with their parents (c0002 +.130, c0003
 c0006 +.093, c0014 +.107; the rater had counted two). The first replay, before the
 measured line and the parents column, read 8 of 11 and is superseded by this one.
 
+**Amended 2026-09-15 evening, after the mem3 findings arm ran** (its legacy arm has not;
+`docs/mem3-comparison-20260915/STATUS.md`). The replay's bytes did not hold. The mem2
+workers configured 9 knob keys; the mem3 workers configured 19, four of them the last
+training-log line copied into the knobs file (`last_logged_loss`, `_step`, `_epoch`,
+`_elapsed_s`), which the outcome filter did not know. The index reached 2 KiB at the 13th
+settled candidate, elided 3 values there and 13 in the last job, and sat 38–82 bytes over
+its bound in the last three jobs (whole knobs are never elided, so the bound is not hard).
+Coverage stayed full and every candidate stayed named; what a late worker lost is the
+*oldest values* of ten knobs. One-line change on main, outside the pair: `last_logged_*`
+and `logged_*` join the outcome prefixes (acceptance case extended). It buys a few
+candidates, not a scale: a byte-bounded index over worker-chosen keys saturates, and the
+answer to that is not a larger bound but a queryable index (`docs/experiment-index-plan.md`).
+
 ## 4. Opt-in and compatibility
 
 Add `[memory] mode = "findings-v1"`; absence means the existing lineage behavior.

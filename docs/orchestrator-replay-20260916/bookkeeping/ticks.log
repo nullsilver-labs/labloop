@@ -1,0 +1,54 @@
+../labloop-drafts-4-20260914
+  c0005: chance improve ['c0002'] | argmax c0004 improve conf 0.58 0.74s 8841 B
+  c0006: chance improve ['c0004'] | argmax c0001 improve conf 0.18 0.71s 10737 B
+  c0007: chance improve ['c0003'] | argmax c0004 improve conf 0.22 0.89s 12828 B
+  c0008: chance improve ['c0005'] | argmax c0003 improve conf 0.28 0.92s 14715 B
+  c0009: chance improve ['c0004'] | argmax c0006 improve conf 0.18 0.88s 16563 B
+  c0010: chance improve ['c0003'] | argmax c0006 improve conf 0.23 0.96s 18590 B
+  c0011: chance improve ['c0006'] | argmax c0006 improve conf 0.14 0.88s 20454 B
+  c0012: chance crossover ['c0003', 'c0006'] | argmax c0006 improve conf 0.18 0.95s 22290 B
+  c0013: chance improve ['c0006'] | argmax c0006 improve conf 0.23 0.97s 24164 B
+  c0014: chance improve ['c0010'] | argmax c0006 improve conf 0.27 0.94s 26089 B
+  c0015: chance crossover ['c0007', 'c0013'] | argmax c0006 improve conf 0.22 0.96s 27926 B
+  c0016: chance improve ['c0013'] | argmax c0006 improve conf 0.23 0.96s 29857 B
+  c0017: chance crossover ['c0004', 'c0010'] | argmax c0006 improve conf 0.29 1.01s 32080 B
+  c0018: chance improve ['c0015'] | argmax c0006 improve conf 0.27 0.97s 34142 B
+  c0019: chance improve ['c0004'] | argmax c0017 improve conf 0.47 0.95s 36329 B
+../labloop-mem2-findings-20260914
+  c0002: chance improve ['c0001'] | argmax c0001 improve conf 0.6 0.70s 5435 B
+  c0003: chance improve ['c0001'] | argmax c0001 improve conf 0.2 0.73s 7287 B
+  c0004: chance improve ['c0003'] | argmax c0001 improve conf 0.24 0.69s 9286 B
+  c0005: chance improve ['c0003'] | argmax c0001 improve conf 0.2 0.70s 11178 B
+  c0006: chance improve ['c0005'] | argmax c0003 improve conf 0.28 0.95s 13115 B
+  c0007: chance improve ['c0006'] | argmax c0001 improve conf 0.22 0.94s 15010 B
+  c0008: chance improve ['c0006'] | argmax c0006 improve conf 0.25 1.00s 16888 B
+  c0009: chance improve ['c0003'] | argmax c0006 improve conf 0.36 0.89s 18782 B
+  c0010: chance improve ['c0007'] | argmax c0006 improve conf 0.4 0.96s 20691 B
+  c0011: chance improve ['c0004'] | argmax c0006 improve conf 0.18 0.95s 22564 B
+  c0012: chance improve ['c0007'] | argmax c0010 improve conf 0.18 0.94s 24453 B
+  c0013: chance improve ['c0006'] | argmax c0010 improve conf 0.29 0.92s 26341 B
+  c0014: chance improve ['c0009'] | argmax c0010 improve conf 0.29 0.95s 28226 B
+  c0015: chance improve ['c0010'] | argmax c0010 improve conf 0.25 0.92s 30118 B
+  c0016: chance improve ['c0006'] | argmax c0010 improve conf 0.32 0.94s 31995 B
+  c0017: chance improve ['c0010'] | argmax c0016 improve conf 0.31 0.97s 33944 B
+  c0018: chance improve ['c0016'] | argmax c0016 improve conf 0.37 0.97s 35883 B
+  c0019: chance improve ['c0018'] | argmax c0016 improve conf 0.45 0.96s 37760 B
+../labloop-mem3-findings-20260915
+  c0002: chance improve ['c0001'] | argmax c0001 improve conf 0.71 0.70s 5777 B
+  c0003: chance crossover ['c0001', 'c0000'] | argmax c0001 improve conf 0.68 0.67s 5777 B
+  c0004: chance improve ['c0001'] | argmax c0001 improve conf 0.82 0.66s 7303 B
+  c0005: chance improve ['c0000'] | argmax c0001 improve conf 0.28 0.70s 9534 B
+  c0006: chance crossover ['c0002', 'c0001'] | argmax c0003 improve conf 0.45 0.72s 11317 B
+  c0007: chance improve ['c0003'] | argmax c0003 improve conf 0.61 0.92s 13432 B
+  c0008: chance improve ['c0001'] | argmax c0005 improve conf 0.28 0.89s 16185 B
+  c0009: chance improve ['c0006'] | argmax c0005 improve conf 0.39 0.99s 18275 B
+  c0010: chance crossover ['c0008', 'c0003'] | argmax c0005 improve conf 0.42 0.91s 20399 B
+  c0011: chance crossover ['c0005', 'c0008'] | argmax c0005 improve conf 0.33 0.98s 22414 B
+  c0012: chance improve ['c0003'] | argmax c0005 improve conf 0.34 0.93s 23981 B
+  c0013: chance improve ['c0010'] | argmax c0005 improve conf 0.37 0.96s 26132 B
+  c0014: chance improve ['c0000'] | argmax c0005 improve conf 0.43 0.94s 28040 B
+  c0015: chance improve ['c0013'] | argmax c0005 improve conf 0.4 0.96s 29787 B
+  c0016: chance improve ['c0012'] | argmax c0005 improve conf 0.35 0.97s 32505 B
+  c0017: chance crossover ['c0009', 'c0002'] | argmax c0005 improve conf 0.4 0.97s 34224 B
+  c0018: chance improve ['c0016'] | argmax c0005 improve conf 0.43 0.98s 36299 B
+  c0019: chance improve ['c0001'] | argmax c0005 improve conf 0.44 0.94s 38317 B

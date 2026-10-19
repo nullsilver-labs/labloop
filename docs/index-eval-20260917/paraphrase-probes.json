@@ -1,0 +1,170 @@
+[
+  {
+    "query": "has anyone forced the output to be one of a fixed list of possible answers",
+    "difficulty": "hard",
+    "target": "mem3F:c0003",
+    "expected": ["mem3F:c0003", "mem3F:c0005", "mem3F:c0008", "mem3F:c0009"],
+    "idea": "closed-vocabulary answer scoring instead of free decoding"
+  },
+  {
+    "query": "does scoring answers need to correct for how many tokens each one has",
+    "difficulty": "easy",
+    "target": "mem3F:c0007",
+    "expected": ["mem3F:c0007"],
+    "idea": "length-normalize candidate log-likelihoods"
+  },
+  {
+    "query": "what if we substitute the most common training label whenever the model produces gibberish",
+    "difficulty": "hard",
+    "target": "dr1:c0007",
+    "expected": ["dr1:c0007", "mem3L:c0003"],
+    "idea": "fallback to majority-vote answer on invalid output"
+  },
+  {
+    "query": "would a sparse optimizer on the memory table speed up training",
+    "difficulty": "easy",
+    "target": "dr1:c0008",
+    "expected": ["dr1:c0008", "dr1:c0017", "dr1:c0020"],
+    "idea": "sparse embedding table with SparseAdam optimizer"
+  },
+  {
+    "query": "can the same learned direction be scaled by one number per position for gating",
+    "difficulty": "hard",
+    "target": "mem1F:c0006",
+    "expected": ["mem1F:c0006"],
+    "idea": "rank-1 gate: scalar factor times fixed vector"
+  },
+  {
+    "query": "should memory strength depend on the memory content rather than the model's hidden state",
+    "difficulty": "hard",
+    "target": "mem1F:c0008",
+    "expected": ["mem1F:c0008"],
+    "idea": "gate computed from the memory vector, not hidden state"
+  },
+  {
+    "query": "only inject the memory signal at the tokens that are part of the person's name",
+    "difficulty": "easy",
+    "target": "mem1F:c0009",
+    "expected": ["mem1F:c0009"],
+    "idea": "hard mask limiting memory injection to name tokens"
+  },
+  {
+    "query": "instead of hard-blocking non-name tokens nudge the gate with a trainable offset there",
+    "difficulty": "hard",
+    "target": "mem1F:c0010",
+    "expected": ["mem1F:c0010", "mem1F:c0015", "mem1F:c0016"],
+    "idea": "learned positional bias on gate rather than hard mask"
+  },
+  {
+    "query": "replace the single linear layer mapping memory output with a small two-layer network",
+    "difficulty": "easy",
+    "target": "mem1F:c0013",
+    "expected": ["mem1F:c0013", "mem1F:c0017"],
+    "idea": "two-layer MLP instead of single linear projection"
+  },
+  {
+    "query": "let the gate be a free learned number with no input dependence at all",
+    "difficulty": "hard",
+    "target": "mem1F:c0014",
+    "expected": ["mem1F:c0014"],
+    "idea": "context-free learned gate parameter"
+  },
+  {
+    "query": "add a channel that just remembers every token seen earlier in the prompt",
+    "difficulty": "easy",
+    "target": "mem3L:c0009",
+    "expected": ["mem3L:c0009", "mem3L:c0013", "mem3L:c0017"],
+    "idea": "bag-of-tokens-seen-so-far memory channel"
+  },
+  {
+    "query": "let the frozen model's hidden state pick which part of the entity vector to use",
+    "difficulty": "hard",
+    "target": "mem3L:c0007",
+    "expected": ["mem3L:c0007"],
+    "idea": "per-attribute subvector routing from backbone hidden state"
+  },
+  {
+    "query": "start the memory table weights at exactly zero instead of small random values",
+    "difficulty": "easy",
+    "target": "mem3L:c0012",
+    "expected": ["mem3L:c0012"],
+    "idea": "zero-initialize memory table weights"
+  },
+  {
+    "query": "shrink only the table rows that actually received a gradient update this step",
+    "difficulty": "hard",
+    "target": "mem3L:c0006",
+    "expected": ["mem3L:c0006", "mem3L:c0014"],
+    "idea": "weight decay applied only to touched embedding rows"
+  },
+  {
+    "query": "use a different learning rate for the memory table than for the output head",
+    "difficulty": "easy",
+    "target": "mem2F:c0012",
+    "expected": ["mem2F:c0012", "mem2F:c0013"],
+    "idea": "separate learning rate for table vs projection head"
+  },
+  {
+    "query": "blank out every memory address except the ones inside the mentioned person's name",
+    "difficulty": "hard",
+    "target": "mixed:c0004",
+    "expected": ["mixed:c0004", "mixed:c0005", "mixed:c0008"],
+    "idea": "mask hash keys to null outside the name span"
+  },
+  {
+    "query": "randomly hide the surrounding context tokens during training but keep them at test time",
+    "difficulty": "easy",
+    "target": "mixed:c0010",
+    "expected": ["mixed:c0010", "mixed:c0019"],
+    "idea": "stochastic dropout of non-name context during training"
+  },
+  {
+    "query": "clip the gradient norm on the memory parameters before each optimizer step",
+    "difficulty": "easy",
+    "target": "mixed:c0016",
+    "expected": ["mixed:c0016", "mixed:c0018"],
+    "idea": "gradient norm clipping on memory optimizer"
+  },
+  {
+    "query": "generate extra made-up question phrasings and blend them into the training batches",
+    "difficulty": "hard",
+    "target": "mixed:c0003",
+    "expected": ["mixed:c0003", "mixed:c0006", "mixed:c0017"],
+    "idea": "synthetic paraphrase-template data augmentation"
+  },
+  {
+    "query": "check held-out accuracy more often during training to pick a better checkpoint",
+    "difficulty": "easy",
+    "target": "mem1L:c0007",
+    "expected": ["mem1L:c0007", "mem1L:c0019"],
+    "idea": "shorten the interval between held-out checkpoint evals"
+  },
+  {
+    "query": "keep the learning rate flat at first and only start decaying it near the end",
+    "difficulty": "easy",
+    "target": "mem1L:c0009",
+    "expected": ["mem1L:c0009", "mem1L:c0012"],
+    "idea": "delay the learning-rate decay to late training"
+  },
+  {
+    "query": "pick a hyperparameter value because an earlier run's writeup said that value looked best",
+    "difficulty": "hard",
+    "target": "mem2L:c0009",
+    "expected": ["mem2L:c0009"],
+    "idea": "use the dosage a parent's own report recommended"
+  },
+  {
+    "query": "increase the dropout rate gradually over the course of training instead of a fixed value",
+    "difficulty": "easy",
+    "target": "mem2L:c0004",
+    "expected": ["mem2L:c0004", "mem2L:c0006", "mem2L:c0007"],
+    "idea": "dropout rate ramped over training instead of constant"
+  },
+  {
+    "query": "pool the memory lookups over everything said so far instead of just nearby tokens",
+    "difficulty": "hard",
+    "target": "dr4:c0003",
+    "expected": ["dr4:c0003"],
+    "idea": "whole-prompt cumulative pooling instead of local window"
+  }
+]

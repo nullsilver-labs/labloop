@@ -8,6 +8,46 @@ implementation notes are in `docs/aira2-loop-design.md`; this file is only what 
 true now and what comes next. Milestone criteria are read from the design doc, never
 revised here after the fact.
 
+## Resume here: 2026-10-19 afternoon
+
+Written by the operator session before the human went out. **Nothing is running.**
+
+**Where things stand.**
+- `main` is pushed to GitHub as one squashed commit on top of the September history.
+- The full local history is on branch `local-history-20261019`. **Never push that branch:** it names labbench generator details, and the repo is public.
+- Acceptance is **643/0** on a quiet machine. Under heavy load from running campaigns, 12 loop-timing cases in section C fail; rerun when quiet.
+- Format is 2.2.
+- The default cards no longer say "Make ONE hypothesised change" or "Prefer simple and runnable".
+- The v2 keys are on main: `restart_after`, `seed_from`/`seed_upto`, `same_output_ignore`, `[worker.operator_text]`. The plan is in `docs/labloop-v2-plan.md`.
+
+**In flight: A3, the crossover card test** (hub `../labloop-v2a3-20261019`; its PREREG holds the one primary line).
+- **Interrupted.** A power cut at about 11:40Z killed phase 1. The first snapshots, `../labloop-a3src-*`, are left as evidence; their dead watchers were repaired with `tools/lab watch check`.
+- **Replacements:** `../labloop-a3src2-i{13,14}{a,b}-20261019`, scaffolded but **not trusted and not launched**.
+
+**Steps to finish A3:**
+1. **Human:** `bash ../labloop-v2a3-20261019/trust2.sh`. It should print `trusted 4`.
+2. **Session:** `bash ../labloop-v2a3-20261019/launch12.sh`. It refuses if `../labbench` is mode 000 or another unlock watcher is running. The 4 snapshots (c0000 + 4 drafts each, Haiku) take about 45 minutes; check hourly.
+3. **When all 4 snapshot REPORTs exist and `../labbench` is 775:**
+   - from `../labbench`, run `python3 -m tools.make_a3 phase2 20261019 5d5354c`. It scaffolds the 16 seeded arms at paths already trusted by `trust.sh`, reading `plan.json`, which now points at the `a3src2` snapshots.
+   - then run `bash ../labloop-v2a3-20261019/launch2.sh`.
+   - Each arm re-scores its 4 seeded drafts at start (B2), so the first tick is slow. The arms take about 1–2 hours and about $4.
+4. **Read A3:**
+   - from `../labbench`, run `python3 -m tools.a3_read 20261019 > ../labloop-v2a3-20261019/read.json` as a tracked background task (it re-runs learners in Docker).
+   - then write `READ.md` in the hub against the PREREG's one primary line.
+   - add a dated entry here; keep labbench generator details out of this public repo.
+5. **After A3:** next steps per `docs/labloop-v2-plan.md` §4. If crossover can be made to combine rules, that is a harness change worth a default. If not, check on a second task family that the card change carries over.
+
+**Habits learned this week:**
+- Before pushing main, grep the outgoing diff for labbench generator details. The repo is public; the generators are not.
+- `../labbench` is mode 000 while workers run. The launch scripts lock it, and a trap-protected unlock watcher restores it.
+- **After a power cut:**
+  - `tools/lab watch check` in each affected campaign;
+  - `chmod 775 ../labbench` only when no worker is running;
+  - a campaign whose first draft died mid-run is better replaced than resumed, because the dead draft costs a debug slot.
+- Trust is the human's step (`trust*.sh` scripts in each hub). The agent cannot edit `~/.claude.json`.
+
+**For the human:** `trust2.sh` above. Also delete `/tmp/nullsilver-*`, acceptance leftovers from one `KEEP=1` debug run that the agent may not remove.
+
 ## Current status — reviewed 2026-09-12
 
 | Milestone | Implemented / tested | Live evidence | Remaining |
@@ -18,11 +58,12 @@ revised here after the fact.
 | M3 | Governor and fake-CLI tests implemented; live rate-limit enforcement by the watcher (2026-09-12, section E2b) | First live deferral 2026-09-14 (mem2-legacy c0008: limit message → deferred, not failed → re-dispatched after 30.5 min; 0 failed); the predictive gate never fired (no `window_budget`) | Predictive gate armed at a calibrated budget in the drafts arms (`window_budget` 20.0, `session_cost` 0.48 from 37 sessions); expected to fire only on an overrun, so unattended validation is still pending |
 | M4 | Slots, VRAM checks and fake-GPU tests implemented; second-slot draft rule fixed 2026-09-14 (`e464135`); `max_candidates` guard counts in-flight jobs since 2026-09-15 (two slots overshot the cap by one in D1) | The drafts pair ran on two GPUs 2026-09-14/15: 4.19 and 4.60 settled per GPU-hour vs 4.72 / 5.45 on one GPU — **the M4 kill criterion fired**; `gpu_seconds` is slot-lease time and the growth is in the non-training part of each lease (`docs/drafts-comparison-20260915/RESULT.md` §5); wall clock roughly halved (2.83 h / 2.28 h vs 4.79 h / 3.70 h) | Two-slot dispatch is under the fired rule; the mixed arm used it anyway to match its D4 control (a disclosed exception, `docs/campaign-plan-20260914.md`) and reproduced the pattern (4.19 per lease-hour, 8.23 per wall-hour, non-training lease median 346 s vs 226 / 181 s one-slot; `docs/mixed-comparison-20260915/RESULT.md` §7); the mem3 pair runs on two slots under its own disclosure; the cause (host contention, inferred) is not measured |
 | M5 | Phase removal and format 2.0 complete locally | Site renderer completion recorded historically | External deployment not independently audited in this review |
-| Finding cards | Implemented and tested (opt-in `[memory]`, format 2.1, section G); prompt-size pilot run 2026-09-12 (`docs/finding-cards-pilot.md`); comparison preregistered 2026-09-13 and run 2026-09-13/14 (`docs/memory-comparison-20260913/`, engram w0, 20 candidates per arm, findings first) | Both arms 20/20 completed; blinded rating 2026-09-14: fraction_bad findings .017 (2/115) vs legacy .047 (9/191), ratio .37 ≤ .50 → **supported** (feasibility, one seed); prompt ratio 1.74 ≤ 2.0; coverage NOT full (8/16 jobs under two cross-branch cards) | Human spot-check (`spot-check.md`); fix the selector's eviction order and cross-branch floor before any second comparison; superiority needs more seeds (`RESULT.md`, `opus-review.md`); second pair (mem2, seed 2, legacy first, findings-v2 selector and knob ledger) run 2026-09-14, mechanical pass clean (coverage 18/19, the miss is the single-draft opening; prompt ratio 1.85 ≤ 2.2), blinded rating with the `## Finding` section kept 2026-09-15: **not_supported** (.095 vs .060, ratio 1.59; `docs/mem2-comparison-20260914/RESULT.md`); the two seeds disagree | Ledger v3 implemented 2026-09-15 (per-knob index, measured line on v3 cards, parents in the job card's population table; `docs/finding-cards-plan.md` §3c) and its replay gate passed 11 of 11 (`docs/mem2-comparison-20260914/ledger-v3-replay.md`); the `mem3` pair (`../labloop-mem3-20260915`, seed 4, two GPUs, Sonnet only, findings first by draw) is scaffolded and waits for the human's launch; human spot-checks of both earlier pairs still open |
+| Finding cards | Implemented and tested (opt-in `[memory]`, format 2.1, section G); prompt-size pilot run 2026-09-12 (`docs/finding-cards-pilot.md`); comparison preregistered 2026-09-13 and run 2026-09-13/14 (`docs/memory-comparison-20260913/`, engram w0, 20 candidates per arm, findings first) | Both arms 20/20 completed; blinded rating 2026-09-14: fraction_bad findings .017 (2/115) vs legacy .047 (9/191), ratio .37 ≤ .50 → **supported** (feasibility, one seed); prompt ratio 1.74 ≤ 2.0; coverage NOT full (8/16 jobs under two cross-branch cards) | Human spot-check (`spot-check.md`); fix the selector's eviction order and cross-branch floor before any second comparison; superiority needs more seeds (`RESULT.md`, `opus-review.md`); second pair (mem2, seed 2, legacy first, findings-v2 selector and knob ledger) run 2026-09-14, mechanical pass clean (coverage 18/19, the miss is the single-draft opening; prompt ratio 1.85 ≤ 2.2), blinded rating with the `## Finding` section kept 2026-09-15: **not_supported** (.095 vs .060, ratio 1.59; `docs/mem2-comparison-20260914/RESULT.md`); the two seeds disagree | Ledger v3 implemented 2026-09-15 (per-knob index, measured line on v3 cards, parents in the job card's population table; `docs/finding-cards-plan.md` §3c) and its replay gate passed 11 of 11 (`docs/mem2-comparison-20260914/ledger-v3-replay.md`); the `mem3` pair (`../labloop-mem3-20260915`, seed 4, two GPUs, Sonnet only, findings first by draw): findings arm finished 2026-09-15 (20/20 completed, final .750 vs .50, coverage full, **v3 knob index saturated at the 13th candidate**, `docs/mem3-comparison-20260915/STATUS.md`), legacy arm finished 2026-09-15 (20/20 completed, final .861 vs .50); blinded rating 2026-09-16 (fresh Opus session, rubric inlined from the 2026-09-13 PREREG): fraction_bad findings **.042** (9/213) vs legacy **.109** (28/258), ratio .39 ≤ .50 → **supported**; prompt ratio 1.93 ≤ 2.2; coverage full but the c0004 opening miss; three seeds now read supported / not_supported / supported and are reported side by side, never pooled (`docs/mem3-comparison-20260915/RESULT.md`); human spot-check sheet drawn (`spot-check.md`); `last_logged_*` joined the outcome prefixes on main; an index-with-search replacement for the byte-bounded context is drafted in `docs/experiment-index-plan.md`; human spot-checks of both earlier pairs still open |
 
-| Pi workers | Second harness implemented 2026-09-15 on branch `pi-workers` (`tools/lab-worker-pi`, `tools/pi/lab-worker.js`, `tools/lab_pi.py`, `scripts/llm-server.sh`); acceptance section P (fake pi) and a node test of the extension; preflight records the declared and served context window; the extension clips tool results and continues a run cut at the output limit | Two MNIST probes 2026-09-15 (`docs/pi-probe-20260915.md`): gpt-oss-20b 5/5 completed, final **0.9888** ≥ 0.985, sessions 22–64 s; Qwen3.8-27B 4/5 completed (one `length` stop, debugged), final **0.9937**, sessions 5–13 min. Both clear M1's kill criteria; quality not compared (noise floor) | Merge `pi-workers` after the docs pass; then the M2-style task (headroom) on a local model, and a hosted open model through the same `provider/model` id |
+| Pi workers | Second harness implemented 2026-09-15 on branch `pi-workers` (`tools/lab-worker-pi`, `tools/pi/lab-worker.js`, `tools/lab_pi.py`, `scripts/llm-server.sh`); acceptance section P (fake pi) and a node test of the extension; preflight records the declared and served context window; the extension clips tool results and continues a run cut at the output limit | Two MNIST probes 2026-09-15 (`docs/pi-probe-20260915.md`): gpt-oss-20b 5/5 completed, final **0.9888** ≥ 0.985, sessions 22–64 s; Qwen3.8-27B 4/5 completed (one `length` stop, debugged), final **0.9937**, sessions 5–13 min. Both clear M1's kill criteria; quality not compared (noise floor) | Merged to main 2026-09-15 (`2670f06`); the research task with headroom on a local model is scaffolded as `../labloop-pi-engram-20260915` (engram w0, gpt-oss-20b via Pi, the mem2 legacy arm's configuration, `PREREG.md` with a contract kill criterion; the mem3 legacy arm finished 2026-09-15, so its launch is unblocked; human only); `engram-pi-gptoss-w0` ran 2026-09-16 and was stopped by hand at 10 settled (final .3577, not_supported; `runs/engram-pi-gptoss-w0/`); `engram-pi-qwen38-w0` ran 2026-09-16 and was stopped by hand at 3 settled (c0001 invalid, c0002 killed): the model thought ≈ 25k tokens per session at the template's default `xhigh` effort, 23 tok/s, and never wrote code; the server was rebuilt that afternoon (llama.cpp b10991, `--spec-type draft-mtp` from the GGUF's nextn head: 31–44 tok/s; `--reasoning-effort low`: an agent-sized turn in 19 s where `xhigh` was still thinking at 6000 tokens) and the second attempt `engram-pi-qwen38-w0-low` is prepared in the same dir (PREREG *Second attempt*), launch human only after the first run's files are moved to `runs/`; it ran 2026-09-16 and is read in `docs/pi-engram-20260916/READ.md`: **contract met** (16 of 18 completed, 0 provider errors, 2 killed after their predictions existed), claim recorded `supported` at final 1.0 but **not evidence for the task**: every candidate keys its memory on the question's record id and `attribute` field, not on the input tokens (a fixed rule of `task.md` the evaluator cannot see); w0's hidden labels are reconstructible from `facts.json`; 8.32 lease-hours held ≈ 3 h of `run.sh`, the 8 h lease budget stopped it at 19 of 20. Before the next local-model campaign: a world whose questions carry no `attribute` and opaque ids, a lease budget sized from the local worker's lease; then a hosted open model through the same `provider/model` id |
 
-Current no-LLM acceptance: **478 passed, 0 failed** (2026-09-15, branch `pi-workers`: +24 Pi checks in section P and the extension test; before that **413 passed, 0 failed** (2026-09-14 evening, e464135: second-slot draft rule, +3 slot cases; earlier that day 410 with findings-v2, initial_drafts and per-operator models; 2026-09-12: 388 including the
+Current no-LLM acceptance: **643 passed, 0 failed** (2026-10-19, main after the v2 merge, the new default cards and the status fixes; on a quiet machine, since 12 loop-timing cases fail under heavy load). Before: **613 passed, 0 failed** (2026-10-18: v0.3 blind card = one-shot card, `[worker.operator_text]`, trust check at launch; run with `ANTHROPIC_BASE_URL` unset). Before: **554 passed, 0 failed** (2026-10-17, guard read scope; run with
+`ANTHROPIC_BASE_URL` unset, which the auth preflight refuses). Before: **478 passed, 0 failed** (2026-09-15, branch `pi-workers`: +24 Pi checks in section P and the extension test; before that **413 passed, 0 failed** (2026-09-14 evening, e464135: second-slot draft rule, +3 slot cases; earlier that day 410 with findings-v2, initial_drafts and per-operator models; 2026-09-12: 388 including the
 new bounded-lifecycle section H). Focused lifecycle tests: **9 passed** (27.4 s).
 Counts in dated entries below describe historical suites, not today's coverage.
 Passing synthetic tests does not establish OS isolation, exact crash recovery or live
@@ -276,6 +317,164 @@ mem2 population against the eleven rated "never varied" claims, then a third mem
 (`mem3`, seed 4, legacy vs findings-v3). The card shape stays (derived from the summary's
 `## Finding` section, one narrative); the plan says why and what it costs. Item 5 there is
 the future orchestrator experiment (a CPU-hosted model as the selector, replay first).
+
+### 2026-09-17: guard read scope, training time, spot checks, `lab index`
+
+- Guard: worker reads scoped to its own dir and the job card's parents (Bash, Read/Grep/Glob,
+  Pi's read tools); the write rule looks at the destination only, so copying from a parent
+  passes (`60aa2b4`). Item 1 below is partly done: read scope and editing tools covered;
+  the sudo-Python evaluator boundary, settlement recovery and interrupted finals are not.
+- `out/train_stats.json` in new job cards; `lab run` copies `train_seconds` into `config.json`
+  at settlement; REPORT separates recorded training from lease time. The M4 criterion can be
+  restated per training-hour in the next preregistration.
+- Spot checks: on the human's decision a second blinded Opus rater stands in for the human
+  check in all three memory pairs (mem3: 20 of 20 ratings agree). A stated deviation.
+- `lab index` and `[memory] mode = "index-v1"` (`docs/index-eval-20260917/README.md`): 24 of
+  29 rated errors reachable as of the worker's launch, 5 unknowable at launch; hybrid search
+  +0.08 recall@5 over lexical, under the 0.10 rule, so lexical-only. **Next, human:** the
+  preregistration of the pair findings-v3 vs index-v1 (seed, slots, the queries-per-job and
+  cited-ids measures) and of the 60-candidate scale arm, which needs the new world files if it
+  runs on the local model. Operator suggestions are designed in the plan (§5), not built.
+- Hybrid search kept as an option (`7eccfce`): `[memory.embedder]` url + model, any
+  OpenAI-compatible endpoint, frozen and preflighted; unset = lexical. `scripts/embed-server.py`
+  serves a local checkpoint on CPU. Another model is a fixture rebuild and the same 24 probes.
+- **The pair is scaffolded, not launched:** `../labloop-idx1-20260917/{PREREG,LAUNCH,ORDER}`,
+  arms `../labloop-idx1-index-20260917` (first, drawn) and `../labloop-idx1-v3-20260917`, seed 5,
+  two slots, lexical, tools from `f952c23`, both pass `campaign check`. Read 1 adoption (≥ 75 %
+  of jobs with a parent query the index), primary endpoint better / not worse (+0.03) / worse.
+  Launch is the human's: stop the local model server first, both GPUs idle.
+- **Compression task** (`../labloop-compress`, world c0 from enwik8 via Hugging Face): hidden 2 MB,
+  60 s on one core each way, program size counted, lower is better; the evaluator runs the
+  candidate's code in a no-network container as `labeval` (a cheating decompressor, a C build and a
+  runaway were tested); xz -9e baseline .2934 search / .2993 final; a four-candidate dry run with a
+  scripted worker went baseline → docker eval → index → final. **Probe scaffolded, not launched:**
+  `../labloop-compress-probe-20260917` (Qwen3.8 on Pi, index-v1, 8 workers, kill < 5 completed,
+  threshold .2544). Needs once: `sudo bash worldgen/install_private.sh` in the base project. After a
+  clean probe: findings-v3 vs index-v1 on this task at 40–60 candidates, which replaces the scale arm
+  that waited on new engram world files; the idx1 Sonnet pair on engram stays scaffolded.
+
+### 2026-10-17: labloop on labloop, a plan
+
+- `docs/meta-loop-plan.md`: run labloop's loop on its own policy (scheduler, job cards,
+  memory, worker tools) against a frozen trusted core. First a benchmark suite, labbench,
+  of cheap CPU tasks from hidden generators with headroom for frontier models (admission
+  rules and kill criteria K1–K8 in §2–§4), then the frozen commit's noise floor (§6), then
+  hand-run single-idea pairs (§9); the outer loop is built only if the suite can see a 0.05
+  gain in mean g at k ≤ 3. **For the human before anything runs:** the thresholds, the
+  dollars-to-CPU-hours rate and quality floor of the meta-fitness, and whether the sudoers
+  fix and the policy refactor (§1) land before the first probe.
+- Labbench, same day. Generators live in the private `../labbench` (no remote). hsrc-v0 failed
+  K2 (one-shot g .679 against xz). The plan was amended (a70928d): compression K2 is measured
+  against a frozen generic compressor. hsrc-v1 passed K2 (best of three one-shots, gauge g
+  .441). The v1 admission probe (`../labloop-hsrc1-probe-20261017/READ.md`) does **not admit**
+  it: K5 and K6 fire. labloop's default policy (one opening draft, then improves) lost to
+  draft-only random restarts, final gauge g .035 vs .307 on the same instance. That is the
+  first measured policy effect, against the default. **Guard gap:** a crippled-arm worker read a
+  sibling's `summary.md` once before the guard blocked it (its own disclosure, Acrip c0009). Find
+  and fix this before any run where read scope matters.
+- Guard gap fixed (92a059f, 06340e1: paths resolved, fails closed around `candidates/`; an OS
+  wall is designed in docs/campaign-setup.md, not built). Admission rules v0.2 are in the plan
+  §4 (8e4d912). `[selection] blind` built for v0.2's crippled arms: no population, best or
+  lineage on the card, scoreboard reads refused by the guard. Acceptance **578 passed, 0
+  failed**, run in a clean env (an inherited ANTHROPIC_BASE_URL fails the preflight by design).
+  Families hrw, popt and pinf are built in `../labbench`, gauges frozen.
+- pinf admission probe, the first family under rules v0.2: **fails K2**. The Opus one-shot reached
+  gauge g .88 by mining the public tasks for the prior (`../labloop-pinf-probe-20261017/READ.md`). The
+  chain launched no short runs. The new guard blocked some legitimate worker commands (false
+  positives); see that READ. Next: hrw K2.
+- Policy pair 1 (`../labloop-policy-pair1-20261017/READ.md`): `initial_drafts` 4 beat 1 on both fresh hsrc-v1
+  instances, as predicted (D_A +.085, D_B +.041 in gauge g), but under the preregistered .10 floor: **not
+  supported**. First σ_run: .029. No arm found the decisive hidden structure. Campaign workers use 6–19 turns per job
+  against 41 for a one-shot; per-job effort (OPERATOR_TEXT 'prefer simple', 'ONE change') is the next pair's hypothesis.
+- hrw and popt probes (v0.2): **neither admitted.** hrw failed K2 (Opus g .73). popt passed K2, but K3, K5
+  and K6 fired: instance 2 saturated, found by the frozen arm and independently by one blind draft; instance
+  1 sat at the gauge in 22 sessions. Discovery is per instance. Reads: `../labloop-{hrw,popt}-probe-20261017/READ.md`.
+  **Rules v0.3 adopted 2026-10-18:** a fixed Sonnet worker, the one-shot as a policy, K2 as a median-session line,
+  plus trusted arm dirs. **Confound:** no campaign dir since pinf was trusted (parent trust does not carry over).
+  **Next:** the blind-card change (show c0000), the standalone one-shot arm, then hsrc-v1's re-probe and hrw's
+  v0.3 probe, both with predictions, and a family design with several graded structures.
+- **2026-10-18, after the five-family tally** (plan §4, "Decisions 2026-10-18"; with Fable 5.1). There will be no more planted-key families, and hsrc-v1's re-probe is not run; that was a decision, not a result.
+  - **hrw's v0.3 probe** is scaffolded on fresh probe/3 and probe/4 (`../labloop-hrw-probe3-20261018`, six arms, predictions in PREREG). hrw is the one multi-key, graded family.
+  - **The Haiku gate** is scaffolded (`../labloop-haiku-gate-20261018`): it decides whether a separate weak-worker programme opens.
+  - Tooling f77ea4a: blind card = one-shot card, `[worker.operator_text]`, trust check at launch.
+  - **For the human:** trust the 8 new arm dirs, then run the gate's `launch.sh` and, after it, the probe's `launch.sh`. If hrw is not admitted, close labbench v0.3 in writing.
+  - **Haiku gate read (`../labloop-haiku-gate-20261018/READ.md`): the gate opens.**
+    - The contract held 5/5 and the median session search g was .066, inside [.05, .17].
+    - c0001 found two planted rules that no Sonnet session on this instance had found. Its best final g was .271.
+    - Per-session sd was .085, at $0.04 per session, about 7× cheaper than Sonnet.
+    - The Sonnet card check confirms the v0.3 blind card.
+    - Four guard false positives are listed there.
+    - **Next:** the hrw v0.3 Sonnet probe can launch (labbench at 775). labbench-haiku needs its rules written before any of its instances is scored.
+  - **hrw v0.3 probe read (`../labloop-hrw-probe3-20261018/READ.md`): not admitted; labbench v0.3 closed.**
+    - K3, K5 and K6 fired, K6 in the wrong direction: frozen .303 / .058 against blind .383 / .818 final g.
+    - **Frozen improves added zero planted forms in 20 jobs** (5–9 turns each), while one blind draft found most of the planted rules.
+    - labbench-haiku rules adopted (a142421).
+    - **Next: the effort pair** (remove "ONE change" / "prefer simple") on hrw.
+  - **Effort pair read (`../labloop-effort-pair-20261018/READ.md`): not supported, but close.**
+    - Haiku, hrw instances 5 and 6, 8 paired seeds. Mean D +.096 (default .158, effort .254 final g); t 1.68 against the 1.895 needed.
+    - Drafts ran 60 % longer without "prefer simple". No job was killed or invalid. It cost $4.
+    - A replication on fresh probe/7 and probe/8 is scaffolded (`../labloop-effort-pair-rep-20261018`), with its own line as primary and the pooled 16-pair read as secondary.
+- **2026-10-19 morning:**
+  - The human decided to drop the two lines from the default cards (099600f) and to merge `v2` into main (0275840).
+  - Status view: `fit` instead of `train`, and a Haiku worker's model is no longer blank (a33f4bc).
+  - labbench task statements no longer say "Make ONE hypothesised change".
+  - **A2 read (`../labloop-v2a2-20261019/READ.md`): no primary line supported.**
+    - `draft_p` .3: +.050, p .14. `initial_drafts` 4: +.041, p .19.
+    - The no-op line: forms added per improve .071 against .078, p .58. It removed no-ops (20/90 → 1/99), but final g leans negative (−.092, reported only), so it is not adopted.
+    - $13.38 total.
+  - **Next:** A3, the crossover line on shared snapshots (B2), with forms added per crossover as the primary.
+- **2026-10-19 overnight (autonomous; the user asked for research, Fable/Opus review rounds and a start on labloop v2):**
+  - **Effort pair replication** (`../labloop-effort-pair-rep-20261018/READ.md`), hrw 7/8, Haiku:
+    - **The primary line is not supported:** D +.121, t 1.80 (needed 1.895). Default .136 against effort .258 final g.
+    - **The pooled 16-pair secondary, declared before launch, is supported:** D +.109, t 2.54 ≥ 1.753. All 4 instances are positive.
+    - **Improves adding a form:** 4/80 against 11/80; both runs together 4/160 against 21/160.
+    - **Crossovers added a form 1 time in 54.**
+    - **Recommendation (the human decides):** drop "Make ONE hypothesised change" and "Prefer simple and runnable" from the default cards. This rests on the pooled read plus the mechanism counts, not on a supported primary line.
+  - **Branch `v2`** (10 commits ahead of main, not merged). Plan: `docs/labloop-v2-plan.md`, draft 3, after 3 review rounds (Fable 5.1 and Opus 5.5), a literature pass over 11 verified papers, and an Opus code review plus a verification pass.
+    - Built, each off by default:
+      - **C2** `[selection] restart_after`/`restart_min_step` (stagnation drafts);
+      - **B1** `same_output_as_parent` metric (`[data] same_output_ignore`);
+      - **B2** `[campaign] seed_from`/`seed_upto` (shared snapshot seeding for operator tests). It re-scores seeded fitness through the evaluator, never copies the source's final read, refuses symlinks, and uses a staged copy.
+    - Acceptance **642/0** on v2. Docs are in `docs/campaign-setup.md`.
+    - Dropped after review: sibling cards, the offspring penalty, the code-hash no-op gate, and the feedback hook (a leak channel).
+  - **A2 factorial scaffolded, NOT launched** (`../labloop-v2a2-20261019`, 32 Haiku campaigns, about $10, pinned f77ea4a):
+    - draft_p 0/.3 × initial_drafts 1/4 × a no-op line, on the effort base, blocked by fresh hrw instances 9–12;
+    - lines in its PREREG.
+    - **For the human:** `bash ../labloop-v2a2-20261019/trust.sh`, then `bash ../labloop-v2a2-20261019/launch.sh`. It refuses while labbench is locked.
+  - **Also for the human:**
+    - whether to merge `v2`;
+    - whether to change the default cards;
+    - the stray acceptance dirs under /tmp kept from one `KEEP=1` debug run (`/tmp/nullsilver-*`). They are deletable, but the agent is not allowed to `rm -rf` under /tmp.
+
+- Guard read scope fixed, same day: globs (`*/c0008`, `cand*`), `cd candidates`, `../c0008` from the
+  own dir, `c0003/../c0008`, variables, recursive walks over the campaign root and path-less
+  Glob/Grep (and Pi find/grep) all got past the textual check; the guard now resolves paths and
+  fails closed around `candidates/` (docs/campaign-setup.md, *Read scope*). +44 acceptance cases,
+  31 of them failing before (the 13 allow cases pass both ways), plus 3 Pi bridge checks;
+  **548 passed, 0 failed**. Not a sandbox: code a worker runs is not inspected,
+  and campaigns scaffolded before today carry the old guard.
+- Same evening, on the probe operator's findings: +6 cases for its exact forms (`head */*/…`, a
+  session cwd already in `candidates/`, Glob/Grep with `path: "."`), all failing on the old guard.
+  The rerun caught a flaky pass in 92a059f: a symlink into a sibling was checked by whichever of
+  its two forms (lexical, real) a set yielded first; now both must pass.
+  docs/campaign-setup.md now calls the guard a deterrent, not a wall, and designs the wall: a
+  per-job bubblewrap mount namespace in `lab-worker`/`lab-worker-pi` showing only the own dir, the
+  parents, task, data/train and eval. **Not built; the human decides.** This host refuses
+  unprivileged bwrap (`apparmor_restrict_unprivileged_userns = 1`): a root step first, and
+  `lab index` must be served from outside the wall.
+- Guard false positives from the pinf K2 arms fixed. Of the three denials, two were correct
+  (`ls candidates/*` in the same compound command; the python heredocs that read `data/train`
+  pass on their own). The third, `mkdir -p <own>/code && cd $_ && …`, was a bug: the cwd tracker
+  took `$_` from the hook's own environment, its python3, so every later path resolved under it.
+  `$_` is now the previous command's last argument, or unknown. The same tracker read `$OLDPWD`
+  from the hook too, and modelled `cd -`, `~-`, `~N`, `popd`, a bad `cd` option, extra `cd` args,
+  CDPATH, a `cd` that fails and a piped `cd` as moves that happened. Ten of these were live
+  bypasses at 953f028 (in a fixture, real bash read a sibling and the guard allowed it); `$OLDPWD`
+  is live whenever the worker's persistent shell ran a `cd` in an earlier call. Each now leaves
+  the dir unknown, or follows it exactly. Ids built from variables (`X=c000; cd ${X}0`) are
+  checked as well. +25 acceptance cases; **603 passed, 0 failed** in a clean env. Still open: a `cd` inside `{ …; }`, `eval`,
+  `bash -c`, or after deleting its target is not followed. Campaigns scaffolded before this
+  commit carry the old guard.
 
 ### Next work, in priority order
 

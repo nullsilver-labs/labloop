@@ -1,0 +1,140 @@
+{
+ "per_campaign": [
+  {
+   "campaign": "engram-drafts4-w0",
+   "ticks": 15,
+   "calls": 15,
+   "errors": 0,
+   "latency_per_call_median_s": 0.937,
+   "state_bytes_max": 45804,
+   "input_tokens_total": 134927,
+   "labeled_pairs": 67,
+   "exhausted_pairs": 22,
+   "labeled_candidates": 9,
+   "exhausted_candidates": 4,
+   "auc_pooled": {
+    "jev_noul": 0.756,
+    "jev_score_inverted": 0.682,
+    "rule": 0.68,
+    "children": 0.505,
+    "jobs_in_line": 0.481,
+    "search_score": 0.685
+   },
+   "auc_first_tick": {
+    "jev_noul": 0.625,
+    "jev_score_inverted": 0.65,
+    "rule": 0.65,
+    "children": 0.5,
+    "jobs_in_line": 0.5,
+    "search_score": 0.45
+   },
+   "mean_noul_by_label": {
+    "0": 0.261,
+    "1": 0.381
+   },
+   "model": "jev-1.13.0"
+  },
+  {
+   "campaign": "engram-mem2-findings-w0",
+   "ticks": 18,
+   "calls": 18,
+   "errors": 0,
+   "latency_per_call_median_s": 0.948,
+   "state_bytes_max": 47492,
+   "input_tokens_total": 162855,
+   "labeled_pairs": 94,
+   "exhausted_pairs": 10,
+   "labeled_candidates": 10,
+   "exhausted_candidates": 2,
+   "auc_pooled": {
+    "jev_noul": 0.812,
+    "jev_score_inverted": 0.786,
+    "rule": 0.23,
+    "children": 0.187,
+    "jobs_in_line": 0.165,
+    "search_score": 1.0
+   },
+   "auc_first_tick": {
+    "jev_noul": 0.5,
+    "jev_score_inverted": 0.469,
+    "rule": 0.188,
+    "children": 0.5,
+    "jobs_in_line": 0.5,
+    "search_score": 1.0
+   },
+   "mean_noul_by_label": {
+    "0": 0.267,
+    "1": 0.475
+   },
+   "model": "jev-1.13.0"
+  },
+  {
+   "campaign": "engram-mem3-findings-w0",
+   "ticks": 18,
+   "calls": 18,
+   "errors": 0,
+   "latency_per_call_median_s": 0.952,
+   "state_bytes_max": 48832,
+   "input_tokens_total": 157252,
+   "labeled_pairs": 102,
+   "exhausted_pairs": 27,
+   "labeled_candidates": 12,
+   "exhausted_candidates": 4,
+   "auc_pooled": {
+    "jev_noul": 0.702,
+    "jev_score_inverted": 0.449,
+    "rule": 0.56,
+    "children": 0.408,
+    "jobs_in_line": 0.387,
+    "search_score": 0.975
+   },
+   "auc_first_tick": {
+    "jev_noul": 0.469,
+    "jev_score_inverted": 0.406,
+    "rule": 0.438,
+    "children": 0.5,
+    "jobs_in_line": 0.5,
+    "search_score": 0.938
+   },
+   "mean_noul_by_label": {
+    "0": 0.253,
+    "1": 0.343
+   },
+   "model": "jev-1.13.0"
+  }
+ ],
+ "all": {
+  "campaign": "all",
+  "ticks": 51,
+  "calls": 51,
+  "errors": 0,
+  "latency_per_call_median_s": 0.951,
+  "state_bytes_max": 48832,
+  "input_tokens_total": 455034,
+  "labeled_pairs": 263,
+  "exhausted_pairs": 59,
+  "labeled_candidates": 31,
+  "exhausted_candidates": 10,
+  "auc_pooled": {
+   "jev_noul": 0.743,
+   "jev_score_inverted": 0.614,
+   "rule": 0.513,
+   "children": 0.387,
+   "jobs_in_line": 0.338,
+   "search_score": 0.849
+  },
+  "auc_first_tick": {
+   "jev_noul": 0.526,
+   "jev_score_inverted": 0.493,
+   "rule": 0.436,
+   "children": 0.5,
+   "jobs_in_line": 0.5,
+   "search_score": 0.748
+  },
+  "mean_noul_by_label": {
+   "0": 0.26,
+   "1": 0.38
+  },
+  "model": "jev-1.13.0"
+ }
+}

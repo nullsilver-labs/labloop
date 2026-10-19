@@ -59,7 +59,8 @@ def check_model(model: str, timeout: float = 5.0) -> dict:
     provider, `pi auth check`. Never raises; the dict says what was checked."""
     provider, mid = split_model(model)
     out = {"model": model, "provider": provider, "id": mid, "ok": False, "base_url": None,
-           "served": [], "context_declared": None, "context_served": None, "detail": ""}
+           "served": [], "context_declared": None, "context_served": None,
+           "server_build": None, "detail": ""}
     if not provider or not mid:
         out["detail"] = "a Pi model id is provider/model"
         return out
@@ -90,9 +91,10 @@ def check_model(model: str, timeout: float = 5.0) -> dict:
             return out
         served = [str(m.get("id")) for m in (data.get("data") or []) if isinstance(m, dict)]
         out["served"] = served
-        out["context_served"] = _served_context(base, key, timeout)
+        out["context_served"], out["server_build"] = _served_props(base, key, timeout)
         ctx = (f"; context declared {out['context_declared'] or '?'}, "
-               f"served {out['context_served'] or 'unknown (no /props)'}")
+               f"served {out['context_served'] or 'unknown (no /props)'}"
+               + (f", server build {out['server_build']}" if out["server_build"] else ""))
         if mid in served and out["context_declared"] and out["context_served"] \
                 and out["context_declared"] > out["context_served"]:
             out["detail"] = (f"{mid} declares a {out['context_declared']}-token context in Pi's "
@@ -114,9 +116,11 @@ def check_model(model: str, timeout: float = 5.0) -> dict:
     return out
 
 
-def _served_context(base: str, key: str, timeout: float) -> int | None:
-    """llama.cpp reports the loaded window on /props (at the server root, not under /v1);
-    a hosted API has no such route and the declared window is all there is."""
+def _served_props(base: str, key: str, timeout: float) -> tuple[int | None, str | None]:
+    """(loaded window, server build) from llama.cpp's /props (at the server root, not
+    under /v1); a hosted API has no such route and the declared window is all there is.
+    The build matters since speculative decoding from the model's own MTP head and the
+    reasoning-effort flag depend on it; both are server-side and otherwise invisible."""
     root = base[:-3] if base.endswith("/v1") else base
     req = urllib.request.Request(root + "/props", headers={"Accept": "application/json"})
     if key and not key.startswith(("$", "!")):
@@ -125,9 +129,11 @@ def _served_context(base: str, key: str, timeout: float) -> int | None:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             data = json.loads(r.read().decode("utf-8", errors="replace"))
         n = (data.get("default_generation_settings") or {}).get("n_ctx")
-        return int(n) if isinstance(n, (int, float)) and n > 0 else None
+        build = data.get("build_info")
+        return (int(n) if isinstance(n, (int, float)) and n > 0 else None,
+                str(build)[:40] if isinstance(build, str) and build else None)
     except (urllib.error.URLError, OSError, ValueError, AttributeError):
-        return None
+        return None, None
 
 
 # ---------------------------------------------------------------------------

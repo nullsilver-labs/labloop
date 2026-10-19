@@ -100,6 +100,13 @@ export default function (pi) {
       const p = String(input.path || input.pattern || "");
       if (LABELS_RE.test(p) || LABELS_RE.test(String(input.glob || "")))
         reason = "a worker never reads labels; fitness comes from `lab eval`, the only reader of the splits";
+      // As the Claude Code tool it stands for: a find or grep without a path searches the cwd,
+      // and the guard checks what that search reaches (find matches names at any depth).
+      else if (event.toolName === "find")
+        reason = runGuard("Glob", { path: String(input.path || ""), pattern: "**/" + String(input.pattern || "*") });
+      else if (event.toolName === "grep")
+        reason = runGuard("Grep", { path: String(input.path || ""), glob: String(input.glob || "") });
+      else reason = runGuard(event.toolName === "ls" ? "LS" : "Read", { path: String(input.path || "") });
     }
     if (reason) return { block: true, reason };
     return undefined;

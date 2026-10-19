@@ -26,3 +26,5 @@ Not the human check PREREG asks for: a fresh Opus session re-rated the seeded sa
 | B | 108 | c0019 | R/unsupported | R/unsupported | agree |
 
 Agreement on rating: 19 of 20.
+
+**2026-09-17:** the human decided that the blinded second-rater check stands in for the human spot check of this pair (a deviation from the PREREG, stated as one). The sheet in `spot-check.md` stays unmarked.

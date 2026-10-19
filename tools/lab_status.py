@@ -47,7 +47,6 @@ INVERT = (("#0a0a0a", 232), ("#dedad2", 253))   # fg, bg: silver fill, black tex
 
 BADGES = {"running": "Searching", "waiting_usage": "Waiting for the usage window",
           "stopping": "Finishing", "finished": "Finished"}
-TRAIN_KEYS = ("train_seconds", "train_sec", "train_wall_s", "train_wall_seconds", "wall_seconds")
 SMI_FIELDS = "index,name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw"
 SPARK = "▁▂▃▄▅▆▇█"
 
@@ -114,14 +113,15 @@ def hhmm(s: str | None) -> str:
 
 
 def dur(sec: float | None) -> str:
-    """1h 55m · 15m 31s · 48s — for meta lines."""
+    """1h 55m · 15m 31s · 48s — for meta lines. The lower unit is always printed
+    (15m 00s, 1h 00m) so a value does not shrink and shift the line at every :00."""
     if sec is None:
         return "·"
     sec = max(0, int(sec))
     if sec >= 3600:
-        return f"{sec // 3600}h" + (f" {sec % 3600 // 60:02d}m" if sec % 3600 else "")
+        return f"{sec // 3600}h {sec % 3600 // 60:02d}m"
     if sec >= 60:
-        return f"{sec // 60}m" + (f" {sec % 60:02d}s" if sec % 60 else "")
+        return f"{sec // 60}m {sec % 60:02d}s"
     return f"{sec}s"
 
 
@@ -139,6 +139,14 @@ def short_model(m: str | None) -> str:
     if not m:
         return "·"
     return re.sub(r"-\d{8}$", "", re.sub(r"^claude-", "", m))
+
+
+def cell(text: object, w: int, al: str) -> str:
+    """One table cell: cut to the column with an ellipsis, never wider than `w`."""
+    t = str(text)
+    if len(t) > w:
+        t = t[: max(0, w - 1)] + "…" if w > 1 else t[:w]
+    return f"{t:{al}{w}}  "
 
 
 def bar(frac: float | None, width: int) -> Seg:
@@ -219,17 +227,7 @@ def read_events(limit: int = 40) -> list[dict]:
     return out[-limit:]
 
 
-def train_seconds(cdir: Path) -> float | None:
-    """Training wall time when the candidate recorded one (a convention, not a
-    contract: code/train_stats.json or out/memory_config.json, first known key)."""
-    for rel in ("code/train_stats.json", "out/memory_config.json"):
-        d = _read_json(cdir / rel)
-        if d:
-            for k in TRAIN_KEYS:
-                v = d.get(k)
-                if isinstance(v, (int, float)):
-                    return float(v)
-    return None
+train_seconds = C.train_seconds
 
 
 def phase(cdir: Path, sess_written: bool) -> str:
@@ -237,7 +235,7 @@ def phase(cdir: Path, sess_written: bool) -> str:
     if (cdir / "out" / "predictions-search.json").exists():
         return "predicted"
     if train_seconds(cdir) is not None:
-        return "trained"
+        return "fitted"
     if sess_written:
         return "session ended"
     return "in session"
@@ -269,7 +267,16 @@ def snapshot(probe: Probe) -> dict:
             sess_written = sj.exists() and sj.stat().st_size > 0
         except OSError:
             pass
-        models = [m for m in sess.get("models") or [] if "haiku" not in m]
+        # A session's modelUsage also lists Claude Code's own helper model (Haiku). Show the
+        # model this candidate requested when it served; without that, a non-Haiku one; and
+        # only then anything, so a Haiku worker shows as Haiku and not as a blank.
+        allm = sess.get("models") or []
+        try:
+            req = json.loads((cdir / "config.json").read_text()).get("agent", {}).get("requested") or ""
+        except (OSError, ValueError, AttributeError):
+            req = ""
+        models = ([m for m in allm if req and m.startswith(req)]
+                  or [m for m in allm if "haiku" not in m] or allm)
         hb = _epoch(w.get("heartbeat"))
         rows.append({
             "id": cid, "operator": c.get("operator"), "parents": c.get("parents") or [],
@@ -303,6 +310,7 @@ def snapshot(probe: Probe) -> dict:
         "median_lease": median_lease, "eta": eta, "max_candidates": max_c,
         "gpu_list": full.get("resources", {}).get("gpus"),
         "gpu_hours_total": full.get("resources", {}).get("gpu_hours_total"),
+        "train_seconds_total": sum(r["train"] or 0 for r in rows),
     }
 
 
@@ -360,14 +368,18 @@ def header(s: dict, width: int) -> list[Seg]:
                        (f" {best_fit:.4g}" if best_fit is not None else "", "strong")],
                       [("claim ", "subtle"), (pop.get("claim") or "untested", "text")]]
     if pop.get("final") is not None:
-        top.append([("final ", "subtle"), (f"{pop['final']}", "strong")])
+        fin = pop["final"]
+        score = fin.get("score") if isinstance(fin, dict) else fin
+        top.append([("final ", "subtle"), ("·" if score is None else f"{score:.4g}", "strong")])
 
     started, finished = _epoch(pop.get("started")), _epoch(pop.get("finished"))
     gpu_h = pop.get("gpu_seconds", 0) / 3600
     parts: list[Seg] = [[("started ", "subtle"), (hhmm(pop.get("started")), "text")],
                         [("wall ", "subtle"), (dur(((finished or now) - started) if started else None), "text")],
-                        [("gpu ", "subtle"), (f"{gpu_h:.2f} h", "text"),
+                        [("gpu lease ", "subtle"), (f"{gpu_h:.2f} h", "text"),
                          (f" of {s['gpu_hours_total']:g}" if s["gpu_hours_total"] else "", "subtle")]]
+    if s["train_seconds_total"]:
+        parts.append([("fit time recorded ", "subtle"), (f"{s['train_seconds_total'] / 3600:.2f} h", "text")])
     if s["median_lease"]:
         parts.append([("median lease ", "subtle"), (dur(s["median_lease"]), "text")])
     if s["eta"]:
@@ -432,7 +444,7 @@ def job_segs(r: dict, room: int) -> Seg:
     if room > 70:
         seg.append((f"  ·  {r['phase']}", "muted"))
         if r["train"] is not None:
-            seg.append((f", trained {dur(r['train'])}", "muted"))
+            seg.append((f", fitted {dur(r['train'])}", "muted"))
         if r["heartbeat_age"] is not None and r["heartbeat_age"] > 60:
             seg.append((f"  ·  heartbeat {dur(r['heartbeat_age'])} ago", "strong"))
     return seg
@@ -489,7 +501,7 @@ def gpu_pane(s: dict, width: int) -> list[Seg]:
 
 # columns: key, header, width, align, priority (the highest is dropped first when narrow)
 COLUMNS = [("id", "id", 6, "<", 0), ("operator", "operator", 9, "<", 0), ("parent", "parent", 7, "<", 3),
-           ("gpu", "gpu", 3, ">", 1), ("lease", "lease", 7, ">", 0), ("train", "train", 6, ">", 3),
+           ("gpu", "gpu", 3, ">", 1), ("lease", "lease", 7, ">", 0), ("train", "fit", 6, ">", 3),
            ("turns", "turns", 5, ">", 2), ("cost", "cost", 6, ">", 2), ("model", "model", 9, "<", 4),
            ("fitness", "fitness", 9, ">", 0), ("bar", "", 12, "<", 5), ("note", "", 0, "<", 1)]
 
@@ -498,7 +510,7 @@ def pick_columns(width: int, rows: list[dict]) -> list[tuple]:
     """The columns that fit, widest content first; parent and model grow to fit."""
     grow = {"parent": max([7] + [len(",".join(r["parents"])) for r in rows]),
             "model": max([9] + [len(r["model"]) for r in rows])}
-    cols = [(k, t, min(16, grow.get(k, w)), al, p) for k, t, w, al, p in COLUMNS]
+    cols = [(k, t, min(22, grow.get(k, w)), al, p) for k, t, w, al, p in COLUMNS]
     for prio in (5, 4, 3, 2):
         if sum(c[2] + 2 for c in cols if c[0] != "note") + 32 <= width:
             break
@@ -523,29 +535,32 @@ def population_pane(s: dict, width: int, height: int, scroll: int) -> tuple[list
         seg: Seg = [(" ", "text")]
         for key, _, w, al, _ in cols:
             if key == "id":
-                seg.append((f"{r['id']:{al}{w}}  ", "strong" if best or r["running"] else role))
+                seg.append((cell(r["id"], w, al), "strong" if best or r["running"] else role))
             elif key == "operator":
-                seg.append((f"{r['operator']:{al}{w}}  ", role))
+                seg.append((cell(r["operator"], w, al), role))
             elif key == "parent":
-                seg.append((f"{(','.join(r['parents']) or '·'):{al}{w}}  ", "subtle"))
+                seg.append((cell(",".join(r["parents"]) or "·", w, al), "subtle"))
             elif key == "gpu":
-                seg.append((f"{('·' if r['gpu'] is None else r['gpu']):{al}{w}}  ", "subtle"))
+                seg.append((cell("·" if r["gpu"] is None else r["gpu"], w, al), "subtle"))
             elif key == "lease":
-                seg.append((f"{mmss(r['lease']):{al}{w}}  ", role))
+                seg.append((cell(mmss(r["lease"]), w, al), role))
             elif key == "train":
-                seg.append((f"{mmss(r['train']):{al}{w}}  ", role if r["train"] is not None else "faint"))
+                seg.append((cell(mmss(r["train"]), w, al), role if r["train"] is not None else "faint"))
             elif key == "turns":
-                seg.append((f"{(r['turns'] if r['turns'] is not None else '·'):{al}{w}}  ", role))
+                seg.append((cell(r["turns"] if r["turns"] is not None else "·", w, al), role))
             elif key == "cost":
                 cost = f"${r['cost']:.2f}" if r["cost"] is not None else "·"
-                seg.append((f"{cost:{al}{w}}  ", role))
+                seg.append((cell(cost, w, al), role))
             elif key == "model":
-                seg.append((f"{r['model']:{al}{w}}  ", "subtle"))
+                seg.append((cell(r["model"], w, al), "subtle"))
             elif key == "fitness":
                 if r["fitness"] is None:
                     seg.append((f"{'·':{al}{w}}  ", "faint"))
                 elif best:
-                    seg.append((f" {r['fitness']:.4g} "[:w + 2].rjust(w + 2), "invert"))
+                    # the inverted cell ends where the other values end; one plain space
+                    # after it keeps every note in the same column
+                    seg.append((f" {r['fitness']:.4g} "[:w + 1].rjust(w + 1), "invert"))
+                    seg.append((" ", "text"))
                 else:
                     seg.append((f"{r['fitness']:.4g}"[:w].rjust(w) + "  ",
                                 "strong" if r["status"] == "evaluated" else role))
@@ -631,7 +646,7 @@ def live(interval: float, mode: str | None) -> None:
     fd = sys.stdin.fileno()
     saved = termios.tcgetattr(fd)
     out = sys.stdout
-    scroll, snap, last = 0, None, 0.0
+    scroll, snap, last, shown = 0, None, 0.0, ""
     out.write("\x1b[?1049h\x1b[?25l")
     out.flush()
     try:
@@ -648,8 +663,12 @@ def live(interval: float, mode: str | None) -> None:
                 last = now
             cols, rows = shutil.get_terminal_size((100, 40))
             lines, scroll = render(snap, cols, rows, scroll, interval, mode)
-            out.write("\x1b[H" + "\x1b[K\n".join(lines[:rows]) + "\x1b[K\x1b[J")
-            out.flush()
+            frame = "\x1b[H" + "\x1b[K\n".join(lines[:rows]) + "\x1b[K\x1b[J"
+            if frame != shown:                # same frame: nothing to repaint
+                # ?2026: the terminal holds the frame until the whole write is in
+                out.write("\x1b[?2026h" + frame + "\x1b[?2026l")
+                out.flush()
+                shown = frame
             wait = max(0.05, interval - (time.time() - last))
             r, _, _ = select.select([fd], [], [], min(wait, 1.0))
             if not r:
@@ -691,7 +710,7 @@ def plain() -> None:
              "-" if v["fitness"] is None else f"{v['fitness']:.6g}") for k, v in pop["candidates"].items()]
     print(f"campaign {pop['campaign']}  status {pop['status']}  tick {pop['tick']}  "
           f"settled {pop['settled']}  best {pop['best']}  claim {pop['claim']}  "
-          f"gpu-h {pop['gpu_seconds']/3600:.2f}")
+          f"gpu-lease-h {pop['gpu_seconds']/3600:.2f}")
     cfg = C._campaign_cfg(pop)
     if cfg is not None:
         st = C.usage_state(cfg, pop)

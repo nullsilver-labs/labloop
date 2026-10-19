@@ -60,7 +60,7 @@ def load_modules(project: Path):
     """Import the lab's modules against one arm (the pilot script's method)."""
     os.environ["LAB_ROOT"] = str(project)
     os.environ.setdefault("LAB_PRIVATE", str(Path.home() / ".local/share/labloop-private"))
-    for m in ("lab", "lab_campaign", "lab_findings", "lab_serve"):
+    for m in ("lab", "lab_campaign", "lab_findings"):
         sys.modules.pop(m, None)
     loader = importlib.machinery.SourceFileLoader("lab", str(TOOLS / "lab"))
     spec = importlib.util.spec_from_loader("lab", loader)

@@ -40,6 +40,7 @@ assert_ok   "campaign runs to completion on two leased gpus"   timeout 200 "$LAB
 assert_grep "the worker saw CUDA_VISIBLE_DEVICES=1"            "CUDA_VISIBLE_DEVICES: '1'" candidates/c0001/summary.md
 assert_grep "REPORT names the gpus and the VRAM floor"         "| GPUs | 0, 1; max parallel 2; min free VRAM 1000 MiB |" REPORT.md
 assert_grep "REPORT reports settled candidates per GPU-hour"   "| settled candidates per GPU-hour |" REPORT.md
+assert_grep "REPORT separates recorded fit time from lease time"  "| fit time recorded by candidates |" REPORT.md
 assert_eq   "both gpus were used"                              "$(python3 -c "import json;p=json.load(open('population.json'));print(sorted(set(c['gpu'] for c in p['candidates'].values())))")" "[0, 1]"
 export PATH="$_saved_path_s"; unset FAKE_SMI
 

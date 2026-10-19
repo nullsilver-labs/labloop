@@ -73,7 +73,12 @@ max_debug_retries = 1
                                  # and selector and replaces the ledger with a per-knob
                                  # index (each knob, every value tried, who tried it; no
                                  # candidate dropped for age; outcome keys on the card's
-                                 # measured line instead). Default "legacy": the first-parent
+                                 # measured line instead). "index-v1" keeps v3's cards,
+                                 # shows only the parents' cards plus a constant digest,
+                                 # and has the worker query `lab index` (logged) for the
+                                 # rest of the population (lexical search; add a
+                                 # [memory.embedder] table with url and model for hybrid
+                                 # search, docs/campaign-setup.md). Default "legacy": the first-parent
                                  # lineage of clipped summaries.
                                  # Frozen into population.json when the campaign starts.
 # knobs = "out/memory_config.json"   # findings-v2 only: a small JSON object your code

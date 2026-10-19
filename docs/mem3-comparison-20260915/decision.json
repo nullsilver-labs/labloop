@@ -1,0 +1,74 @@
+{
+ "decision": "supported",
+ "pending_reasons": [],
+ "assignment": {
+  "A": "findings",
+  "B": "legacy"
+ },
+ "fraction_bad_ratio_findings_over_legacy": 0.3893360160965795,
+ "arms": {
+  "findings": {
+   "letter": "A",
+   "by_type": {
+    "M": {
+     "correct": 187,
+     "incorrect": 6,
+     "unsupported": 3
+    },
+    "R": {
+     "correct": 17,
+     "incorrect": 0,
+     "unsupported": 0
+    },
+    "C": {
+     "correct": 1,
+     "incorrect": 0,
+     "unsupported": 5
+    }
+   },
+   "rated_MR": 213,
+   "bad_MR": 9,
+   "fraction_bad": 0.04225352112676056,
+   "C_rated": 6,
+   "C_bad": 5,
+   "unrated": 6,
+   "candidates_with_cross_branch_ack": 13,
+   "repeats_unacknowledged": 1,
+   "repeats_acknowledged": 6,
+   "malformed_statements": {},
+   "rater_totals_agree": true
+  },
+  "legacy": {
+   "letter": "B",
+   "by_type": {
+    "M": {
+     "correct": 200,
+     "incorrect": 22,
+     "unsupported": 5
+    },
+    "R": {
+     "correct": 30,
+     "incorrect": 0,
+     "unsupported": 1
+    },
+    "C": {
+     "correct": 1,
+     "incorrect": 0,
+     "unsupported": 5
+    }
+   },
+   "rated_MR": 258,
+   "bad_MR": 28,
+   "fraction_bad": 0.10852713178294573,
+   "C_rated": 6,
+   "C_bad": 5,
+   "unrated": 6,
+   "candidates_with_cross_branch_ack": 3,
+   "repeats_unacknowledged": 1,
+   "repeats_acknowledged": 3,
+   "malformed_statements": {},
+   "rater_totals_agree": true
+  }
+ },
+ "rule": "supported iff fraction_bad(findings) <= 0.5 * fraction_bad(legacy) with >= 40 rated M+R per arm and no pending reason"
+}

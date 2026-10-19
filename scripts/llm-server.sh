@@ -10,6 +10,15 @@
 #   scripts/llm-server.sh start <alias> [gpu] [ctx]   e.g. start gpt-oss-20b 0 32768
 #   scripts/llm-server.sh stop | status | logs
 #
+# Two knobs, environment only, both recorded in the container command (`status` prints
+# them) so a campaign's launch notes can quote them:
+#   LLM_SERVER_SPEC=draft-mtp      --spec-type: self-speculative decoding from the
+#                                  model's own MTP (nextn) head when the GGUF ships one;
+#                                  unset = none. Same tokens, faster decode.
+#   LLM_SERVER_EFFORT=low          --reasoning-effort given to the chat template
+#                                  (Qwen3.8: low | medium | xhigh, default xhigh);
+#                                  unset = the template default. Changes the output.
+#
 # <alias> is the model id Pi uses (providers.local.models[].id in ~/.pi/agent/models.json)
 # and the id the server reports on /v1/models; the GGUF it maps to is in MODELS below.
 # The docker daemon supervises the container (restart=no); it is a service, not a job,
@@ -41,6 +50,9 @@ case "$cmd" in
     if docker ps -q -f "name=^${NAME}$" | grep -q .; then
       echo "$NAME is already running: $(docker inspect -f '{{.Config.Cmd}}' "$NAME" | tr -s ' ' | cut -c1-120)"; exit 1
     fi
+    extra=()
+    [ -n "${LLM_SERVER_SPEC:-}" ] && extra+=(--spec-type "$LLM_SERVER_SPEC")
+    [ -n "${LLM_SERVER_EFFORT:-}" ] && extra+=(--reasoning-effort "$LLM_SERVER_EFFORT")
     docker rm -f "$NAME" >/dev/null 2>&1 || true
     docker run -d --name "$NAME" --restart=no \
       --gpus "\"device=$gpu\"" \
@@ -50,8 +62,9 @@ case "$cmd" in
       -m "/models/$file" --alias "$alias" \
       --host 0.0.0.0 --port "$PORT" \
       -ngl 999 -c "$ctx" -fa on -ctk q8_0 -ctv q8_0 \
-      --jinja --parallel 1 --no-warmup >/dev/null
-    echo "started $NAME: $alias on gpu $gpu, ctx $ctx, http://127.0.0.1:$PORT/v1"
+      --jinja --parallel 1 --no-warmup "${extra[@]}" >/dev/null
+    echo "started $NAME: $alias on gpu $gpu, ctx $ctx, spec ${LLM_SERVER_SPEC:-none}," \
+         "effort ${LLM_SERVER_EFFORT:-default}, http://127.0.0.1:$PORT/v1"
     for i in $(seq 1 120); do
       if curl -sf "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; then
         echo "ready: $(curl -s "http://127.0.0.1:$PORT/v1/models" | python3 -c 'import json,sys; print(", ".join(m["id"] for m in json.load(sys.stdin)["data"]))')"
@@ -68,6 +81,8 @@ case "$cmd" in
   status)
     if docker ps -q -f "name=^${NAME}$" | grep -q .; then
       echo "$NAME: $(docker ps -f "name=^${NAME}$" --format '{{.Status}}')"
+      echo "command: $(docker inspect -f '{{join .Config.Cmd " "}}' "$NAME")"
+      echo "image: $(docker inspect -f '{{.Config.Image}} {{.Image}}' "$NAME" | cut -c1-80)"
       curl -s "http://127.0.0.1:$PORT/v1/models" | python3 -c 'import json,sys; print("serving:", ", ".join(m["id"] for m in json.load(sys.stdin)["data"]))' 2>/dev/null || echo "not answering yet"
     else
       echo "$NAME: not running"; exit 1

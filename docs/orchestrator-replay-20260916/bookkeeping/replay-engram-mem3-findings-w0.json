@@ -1,0 +1,1478 @@
+{
+ "campaign": "engram-mem3-findings-w0",
+ "project": "../labloop-mem3-findings-20260915",
+ "backend": "jev",
+ "seed": 0,
+ "card_chars": 1500,
+ "task_chars": 2500,
+ "frozen": "c0005",
+ "frozen_lineage": [
+  "c0000",
+  "c0005"
+ ],
+ "instructions": {
+  "parent": "You are the scheduler of an evolutionary code search. Each option is one settled candidate of the population, described by its finding card (what it changed, what it hypothesised, what was observed, what it concluded, its limits) and its search score (higher is better; the baseline is the trivial predictor). The state holds the task, the population table with lineage and scores, and a knob index: for every training knob, the values already tried and by whom. Which candidate should the next job build on? Prefer a candidate whose line still has headroom on the task; avoid a line whose last change is a knob and direction the index already covers; weigh the strongest branch outside the lineage that has received the most jobs; a low-scoring candidate that carries an untried idea can be worth one job.",
+  "operator": "The next job builds on the chosen parent (state.parent). Should it be an improve (one hypothesised change to the parent's code) or a crossover (combine the parent with a second candidate's idea)? Crossover is worth it when two lines hold complementary changes; improve when the parent's own line has an obvious next step.",
+  "partner": "The next job is a crossover of the chosen parent (state.parent) with a second candidate. Which candidate carries the change most worth combining with the parent's?"
+ },
+ "ticks": [
+  {
+   "tick": "c0002",
+   "launched": "2026-09-15T12:37:43Z",
+   "eligible": [
+    "c0000",
+    "c0001"
+   ],
+   "chance": {
+    "operator": "improve",
+    "parents": [
+     "c0001"
+    ]
+   },
+   "best_so_far": "c0001",
+   "frozen_lineage_parents": [],
+   "parent": {
+    "choice": "c0001",
+    "probabilities": {
+     "c0000": 0.15,
+     "c0001": 0.85
+    },
+    "confidence": 0.71,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 1863,
+     "output_tokens": 43
+    },
+    "status": 200,
+    "latency_s": 0.7014791920082644,
+    "bytes": 5777,
+    "error": null
+   },
+   "parent_sampled": "c0001",
+   "p_chance_parents": 0.85,
+   "p_lineage": 0.15,
+   "chance_parent_in_lineage": false,
+   "argmax_in_lineage": false,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "improve": 0.98,
+     "crossover": 0.02
+    },
+    "confidence": 0.97,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 1397,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.7305986839346588,
+    "bytes": 3929,
+    "error": null
+   },
+   "operator_sampled": "improve"
+  },
+  {
+   "tick": "c0003",
+   "launched": "2026-09-15T12:37:43Z",
+   "eligible": [
+    "c0000",
+    "c0001"
+   ],
+   "chance": {
+    "operator": "crossover",
+    "parents": [
+     "c0001",
+     "c0000"
+    ]
+   },
+   "best_so_far": "c0001",
+   "frozen_lineage_parents": [
+    "c0000"
+   ],
+   "parent": {
+    "choice": "c0001",
+    "probabilities": {
+     "c0001": 0.84,
+     "c0000": 0.16
+    },
+    "confidence": 0.68,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 1863,
+     "output_tokens": 43
+    },
+    "status": 200,
+    "latency_s": 0.674949684063904,
+    "bytes": 5777,
+    "error": null
+   },
+   "parent_sampled": "c0001",
+   "p_chance_parents": 1.0,
+   "p_lineage": 0.16,
+   "chance_parent_in_lineage": true,
+   "argmax_in_lineage": false,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "crossover": 0.01,
+     "improve": 0.99
+    },
+    "confidence": 0.97,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 1397,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.7002782539930195,
+    "bytes": 3929,
+    "error": null
+   },
+   "operator_sampled": "improve"
+  },
+  {
+   "tick": "c0004",
+   "launched": "2026-09-15T12:49:24Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002"
+   ],
+   "chance": {
+    "operator": "improve",
+    "parents": [
+     "c0001"
+    ]
+   },
+   "best_so_far": "c0001",
+   "frozen_lineage_parents": [],
+   "parent": {
+    "choice": "c0001",
+    "probabilities": {
+     "c0002": 0.02,
+     "c0000": 0.1,
+     "c0001": 0.88
+    },
+    "confidence": 0.82,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 2442,
+     "output_tokens": 54
+    },
+    "status": 200,
+    "latency_s": 0.6645055050030351,
+    "bytes": 7303,
+    "error": null
+   },
+   "parent_sampled": "c0001",
+   "p_chance_parents": 0.88,
+   "p_lineage": 0.1,
+   "chance_parent_in_lineage": false,
+   "argmax_in_lineage": false,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "improve": 0.98,
+     "crossover": 0.02
+    },
+    "confidence": 0.96,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 1583,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.6692887720419094,
+    "bytes": 4241,
+    "error": null
+   },
+   "operator_sampled": "improve"
+  },
+  {
+   "tick": "c0005",
+   "launched": "2026-09-15T12:57:34Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002",
+    "c0003"
+   ],
+   "chance": {
+    "operator": "improve",
+    "parents": [
+     "c0000"
+    ]
+   },
+   "best_so_far": "c0003",
+   "frozen_lineage_parents": [
+    "c0000"
+   ],
+   "parent": {
+    "choice": "c0001",
+    "probabilities": {
+     "c0000": 0.12,
+     "c0002": 0.03,
+     "c0003": 0.39,
+     "c0001": 0.46
+    },
+    "confidence": 0.28,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 3178,
+     "output_tokens": 65
+    },
+    "status": 200,
+    "latency_s": 0.6955218439688906,
+    "bytes": 9534,
+    "error": null
+   },
+   "parent_sampled": "c0001",
+   "p_chance_parents": 0.12,
+   "p_lineage": 0.12,
+   "chance_parent_in_lineage": true,
+   "argmax_in_lineage": false,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "crossover": 0.23,
+     "improve": 0.77
+    },
+    "confidence": 0.54,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 1818,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.7175445379689336,
+    "bytes": 4732,
+    "error": null
+   },
+   "operator_sampled": "improve"
+  },
+  {
+   "tick": "c0006",
+   "launched": "2026-09-15T13:00:15Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004"
+   ],
+   "chance": {
+    "operator": "crossover",
+    "parents": [
+     "c0002",
+     "c0001"
+    ]
+   },
+   "best_so_far": "c0003",
+   "frozen_lineage_parents": [],
+   "parent": {
+    "choice": "c0003",
+    "probabilities": {
+     "c0001": 0.32,
+     "c0004": 0.02,
+     "c0002": 0.02,
+     "c0003": 0.56,
+     "c0000": 0.08
+    },
+    "confidence": 0.45,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 3841,
+     "output_tokens": 76
+    },
+    "status": 200,
+    "latency_s": 0.7158966440474615,
+    "bytes": 11317,
+    "error": null
+   },
+   "parent_sampled": "c0003",
+   "p_chance_parents": 0.34,
+   "p_lineage": 0.08,
+   "chance_parent_in_lineage": false,
+   "argmax_in_lineage": false,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "crossover": 0.11,
+     "improve": 0.89
+    },
+    "confidence": 0.78,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 1997,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.6735207759775221,
+    "bytes": 5024,
+    "error": null
+   },
+   "operator_sampled": "improve"
+  },
+  {
+   "tick": "c0007",
+   "launched": "2026-09-15T13:11:36Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0006"
+   ],
+   "chance": {
+    "operator": "improve",
+    "parents": [
+     "c0003"
+    ]
+   },
+   "best_so_far": "c0003",
+   "frozen_lineage_parents": [],
+   "parent": {
+    "choice": "c0003",
+    "probabilities": {
+     "c0001": 0.29,
+     "c0003": 0.66,
+     "c0006": 0.01,
+     "c0004": 0.01,
+     "c0000": 0.02,
+     "c0002": 0.01
+    },
+    "confidence": 0.61,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 4625,
+     "output_tokens": 87
+    },
+    "status": 200,
+    "latency_s": 0.922442454029806,
+    "bytes": 13432,
+    "error": null
+   },
+   "parent_sampled": "c0003",
+   "p_chance_parents": 0.66,
+   "p_lineage": 0.02,
+   "chance_parent_in_lineage": false,
+   "argmax_in_lineage": false,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "crossover": 0.1,
+     "improve": 0.9
+    },
+    "confidence": 0.81,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 2217,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.7333074019988999,
+    "bytes": 5417,
+    "error": null
+   },
+   "operator_sampled": "improve"
+  },
+  {
+   "tick": "c0008",
+   "launched": "2026-09-15T13:21:07Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006"
+   ],
+   "chance": {
+    "operator": "improve",
+    "parents": [
+     "c0001"
+    ]
+   },
+   "best_so_far": "c0005",
+   "frozen_lineage_parents": [],
+   "parent": {
+    "choice": "c0005",
+    "probabilities": {
+     "c0004": 0.01,
+     "c0002": 0.01,
+     "c0003": 0.25,
+     "c0006": 0.01,
+     "c0000": 0.03,
+     "c0001": 0.32,
+     "c0005": 0.37
+    },
+    "confidence": 0.28,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 5600,
+     "output_tokens": 98
+    },
+    "status": 200,
+    "latency_s": 0.8858779789879918,
+    "bytes": 16185,
+    "error": null
+   },
+   "parent_sampled": "c0000",
+   "p_chance_parents": 0.32,
+   "p_lineage": 0.4,
+   "chance_parent_in_lineage": false,
+   "argmax_in_lineage": true,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "improve": 0.88,
+     "crossover": 0.12
+    },
+    "confidence": 0.76,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 2599,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.667895307065919,
+    "bytes": 6132,
+    "error": null
+   },
+   "operator_sampled": "improve"
+  },
+  {
+   "tick": "c0009",
+   "launched": "2026-09-15T13:24:37Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007"
+   ],
+   "chance": {
+    "operator": "improve",
+    "parents": [
+     "c0006"
+    ]
+   },
+   "best_so_far": "c0005",
+   "frozen_lineage_parents": [],
+   "parent": {
+    "choice": "c0005",
+    "probabilities": {
+     "c0003": 0.13,
+     "c0007": 0.09,
+     "c0002": 0.01,
+     "c0001": 0.23,
+     "c0000": 0.04,
+     "c0004": 0.03,
+     "c0006": 0.01,
+     "c0005": 0.45999999999999996
+    },
+    "confidence": 0.39,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 6301,
+     "output_tokens": 109
+    },
+    "status": 200,
+    "latency_s": 0.9884003319311887,
+    "bytes": 18275,
+    "error": null
+   },
+   "parent_sampled": "c0005",
+   "p_chance_parents": 0.01,
+   "p_lineage": 0.49999999999999994,
+   "chance_parent_in_lineage": false,
+   "argmax_in_lineage": true,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "crossover": 0.27,
+     "improve": 0.73
+    },
+    "confidence": 0.46,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 2804,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.7152176889358088,
+    "bytes": 6543,
+    "error": null
+   },
+   "operator_sampled": "crossover",
+   "partner": {
+    "choice": "c0007",
+    "probabilities": {
+     "c0000": 0.01,
+     "c0003": 0.26,
+     "c0004": 0.01,
+     "c0002": 0.02,
+     "c0007": 0.65,
+     "c0006": 0.01,
+     "c0001": 0.04
+    },
+    "confidence": 0.58,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 5585,
+     "output_tokens": 98
+    },
+    "status": 200,
+    "latency_s": 0.9452546830289066,
+    "bytes": 15614,
+    "error": null
+   },
+   "partner_sampled": "c0007"
+  },
+  {
+   "tick": "c0010",
+   "launched": "2026-09-15T13:34:58Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008"
+   ],
+   "chance": {
+    "operator": "crossover",
+    "parents": [
+     "c0008",
+     "c0003"
+    ]
+   },
+   "best_so_far": "c0005",
+   "frozen_lineage_parents": [],
+   "parent": {
+    "choice": "c0005",
+    "probabilities": {
+     "c0005": 0.49,
+     "c0002": 0.01,
+     "c0003": 0.12,
+     "c0000": 0.02,
+     "c0007": 0.1,
+     "c0004": 0.02,
+     "c0001": 0.21000000000000002,
+     "c0008": 0.03,
+     "c0006": 0.0
+    },
+    "confidence": 0.42,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 7004,
+     "output_tokens": 120
+    },
+    "status": 200,
+    "latency_s": 0.9067274669650942,
+    "bytes": 20399,
+    "error": null
+   },
+   "parent_sampled": "c0008",
+   "p_chance_parents": 0.15,
+   "p_lineage": 0.51,
+   "chance_parent_in_lineage": false,
+   "argmax_in_lineage": true,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "improve": 0.73,
+     "crossover": 0.27
+    },
+    "confidence": 0.47,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 3007,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.7147426309529692,
+    "bytes": 6929,
+    "error": null
+   },
+   "operator_sampled": "crossover",
+   "partner": {
+    "choice": "c0007",
+    "probabilities": {
+     "c0002": 0.03,
+     "c0006": 0.01,
+     "c0004": 0.02,
+     "c0003": 0.22,
+     "c0000": 0.01,
+     "c0008": 0.15,
+     "c0001": 0.06,
+     "c0007": 0.5
+    },
+    "confidence": 0.44,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 6288,
+     "output_tokens": 109
+    },
+    "status": 200,
+    "latency_s": 0.8999910999555141,
+    "bytes": 17738,
+    "error": null
+   },
+   "partner_sampled": "c0007"
+  },
+  {
+   "tick": "c0011",
+   "launched": "2026-09-15T13:39:39Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0009"
+   ],
+   "chance": {
+    "operator": "crossover",
+    "parents": [
+     "c0005",
+     "c0008"
+    ]
+   },
+   "best_so_far": "c0005",
+   "frozen_lineage_parents": [
+    "c0005"
+   ],
+   "parent": {
+    "choice": "c0005",
+    "probabilities": {
+     "c0009": 0.07,
+     "c0007": 0.08,
+     "c0002": 0.01,
+     "c0005": 0.39,
+     "c0003": 0.09,
+     "c0000": 0.02,
+     "c0008": 0.02,
+     "c0004": 0.02,
+     "c0006": 0.0,
+     "c0001": 0.3
+    },
+    "confidence": 0.33,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 7702,
+     "output_tokens": 131
+    },
+    "status": 200,
+    "latency_s": 0.9848933740286157,
+    "bytes": 22414,
+    "error": null
+   },
+   "parent_sampled": "c0005",
+   "p_chance_parents": 0.41000000000000003,
+   "p_lineage": 0.41000000000000003,
+   "chance_parent_in_lineage": true,
+   "argmax_in_lineage": true,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "crossover": 0.21,
+     "improve": 0.79
+    },
+    "confidence": 0.57,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 3193,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.7099681940162554,
+    "bytes": 7248,
+    "error": null
+   },
+   "operator_sampled": "improve"
+  },
+  {
+   "tick": "c0012",
+   "launched": "2026-09-15T13:50:00Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0009",
+    "c0010"
+   ],
+   "chance": {
+    "operator": "improve",
+    "parents": [
+     "c0003"
+    ]
+   },
+   "best_so_far": "c0005",
+   "frozen_lineage_parents": [],
+   "parent": {
+    "choice": "c0005",
+    "probabilities": {
+     "c0010": 0.01,
+     "c0003": 0.07,
+     "c0008": 0.02,
+     "c0002": 0.01,
+     "c0000": 0.02,
+     "c0004": 0.02,
+     "c0007": 0.05,
+     "c0006": 0.0,
+     "c0001": 0.35,
+     "c0009": 0.04,
+     "c0005": 0.41000000000000003
+    },
+    "confidence": 0.34,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 8288,
+     "output_tokens": 142
+    },
+    "status": 200,
+    "latency_s": 0.9272598929237574,
+    "bytes": 23981,
+    "error": null
+   },
+   "parent_sampled": "c0005",
+   "p_chance_parents": 0.07,
+   "p_lineage": 0.43000000000000005,
+   "chance_parent_in_lineage": false,
+   "argmax_in_lineage": true,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "crossover": 0.21,
+     "improve": 0.79
+    },
+    "confidence": 0.58,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 3366,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.7099379650317132,
+    "bytes": 7552,
+    "error": null
+   },
+   "operator_sampled": "improve"
+  },
+  {
+   "tick": "c0013",
+   "launched": "2026-09-15T13:56:01Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0009",
+    "c0010",
+    "c0011"
+   ],
+   "chance": {
+    "operator": "improve",
+    "parents": [
+     "c0010"
+    ]
+   },
+   "best_so_far": "c0005",
+   "frozen_lineage_parents": [],
+   "parent": {
+    "choice": "c0005",
+    "probabilities": {
+     "c0004": 0.01,
+     "c0008": 0.03,
+     "c0002": 0.01,
+     "c0005": 0.42,
+     "c0006": 0.0,
+     "c0011": 0.02,
+     "c0001": 0.3,
+     "c0010": 0.01,
+     "c0003": 0.06,
+     "c0007": 0.06,
+     "c0000": 0.04,
+     "c0009": 0.04
+    },
+    "confidence": 0.37,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 9121,
+     "output_tokens": 153
+    },
+    "status": 200,
+    "latency_s": 0.9558477060636505,
+    "bytes": 26132,
+    "error": null
+   },
+   "parent_sampled": "c0011",
+   "p_chance_parents": 0.01,
+   "p_lineage": 0.45999999999999996,
+   "chance_parent_in_lineage": false,
+   "argmax_in_lineage": true,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "crossover": 0.3,
+     "improve": 0.7
+    },
+    "confidence": 0.41,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 3609,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.7014271590160206,
+    "bytes": 7983,
+    "error": null
+   },
+   "operator_sampled": "crossover",
+   "partner": {
+    "choice": "c0007",
+    "probabilities": {
+     "c0003": 0.21,
+     "c0007": 0.39,
+     "c0002": 0.01,
+     "c0009": 0.07,
+     "c0000": 0.01,
+     "c0008": 0.09,
+     "c0004": 0.01,
+     "c0006": 0.01,
+     "c0001": 0.04,
+     "c0010": 0.03,
+     "c0011": 0.13
+    },
+    "confidence": 0.34,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 8405,
+     "output_tokens": 142
+    },
+    "status": 200,
+    "latency_s": 0.938913117046468,
+    "bytes": 23471,
+    "error": null
+   },
+   "partner_sampled": "c0007"
+  },
+  {
+   "tick": "c0014",
+   "launched": "2026-09-15T14:02:32Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0009",
+    "c0010",
+    "c0011",
+    "c0012"
+   ],
+   "chance": {
+    "operator": "improve",
+    "parents": [
+     "c0000"
+    ]
+   },
+   "best_so_far": "c0005",
+   "frozen_lineage_parents": [
+    "c0000"
+   ],
+   "parent": {
+    "choice": "c0005",
+    "probabilities": {
+     "c0010": 0.01,
+     "c0002": 0.01,
+     "c0008": 0.02,
+     "c0004": 0.01,
+     "c0000": 0.01,
+     "c0003": 0.08,
+     "c0011": 0.01,
+     "c0007": 0.02,
+     "c0012": 0.11,
+     "c0006": 0.0,
+     "c0001": 0.22,
+     "c0009": 0.02,
+     "c0005": 0.48
+    },
+    "confidence": 0.43,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 9797,
+     "output_tokens": 164
+    },
+    "status": 200,
+    "latency_s": 0.939688705955632,
+    "bytes": 28040,
+    "error": null
+   },
+   "parent_sampled": "c0005",
+   "p_chance_parents": 0.01,
+   "p_lineage": 0.49,
+   "chance_parent_in_lineage": true,
+   "argmax_in_lineage": true,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "improve": 0.69,
+     "crossover": 0.31
+    },
+    "confidence": 0.38,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 3782,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.6965245659230277,
+    "bytes": 8271,
+    "error": null
+   },
+   "operator_sampled": "crossover",
+   "partner": {
+    "choice": "c0012",
+    "probabilities": {
+     "c0004": 0.01,
+     "c0008": 0.08,
+     "c0002": 0.01,
+     "c0000": 0.0,
+     "c0003": 0.15,
+     "c0011": 0.04,
+     "c0007": 0.16,
+     "c0012": 0.47,
+     "c0006": 0.01,
+     "c0009": 0.03,
+     "c0001": 0.02,
+     "c0010": 0.02
+    },
+    "confidence": 0.42,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 9081,
+     "output_tokens": 153
+    },
+    "status": 200,
+    "latency_s": 0.910709286108613,
+    "bytes": 25379,
+    "error": null
+   },
+   "partner_sampled": "c0001"
+  },
+  {
+   "tick": "c0015",
+   "launched": "2026-09-15T14:10:34Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0009",
+    "c0010",
+    "c0011",
+    "c0012",
+    "c0013"
+   ],
+   "chance": {
+    "operator": "improve",
+    "parents": [
+     "c0013"
+    ]
+   },
+   "best_so_far": "c0005",
+   "frozen_lineage_parents": [],
+   "parent": {
+    "choice": "c0005",
+    "probabilities": {
+     "c0005": 0.44,
+     "c0003": 0.07,
+     "c0008": 0.02,
+     "c0002": 0.0,
+     "c0000": 0.02,
+     "c0004": 0.01,
+     "c0011": 0.01,
+     "c0013": 0.0,
+     "c0007": 0.05,
+     "c0012": 0.09,
+     "c0006": 0.0,
+     "c0009": 0.03,
+     "c0001": 0.25,
+     "c0010": 0.01
+    },
+    "confidence": 0.4,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 10425,
+     "output_tokens": 175
+    },
+    "status": 200,
+    "latency_s": 0.9577318519586697,
+    "bytes": 29787,
+    "error": null
+   },
+   "parent_sampled": "c0003",
+   "p_chance_parents": 0.0,
+   "p_lineage": 0.46,
+   "chance_parent_in_lineage": false,
+   "argmax_in_lineage": true,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "crossover": 0.24,
+     "improve": 0.76
+    },
+    "confidence": 0.52,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 3954,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.7160090999677777,
+    "bytes": 8587,
+    "error": null
+   },
+   "operator_sampled": "improve"
+  },
+  {
+   "tick": "c0016",
+   "launched": "2026-09-15T14:23:26Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0009",
+    "c0010",
+    "c0011",
+    "c0012",
+    "c0013",
+    "c0014"
+   ],
+   "chance": {
+    "operator": "improve",
+    "parents": [
+     "c0012"
+    ]
+   },
+   "best_so_far": "c0005",
+   "frozen_lineage_parents": [],
+   "parent": {
+    "choice": "c0005",
+    "probabilities": {
+     "c0010": 0.01,
+     "c0005": 0.39,
+     "c0000": 0.02,
+     "c0002": 0.01,
+     "c0001": 0.27,
+     "c0008": 0.03,
+     "c0014": 0.01,
+     "c0004": 0.01,
+     "c0007": 0.07,
+     "c0006": 0.0,
+     "c0009": 0.05,
+     "c0003": 0.07,
+     "c0012": 0.05,
+     "c0013": 0.0,
+     "c0011": 0.01
+    },
+    "confidence": 0.35,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 11352,
+     "output_tokens": 186
+    },
+    "status": 200,
+    "latency_s": 0.9690203480422497,
+    "bytes": 32505,
+    "error": null
+   },
+   "parent_sampled": "c0005",
+   "p_chance_parents": 0.05,
+   "p_lineage": 0.41000000000000003,
+   "chance_parent_in_lineage": false,
+   "argmax_in_lineage": true,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "improve": 0.73,
+     "crossover": 0.27
+    },
+    "confidence": 0.46,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 4309,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.7010192659217864,
+    "bytes": 9271,
+    "error": null
+   },
+   "operator_sampled": "crossover",
+   "partner": {
+    "choice": "c0012",
+    "probabilities": {
+     "c0006": 0.01,
+     "c0009": 0.02,
+     "c0003": 0.24,
+     "c0001": 0.03,
+     "c0007": 0.17,
+     "c0012": 0.29,
+     "c0000": 0.0,
+     "c0013": 0.01,
+     "c0014": 0.07,
+     "c0004": 0.01,
+     "c0011": 0.04,
+     "c0010": 0.02,
+     "c0008": 0.08,
+     "c0002": 0.01
+    },
+    "confidence": 0.25,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 10636,
+     "output_tokens": 175
+    },
+    "status": 200,
+    "latency_s": 0.9872644860297441,
+    "bytes": 29844,
+    "error": null
+   },
+   "partner_sampled": "c0012"
+  },
+  {
+   "tick": "c0017",
+   "launched": "2026-09-15T14:23:36Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0009",
+    "c0010",
+    "c0011",
+    "c0012",
+    "c0013",
+    "c0014",
+    "c0015"
+   ],
+   "chance": {
+    "operator": "crossover",
+    "parents": [
+     "c0009",
+     "c0002"
+    ]
+   },
+   "best_so_far": "c0005",
+   "frozen_lineage_parents": [],
+   "parent": {
+    "choice": "c0005",
+    "probabilities": {
+     "c0007": 0.06,
+     "c0008": 0.03,
+     "c0015": 0.02,
+     "c0003": 0.09,
+     "c0005": 0.43,
+     "c0004": 0.01,
+     "c0002": 0.01,
+     "c0001": 0.19,
+     "c0014": 0.01,
+     "c0009": 0.03,
+     "c0000": 0.01,
+     "c0011": 0.01,
+     "c0012": 0.08,
+     "c0013": 0.01,
+     "c0010": 0.01,
+     "c0006": 0.0
+    },
+    "confidence": 0.4,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 12009,
+     "output_tokens": 197
+    },
+    "status": 200,
+    "latency_s": 0.967996648978442,
+    "bytes": 34224,
+    "error": null
+   },
+   "parent_sampled": "c0007",
+   "p_chance_parents": 0.04,
+   "p_lineage": 0.44,
+   "chance_parent_in_lineage": false,
+   "argmax_in_lineage": true,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "crossover": 0.26,
+     "improve": 0.74
+    },
+    "confidence": 0.47,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 4459,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.7131315720034763,
+    "bytes": 9507,
+    "error": null
+   },
+   "operator_sampled": "improve"
+  },
+  {
+   "tick": "c0018",
+   "launched": "2026-09-15T14:37:19Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0009",
+    "c0010",
+    "c0011",
+    "c0012",
+    "c0013",
+    "c0014",
+    "c0015",
+    "c0016"
+   ],
+   "chance": {
+    "operator": "improve",
+    "parents": [
+     "c0016"
+    ]
+   },
+   "best_so_far": "c0005",
+   "frozen_lineage_parents": [],
+   "parent": {
+    "choice": "c0005",
+    "probabilities": {
+     "c0009": 0.02,
+     "c0007": 0.05,
+     "c0014": 0.01,
+     "c0004": 0.01,
+     "c0002": 0.0,
+     "c0001": 0.19,
+     "c0013": 0.01,
+     "c0012": 0.05,
+     "c0006": 0.0,
+     "c0016": 0.0,
+     "c0003": 0.1,
+     "c0010": 0.03,
+     "c0011": 0.0,
+     "c0000": 0.02,
+     "c0015": 0.02,
+     "c0008": 0.03,
+     "c0005": 0.45999999999999996
+    },
+    "confidence": 0.43,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 12744,
+     "output_tokens": 208
+    },
+    "status": 200,
+    "latency_s": 0.9779774129856378,
+    "bytes": 36299,
+    "error": null
+   },
+   "parent_sampled": "c0003",
+   "p_chance_parents": 0.0,
+   "p_lineage": 0.48,
+   "chance_parent_in_lineage": false,
+   "argmax_in_lineage": true,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "crossover": 0.28,
+     "improve": 0.72
+    },
+    "confidence": 0.45,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 4671,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.7326945529785007,
+    "bytes": 9866,
+    "error": null
+   },
+   "operator_sampled": "improve"
+  },
+  {
+   "tick": "c0019",
+   "launched": "2026-09-15T14:37:30Z",
+   "eligible": [
+    "c0000",
+    "c0001",
+    "c0002",
+    "c0003",
+    "c0004",
+    "c0005",
+    "c0006",
+    "c0007",
+    "c0008",
+    "c0009",
+    "c0010",
+    "c0011",
+    "c0012",
+    "c0013",
+    "c0014",
+    "c0015",
+    "c0016",
+    "c0017"
+   ],
+   "chance": {
+    "operator": "improve",
+    "parents": [
+     "c0001"
+    ]
+   },
+   "best_so_far": "c0005",
+   "frozen_lineage_parents": [],
+   "parent": {
+    "choice": "c0005",
+    "probabilities": {
+     "c0004": 0.01,
+     "c0008": 0.02,
+     "c0010": 0.02,
+     "c0011": 0.0,
+     "c0003": 0.1,
+     "c0007": 0.08,
+     "c0015": 0.02,
+     "c0000": 0.02,
+     "c0013": 0.01,
+     "c0002": 0.0,
+     "c0005": 0.47,
+     "c0006": 0.0,
+     "c0012": 0.04,
+     "c0001": 0.17,
+     "c0016": 0.0,
+     "c0014": 0.01,
+     "c0017": 0.01,
+     "c0009": 0.02
+    },
+    "confidence": 0.44,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 13472,
+     "output_tokens": 219
+    },
+    "status": 200,
+    "latency_s": 0.9447430330328643,
+    "bytes": 38317,
+    "error": null
+   },
+   "parent_sampled": "c0005",
+   "p_chance_parents": 0.17,
+   "p_lineage": 0.49,
+   "chance_parent_in_lineage": false,
+   "argmax_in_lineage": true,
+   "operator": {
+    "choice": "improve",
+    "probabilities": {
+     "crossover": 0.29,
+     "improve": 0.71
+    },
+    "confidence": 0.42,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 4876,
+     "output_tokens": 35
+    },
+    "status": 200,
+    "latency_s": 0.7353827629704028,
+    "bytes": 10236,
+    "error": null
+   },
+   "operator_sampled": "crossover",
+   "partner": {
+    "choice": "c0012",
+    "probabilities": {
+     "c0017": 0.02,
+     "c0009": 0.01,
+     "c0007": 0.18,
+     "c0014": 0.08,
+     "c0004": 0.01,
+     "c0001": 0.02,
+     "c0002": 0.01,
+     "c0013": 0.01,
+     "c0012": 0.26,
+     "c0006": 0.0,
+     "c0016": 0.04,
+     "c0003": 0.16,
+     "c0010": 0.07,
+     "c0011": 0.05,
+     "c0000": 0.01,
+     "c0015": 0.01,
+     "c0008": 0.06
+    },
+    "confidence": 0.23,
+    "model": "jev-1.13.0",
+    "usage": {
+     "input_tokens": 12756,
+     "output_tokens": 208
+    },
+    "status": 200,
+    "latency_s": 1.002940307953395,
+    "bytes": 35656,
+    "error": null
+   },
+   "partner_sampled": "c0012"
+  }
+ ]
+}

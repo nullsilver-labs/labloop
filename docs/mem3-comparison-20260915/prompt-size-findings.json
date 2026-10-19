@@ -1,0 +1,682 @@
+{
+ "campaign": "engram-mem3-findings-w0",
+ "project": "/mnt/data/projects/nullsilver/labloop-mem3-findings-20260915",
+ "tokenizer": "tiktoken 0.14.0, encoding cl100k_base (a proxy: Claude's tokenizer is not public)",
+ "limits": {
+  "max_cards": 8,
+  "max_bytes": 12288
+ },
+ "policy": "findings-v3",
+ "mismatches": [
+  "c0001",
+  "c0002",
+  "c0003",
+  "c0004",
+  "c0005",
+  "c0006",
+  "c0007",
+  "c0008",
+  "c0009",
+  "c0010",
+  "c0011",
+  "c0012",
+  "c0013",
+  "c0014",
+  "c0015",
+  "c0016",
+  "c0017",
+  "c0018",
+  "c0019"
+ ],
+ "rows": [
+  {
+   "id": "c0001",
+   "operator": "draft",
+   "parents": [],
+   "population": 1,
+   "cards_available": 0,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 2347,
+    "bytes": 9775,
+    "population_table": 13,
+    "memory": 367,
+    "fixed": 1967
+   },
+   "findings_facts": {
+    "tokens": 2297,
+    "bytes": 9530,
+    "population_table": 13,
+    "memory": 317,
+    "fixed": 1967,
+    "cards": 0
+   },
+   "findings_filled": {
+    "tokens": 2297,
+    "bytes": 9530,
+    "population_table": 13,
+    "memory": 317,
+    "fixed": 1967,
+    "cards": 0,
+    "omitted": 0
+   }
+  },
+  {
+   "id": "c0002",
+   "operator": "improve",
+   "parents": [
+    "c0001"
+   ],
+   "population": 2,
+   "cards_available": 2,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 3119,
+    "bytes": 12653,
+    "population_table": 37,
+    "memory": 1079,
+    "fixed": 2003
+   },
+   "findings_facts": {
+    "tokens": 2821,
+    "bytes": 11558,
+    "population_table": 37,
+    "memory": 781,
+    "fixed": 2003,
+    "cards": 2
+   },
+   "findings_filled": {
+    "tokens": 3322,
+    "bytes": 14797,
+    "population_table": 37,
+    "memory": 1282,
+    "fixed": 2003,
+    "cards": 2,
+    "omitted": 0
+   }
+  },
+  {
+   "id": "c0003",
+   "operator": "crossover",
+   "parents": [
+    "c0001",
+    "c0000"
+   ],
+   "population": 3,
+   "cards_available": 2,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 3251,
+    "bytes": 13134,
+    "population_table": 52,
+    "memory": 1175,
+    "fixed": 2024
+   },
+   "findings_facts": {
+    "tokens": 2869,
+    "bytes": 11696,
+    "population_table": 52,
+    "memory": 793,
+    "fixed": 2024,
+    "cards": 2
+   },
+   "findings_filled": {
+    "tokens": 3365,
+    "bytes": 14907,
+    "population_table": 52,
+    "memory": 1289,
+    "fixed": 2024,
+    "cards": 2,
+    "omitted": 0
+   }
+  },
+  {
+   "id": "c0004",
+   "operator": "improve",
+   "parents": [
+    "c0001"
+   ],
+   "population": 4,
+   "cards_available": 3,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 3693,
+    "bytes": 14650,
+    "population_table": 76,
+    "memory": 1613,
+    "fixed": 2004
+   },
+   "findings_facts": {
+    "tokens": 3266,
+    "bytes": 13182,
+    "population_table": 76,
+    "memory": 1186,
+    "fixed": 2004,
+    "cards": 3
+   },
+   "findings_filled": {
+    "tokens": 3903,
+    "bytes": 17673,
+    "population_table": 76,
+    "memory": 1823,
+    "fixed": 2004,
+    "cards": 3,
+    "omitted": 0
+   }
+  },
+  {
+   "id": "c0005",
+   "operator": "improve",
+   "parents": [
+    "c0000"
+   ],
+   "population": 5,
+   "cards_available": 4,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 4491,
+    "bytes": 17598,
+    "population_table": 97,
+    "memory": 2393,
+    "fixed": 2001
+   },
+   "findings_facts": {
+    "tokens": 3716,
+    "bytes": 14980,
+    "population_table": 97,
+    "memory": 1618,
+    "fixed": 2001,
+    "cards": 4
+   },
+   "findings_filled": {
+    "tokens": 4498,
+    "bytes": 20572,
+    "population_table": 97,
+    "memory": 2400,
+    "fixed": 2001,
+    "cards": 4,
+    "omitted": 0
+   }
+  },
+  {
+   "id": "c0006",
+   "operator": "crossover",
+   "parents": [
+    "c0002",
+    "c0001"
+   ],
+   "population": 6,
+   "cards_available": 5,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 5064,
+    "bytes": 19647,
+    "population_table": 118,
+    "memory": 2920,
+    "fixed": 2026
+   },
+   "findings_facts": {
+    "tokens": 4300,
+    "bytes": 17146,
+    "population_table": 118,
+    "memory": 2156,
+    "fixed": 2026,
+    "cards": 5
+   },
+   "findings_filled": {
+    "tokens": 4527,
+    "bytes": 20654,
+    "population_table": 118,
+    "memory": 2383,
+    "fixed": 2026,
+    "cards": 4,
+    "omitted": 1
+   }
+  },
+  {
+   "id": "c0007",
+   "operator": "improve",
+   "parents": [
+    "c0003"
+   ],
+   "population": 7,
+   "cards_available": 6,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 5889,
+    "bytes": 22567,
+    "population_table": 143,
+    "memory": 3744,
+    "fixed": 2002
+   },
+   "findings_facts": {
+    "tokens": 4871,
+    "bytes": 19216,
+    "population_table": 143,
+    "memory": 2726,
+    "fixed": 2002,
+    "cards": 6
+   },
+   "findings_filled": {
+    "tokens": 4573,
+    "bytes": 20747,
+    "population_table": 143,
+    "memory": 2428,
+    "fixed": 2002,
+    "cards": 4,
+    "omitted": 2
+   }
+  },
+  {
+   "id": "c0008",
+   "operator": "improve",
+   "parents": [
+    "c0001"
+   ],
+   "population": 8,
+   "cards_available": 7,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 5875,
+    "bytes": 22358,
+    "population_table": 165,
+    "memory": 3706,
+    "fixed": 2004
+   },
+   "findings_facts": {
+    "tokens": 5385,
+    "bytes": 21216,
+    "population_table": 165,
+    "memory": 3216,
+    "fixed": 2004,
+    "cards": 7
+   },
+   "findings_filled": {
+    "tokens": 4595,
+    "bytes": 20841,
+    "population_table": 165,
+    "memory": 2426,
+    "fixed": 2004,
+    "cards": 4,
+    "omitted": 3
+   }
+  },
+  {
+   "id": "c0009",
+   "operator": "improve",
+   "parents": [
+    "c0006"
+   ],
+   "population": 9,
+   "cards_available": 8,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 5949,
+    "bytes": 22593,
+    "population_table": 187,
+    "memory": 3759,
+    "fixed": 2003
+   },
+   "findings_facts": {
+    "tokens": 5312,
+    "bytes": 20924,
+    "population_table": 187,
+    "memory": 3122,
+    "fixed": 2003,
+    "cards": 6
+   },
+   "findings_filled": {
+    "tokens": 4680,
+    "bytes": 21038,
+    "population_table": 187,
+    "memory": 2490,
+    "fixed": 2003,
+    "cards": 4,
+    "omitted": 4
+   }
+  },
+  {
+   "id": "c0010",
+   "operator": "crossover",
+   "parents": [
+    "c0008",
+    "c0003"
+   ],
+   "population": 10,
+   "cards_available": 9,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 6092,
+    "bytes": 23641,
+    "population_table": 208,
+    "memory": 3858,
+    "fixed": 2026
+   },
+   "findings_facts": {
+    "tokens": 5482,
+    "bytes": 21941,
+    "population_table": 208,
+    "memory": 3248,
+    "fixed": 2026,
+    "cards": 7
+   },
+   "findings_filled": {
+    "tokens": 4670,
+    "bytes": 20972,
+    "population_table": 208,
+    "memory": 2436,
+    "fixed": 2026,
+    "cards": 4,
+    "omitted": 4
+   }
+  },
+  {
+   "id": "c0011",
+   "operator": "crossover",
+   "parents": [
+    "c0005",
+    "c0008"
+   ],
+   "population": 11,
+   "cards_available": 10,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 6148,
+    "bytes": 23809,
+    "population_table": 232,
+    "memory": 3890,
+    "fixed": 2026
+   },
+   "findings_facts": {
+    "tokens": 5399,
+    "bytes": 21445,
+    "population_table": 232,
+    "memory": 3141,
+    "fixed": 2026,
+    "cards": 7
+   },
+   "findings_filled": {
+    "tokens": 4650,
+    "bytes": 20915,
+    "population_table": 232,
+    "memory": 2392,
+    "fixed": 2026,
+    "cards": 4,
+    "omitted": 4
+   }
+  },
+  {
+   "id": "c0012",
+   "operator": "improve",
+   "parents": [
+    "c0003"
+   ],
+   "population": 12,
+   "cards_available": 11,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 6070,
+    "bytes": 23280,
+    "population_table": 257,
+    "memory": 3811,
+    "fixed": 2002
+   },
+   "findings_facts": {
+    "tokens": 5512,
+    "bytes": 22012,
+    "population_table": 257,
+    "memory": 3253,
+    "fixed": 2002,
+    "cards": 7
+   },
+   "findings_filled": {
+    "tokens": 4695,
+    "bytes": 21065,
+    "population_table": 257,
+    "memory": 2436,
+    "fixed": 2002,
+    "cards": 4,
+    "omitted": 4
+   }
+  },
+  {
+   "id": "c0013",
+   "operator": "improve",
+   "parents": [
+    "c0010"
+   ],
+   "population": 13,
+   "cards_available": 12,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 6297,
+    "bytes": 23851,
+    "population_table": 277,
+    "memory": 4017,
+    "fixed": 2003
+   },
+   "findings_facts": {
+    "tokens": 5603,
+    "bytes": 22076,
+    "population_table": 277,
+    "memory": 3323,
+    "fixed": 2003,
+    "cards": 6
+   },
+   "findings_filled": {
+    "tokens": 4880,
+    "bytes": 21617,
+    "population_table": 277,
+    "memory": 2600,
+    "fixed": 2003,
+    "cards": 4,
+    "omitted": 4
+   }
+  },
+  {
+   "id": "c0014",
+   "operator": "improve",
+   "parents": [
+    "c0000"
+   ],
+   "population": 14,
+   "cards_available": 13,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 6331,
+    "bytes": 23798,
+    "population_table": 297,
+    "memory": 4033,
+    "fixed": 2001
+   },
+   "findings_facts": {
+    "tokens": 5641,
+    "bytes": 21972,
+    "population_table": 297,
+    "memory": 3343,
+    "fixed": 2001,
+    "cards": 7
+   },
+   "findings_filled": {
+    "tokens": 4728,
+    "bytes": 21192,
+    "population_table": 297,
+    "memory": 2430,
+    "fixed": 2001,
+    "cards": 4,
+    "omitted": 4
+   }
+  },
+  {
+   "id": "c0015",
+   "operator": "improve",
+   "parents": [
+    "c0013"
+   ],
+   "population": 15,
+   "cards_available": 14,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 6203,
+    "bytes": 23508,
+    "population_table": 318,
+    "memory": 3883,
+    "fixed": 2002
+   },
+   "findings_facts": {
+    "tokens": 5616,
+    "bytes": 21936,
+    "population_table": 318,
+    "memory": 3296,
+    "fixed": 2002,
+    "cards": 6
+   },
+   "findings_filled": {
+    "tokens": 4920,
+    "bytes": 21728,
+    "population_table": 318,
+    "memory": 2600,
+    "fixed": 2002,
+    "cards": 4,
+    "omitted": 4
+   }
+  },
+  {
+   "id": "c0016",
+   "operator": "improve",
+   "parents": [
+    "c0012"
+   ],
+   "population": 16,
+   "cards_available": 15,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 5936,
+    "bytes": 22438,
+    "population_table": 339,
+    "memory": 3596,
+    "fixed": 2001
+   },
+   "findings_facts": {
+    "tokens": 5263,
+    "bytes": 20872,
+    "population_table": 339,
+    "memory": 2923,
+    "fixed": 2001,
+    "cards": 6
+   },
+   "findings_filled": {
+    "tokens": 4841,
+    "bytes": 21502,
+    "population_table": 339,
+    "memory": 2501,
+    "fixed": 2001,
+    "cards": 4,
+    "omitted": 4
+   }
+  },
+  {
+   "id": "c0017",
+   "operator": "crossover",
+   "parents": [
+    "c0009",
+    "c0002"
+   ],
+   "population": 17,
+   "cards_available": 16,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 6214,
+    "bytes": 23440,
+    "population_table": 361,
+    "memory": 3827,
+    "fixed": 2026
+   },
+   "findings_facts": {
+    "tokens": 5583,
+    "bytes": 21652,
+    "population_table": 361,
+    "memory": 3196,
+    "fixed": 2026,
+    "cards": 6
+   },
+   "findings_filled": {
+    "tokens": 4874,
+    "bytes": 21538,
+    "population_table": 361,
+    "memory": 2487,
+    "fixed": 2026,
+    "cards": 4,
+    "omitted": 4
+   }
+  },
+  {
+   "id": "c0018",
+   "operator": "improve",
+   "parents": [
+    "c0016"
+   ],
+   "population": 18,
+   "cards_available": 17,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 6440,
+    "bytes": 24331,
+    "population_table": 386,
+    "memory": 4050,
+    "fixed": 2004
+   },
+   "findings_facts": {
+    "tokens": 5265,
+    "bytes": 20705,
+    "population_table": 386,
+    "memory": 2875,
+    "fixed": 2004,
+    "cards": 5
+   },
+   "findings_filled": {
+    "tokens": 4941,
+    "bytes": 21784,
+    "population_table": 386,
+    "memory": 2551,
+    "fixed": 2004,
+    "cards": 4,
+    "omitted": 4
+   }
+  },
+  {
+   "id": "c0019",
+   "operator": "improve",
+   "parents": [
+    "c0001"
+   ],
+   "population": 19,
+   "cards_available": 18,
+   "memory": "findings-v3",
+   "as_dispatched": {
+    "tokens": 6323,
+    "bytes": 23860,
+    "population_table": 406,
+    "memory": 3914,
+    "fixed": 2003
+   },
+   "findings_facts": {
+    "tokens": 5532,
+    "bytes": 21498,
+    "population_table": 406,
+    "memory": 3123,
+    "fixed": 2003,
+    "cards": 6
+   },
+   "findings_filled": {
+    "tokens": 4839,
+    "bytes": 21491,
+    "population_table": 406,
+    "memory": 2430,
+    "fixed": 2003,
+    "cards": 4,
+    "omitted": 4
+   }
+  }
+ ]
+}

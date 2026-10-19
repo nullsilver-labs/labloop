@@ -21,7 +21,10 @@ status in [../NEXT.md](../NEXT.md).
 5. **Trust the project directory once** for Claude Code, or headless sessions ignore the
    project's `permissions.allow`; the hooks still run. Either open `claude` interactively
    there once and accept the trust dialog, or set
-   `projects["<abs path>"].hasTrustDialogAccepted: true` in `~/.claude.json`. Pi workers
+   `projects["<abs path>"].hasTrustDialogAccepted: true` in `~/.claude.json`. Trust on a
+   parent dir does not carry over: each campaign dir needs its own. `lab run` refuses to
+   start a campaign whose Claude workers run through `lab-worker` in an untrusted dir, and
+   `lab campaign check` names it (admission rules v0.3, change 8). Pi workers
    need no trust: the wrapper passes `--no-approve` and loads only the lab's extension.
 6. **Subscription login only**, for Claude workers. `claude auth status` must say
    `loggedIn: true`, with no `ANTHROPIC_API_KEY` or endpoint override in the environment.
@@ -43,7 +46,6 @@ export LAB_PRIVATE=~/.local/share/labloop-private
 tools/lab campaign check
 tools/lab run campaign.toml --poll-sec 10        # or under: lab watch start --op campaign --budget-min N -- tools/lab run …
 tools/lab campaign status                        # live view from another shell; --once one frame, --plain text
-tools/lab serve                                  # read-only page for a phone on the LAN (port 8791)
 tools/lab campaign stop [--now]                  # stop dispatching (and kill running jobs)
 ```
 
@@ -58,6 +60,67 @@ independent starts and cost two improve slots out of the campaign's candidate bu
 raise it on a task where the approach matters more than the tuning. Drafts still never
 outnumber `max_parallel_jobs` at once, and a draft that failed or was deferred counts as
 dispatched; its re-dispatch counts with it, not again.
+
+**`[selection] blind`** (default false) makes a *blind arm*: every job is a fresh draft
+that is shown no other candidate. It is the crippled arm of admission rules v0.2
+([meta-loop-plan.md](meta-loop-plan.md) §4). It needs `draft_p = 1.0`, `crossover_p = 0`
+and `[memory] mode = "legacy"`, and `lab campaign check` refuses anything else.
+- **The job card.** Since admission rules v0.3 (item 3) a blind card is a one-shot's card:
+  the ordinary draft text and a population table holding only the baseline, with the
+  baseline as best-so-far, whatever else has settled. No lineage. A one-shot is a campaign
+  of `max_candidates = 2`, so its single draft sees exactly that. A `job.json` written
+  before v0.3 (no `blind_card` key) still renders the v0.2 card: no table, a blind-arm
+  notice.
+- **The guard.** For a worker whose `job.json` says `"blind": true`, the guard also refuses
+  the scoreboard: `population.json`, `LEDGER.md`, `events.jsonl`, `REPORT.md`, `.lab/`,
+  `index/`, and `lab campaign | index | status | report | job`. Those reads are refused
+  whether the path is named, globbed or reached through `..`.
+- **Debug jobs.** A debug job still sees the failed draft it repairs.
+- **The limit.** Like the rest of the read scope, this is a deterrent, not a wall: a path
+  built at run time by code the worker writes is not seen.
+
+### v2 keys (branch `v2`, each off by default; see [labloop-v2-plan.md](labloop-v2-plan.md))
+
+**`[selection] restart_after = K`** (with optional `restart_min_step`) dispatches a fresh draft once K settled improve or crossover jobs in a row have failed to raise the best search fitness by at least `restart_min_step`.
+- A draft resets the count, so the chain gets K more tries after a restart.
+- Debug jobs neither count nor break the run.
+- It draws no random number, so a campaign without the key is unchanged.
+- `lab campaign check` refuses it in a blind arm.
+- The plan tests it only against `draft_p` matched to the same expected number of drafts.
+
+**`[data] same_output_ignore = ["seconds", ...]`** names keys dropped before a child's `out/predictions-search.json` is compared with its first parent's.
+- The result is stored as `same_output_as_parent` on every evaluated improve or crossover, and REPORT counts it.
+- It is a metric, never a gate.
+- On hrw that file is the worker's dev self-measurement, so the flag there means "the same dev per-target accuracy".
+
+**`[campaign] seed_from = "/abs/campaign/dir"` with `seed_upto = "c0003"`** starts a new campaign from a byte-for-byte copy of another campaign's opening, c0000 through `seed_upto`.
+- **For:** operator tests, where both arms must share one start.
+- **Not for:** breadth or selection tests, where the opening's luck is the effect itself.
+- **The prefix may hold only** the baseline, drafts and debugs, and all of them must be settled.
+- **`lab run` refuses before writing anything if any of these holds:**
+  - the task, train data, search inputs, evaluator, or the search or final labels differ from the source's;
+  - either campaign uses a findings memory;
+  - the arm is blind;
+  - `initial_drafts` exceeds the seeded drafts;
+  - the worker model differs;
+  - copied code names the source dir.
+- **What the copy records:** each copied dir gets a `seeded.json` saying where it came from. population.json marks the entries `seeded_from` and replays the source's counters. The LEDGER gets one row per seeded candidate, and REPORT says what was seeded.
+- **Accounting:** seeded candidates count toward `max_candidates`, and their sessions are left out of the cost lines.
+- **Reading results:** use per-job metrics. A final-g comparison between two seeded arms is diluted when the best candidate stays a seeded one.
+
+**`[worker.operator_text]`** replaces what a worker is told for one operator, whole, and
+nothing else. It exists for policy pairs about instructions (the effort pair,
+[meta-loop-plan.md](meta-loop-plan.md) §9):
+
+```toml
+[worker.operator_text]
+improve = "You inherit the parent's code. State your hypothesis in summary.md before running, run, and report what happened."
+```
+
+The keys are the operators (`baseline`, `draft`, `improve`, `crossover`, `debug`).
+The campaign file is hashed, so an override is part of the campaign, and each `job.json`
+keeps the text its worker was shown. The task statement is not touched: a pair that
+removes a line from both edits `task.md` too.
 
 **`[resources.worker_model_by_operator]`** names a model per operator, overriding
 `worker_model` for that operator only:
@@ -89,6 +152,13 @@ point workers at any OpenAI-compatible server or hosted API.
    GPU 0, bound to `127.0.0.1:8083`, reporting the alias as its model id. It is a service
    for every client on the host, not a job: no `lab watch`, and `lab run` never starts or
    stops it. List the candidates' GPU in `resources.gpus` and leave the server's out.
+   Two knobs, environment only, both recorded in the container command that
+   `llm-server.sh status` prints: `LLM_SERVER_SPEC=draft-mtp` drafts from the model's
+   own MTP head when the GGUF ships one (same tokens, faster decode; Qwen3.8-27B went
+   from 23 to 31–44 tok/s), and `LLM_SERVER_EFFORT=low` sets the chat template's
+   reasoning effort (Qwen3.8: `low`, `medium`, `xhigh` = default). The effort changes
+   the model's output, so it belongs in the campaign's preregistration and launch
+   notes; the preflight records the server build beside the served window.
 2. **A provider in Pi's models.json**, with `baseUrl`, `api = "openai-completions"`, a
    placeholder `apiKey`, `compat.supportsDeveloperRole = false` for llama.cpp, and one
    entry per alias the server may run. `pi --list-models` shows them.
@@ -190,6 +260,66 @@ compute has stopped while the watcher is running with `cleanup_error`. Linux `/p
 candidate execution. Do not update tools or resume the tainted historical control for
 comparison: use a fresh campaign identity and freshly trained candidates after a bounded
 smoke test.
+
+**Read scope.** A worker reads its own candidate dir, the candidates its job card lists in
+`contract.may_read` (its parents) and the ones its own `lab index` queries returned; the task,
+data and anything else outside `candidates/` stay open. Until 2026-10-17 the guard only
+matched paths spelled out as `candidates/<id>`, and a glob, a `cd`, a `..` hop from the own
+dir or a recursive search went through (hsrc-v1 Acrip c0009 read a sibling's summary once and
+said so). A regex over shell text cannot be made sound, so the guard now fails closed around
+`candidates/`:
+
+- *Spelled out.* A Bash command may name `candidates` only as `candidates/<readable id>`, and
+  a candidate id `cNNNN` only if it is readable (a `lab` command excepted: `lab index open`
+  logs what it shows). `cd candidates`, `ls candidates`, `P=candidates` are refused, and so is
+  `candidates` as a code name in inline Python (an attribute, `x.candidates`, passes). The
+  text of a `cat`/`tee` heredoc is prose and is not read.
+- *Resolved.* Every path word is resolved against the session cwd, following `cd` and the
+  variables the command assigns, through symlinks; a glob is expanded on disk and every match
+  checked; a path whose prefix the guard cannot know (`"$(dirname "$PWD")"/c000?`) is refused
+  when a wildcard component could match another candidate's id; another campaign's
+  `candidates/cNNNN` is out of scope whatever the id.
+- *Recursive.* A walk from a dir that holds `candidates/` (find, rg, `grep -r`, `ls -R`,
+  `cp -r`, `tar c`, `git grep`, `os.walk`, and a Grep or Glob tool call with no path from the
+  campaign root) is refused; name your own dir instead. Pi's find and grep are checked as Glob
+  and Grep.
+
+**The guard is a deterrent, not a wall.** It is a check at the tool boundary. Code the
+worker writes into its own dir and runs (`code/run.sh`, a script that walks `..`) is not
+inspected, nor is a path a program assembles at run time from pieces the command never spells
+out. Candidate *names* stay visible (`ls *`, `git status`); contents do not. It stops a worker
+that wanders and records the attempt in `session.json` → `permission_denials`; it does not stop
+one that is trying. A comparison that depends on read scope (a draft-only arm against one that
+reads its parents) states that the scope was enforced by the guard only, or runs behind the
+wall below. Each campaign carries its own copy of `guard.sh` from init: one scaffolded before
+2026-10-17 has the old guard.
+
+**The OS wall (designed, not built; it needs the human).** The sound fix is a per-job mount
+namespace in which nothing outside the read scope exists, so no command form matters.
+`lab-worker` and `lab-worker-pi` would wrap the session (and with it every `code/run.sh` it
+runs) in bubblewrap:
+
+- read-write: the worker's own candidate dir;
+- read-only: the job card's `contract.may_read` dirs (its parents), `task.md`, `data/train/`,
+  `eval/`, `campaign.toml`, `.claude/`, `tools/`, the index file when the campaign's memory mode
+  has one, and the system and toolchain paths the session needs (`/usr`, the venv, the `claude`
+  or `pi` install, the auth file under `~/.claude`, `/dev/nvidia*` for a GPU slot);
+- absent: every other `candidates/<id>` (an empty tmpfs over `candidates/`, then the own dir and
+  the parents bound back in), `LAB_PRIVATE`, sibling campaign dirs, `../labbench` (so the
+  `chmod 000` ritual during runs is no longer needed), and the rest of `$HOME`;
+- network as today (the API or the local model server); `--die-with-parent`, so the watcher's
+  pidfd containment still owns the lifetime.
+
+Two things are open. **The host blocks it today:** on this Ubuntu machine
+`kernel.apparmor_restrict_unprivileged_userns = 1`, and `bwrap` without root fails with
+`setting up uid map: Permission denied` (checked 2026-10-17). Enabling it is a root step for the
+human: an AppArmor profile that grants `userns` to `/usr/bin/bwrap`, or the sysctl set to 0.
+**`lab index` needs care:** the index holds every settled candidate's text, so behind the wall it
+must be served by `lab` from outside (a query socket) rather than mounted, or the wall reopens
+for index-mode campaigns. A worker that finds a path missing gets ENOENT, which reads as a
+real error in its transcript; the job card should say what is mounted. Until the wall is built,
+the guard above is the only read-scope enforcement, and the read of any comparison that
+depends on it says so (`REPORT.md` does not yet state it mechanically).
 
 ## The usage governor (the Claude Max window)
 
@@ -332,22 +462,39 @@ bound the oldest values of a knob are elided, never a knob or an id of a value s
 and the elision is written into the row. The job card's population table lists parents
 beside scores for every policy since the same day. `knobs` is required under v3.
 
+**`mode = "index-v1"`** (`docs/experiment-index-plan.md`, 2026-09-17) publishes v3's cards and
+takes the population out of the job card: the direct parents' cards in full, a digest of
+constant size (counts, the three strongest candidates outside the lineage, how many knob keys
+have more than one value) and an instruction to run `tools/lab index knob KEY` and
+`tools/lab index search "…"` before stating a change. `lab run` rebuilds
+`index/experiments.sqlite3` from the candidate dirs whenever a candidate settles; the file has
+one writer and the guard treats it as a machine file. Every query a worker runs is appended to
+`queries.jsonl` in its candidate dir with the ids it was shown. The job card is the same size
+at 20 candidates and at 200. It needs `knobs`, like v2 and v3.
+
+Search is lexical unless the campaign names an **embedder**, chosen like the worker model — a
+name and where it is served, any OpenAI-compatible `/v1/embeddings` endpoint (llama.cpp
+`--embedding`, TEI, vLLM, a hosted API, or `scripts/embed-server.py MODEL_DIR` for a local
+checkpoint on CPU):
+
+```toml
+[memory.embedder]
+url   = "http://127.0.0.1:8789"
+model = "bge-small-en-v1.5"
+query_prefix = "Represent this sentence for searching relevant passages: "   # model-specific, default ""
+doc_prefix   = ""
+# api_key_env = "EMBED_API_KEY"   # the variable's name, never the key
+```
+
+It is frozen into `population.json` and checked at start like a Pi endpoint (a campaign does
+not start on an embedder that does not answer). Rows are embedded when a candidate settles,
+vectors are cached by content hash in `index/embeddings.sqlite3`, and `lab index search`
+fuses the lexical and vector rankings by reciprocal rank; if the endpoint is down at query
+time the answer is lexical and says so. `lab run` never starts the server. Measured so far without a
+worker (`docs/index-eval-20260917/README.md`); no campaign has run under it.
+
 Passing the acceptance suite shows that the plumbing is correct, not that the memory is
 useful. The comparison that would show that is `finding-cards-plan.md` §7.
 `scripts/mem_replay_selector.py <project>` replays a finished campaign's dispatches under
 both policies and reports cross-branch coverage, cards shown to nobody, and whether a
 repeated idea was visible to the job that repeated it. It is read-only, with no LLM.
-
-## The read-only page
-
-`tools/lab serve` renders the campaign on `http://<host>:8791/`: the header and usage
-line, the population newest first, the timeline, one page per candidate with its summary,
-and REPORT.md once written. It re-reads the files on every request, writes nothing,
-answers only GET, and redacts displayed text with the feed's rules. There is no stop
-button by design; stopping stays `tools/lab campaign stop`. It has no authentication, so
-bind it to a LAN interface, never a public one. To keep it up across sessions, run it
-under a watcher with a long budget:
-
-```sh
-tools/lab watch start --op serve --budget-min 100000 -- tools/lab serve
-```

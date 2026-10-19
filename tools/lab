@@ -60,7 +60,7 @@ from typing import Any
 # sessions, predictions) and its state.json. 2.1 adds the optional finding cards
 # (candidates/cNNNN/finding.json, population.json `memory`, job.json `findings`).
 # Version history: README.md, "Format versioning".
-FORMAT_VERSION = "2.1"
+FORMAT_VERSION = "2.2"
 
 # Every event type carries a fixed feed class. `news` reaches the homepage and RSS,
 # `activity` only the project timeline, `none` is chart data.
@@ -336,7 +336,7 @@ def format_manifest() -> dict:
             "keys": ["format", "campaign", "campaign_file", "campaign_sha256", "status",
                      "started", "finished", "tick", "seed", "auth_preflight", "candidates",
                      "best", "settled", "settled_at_best", "gpu_seconds", "stop_reason",
-                     "final", "claim", "usage", "memory", "updated_at"],
+                     "final", "claim", "usage", "memory", "updated_at", "seeded"],
             "statuses": C.CAMPAIGN_STATUS,
             "status_badges": {"running": "Searching",
                               "waiting_usage": "Waiting for the usage window",
@@ -353,7 +353,8 @@ def format_manifest() -> dict:
             "exec_statuses": C.EXEC_STATUS,
             "keys": ["id", "operator", "parents", "status", "exec", "gpu", "watch",
                      "launched", "ended", "exit_code", "fitness", "n", "fail_reason",
-                     "debugged", "path", "session", "redispatch_of", "defers"],
+                     "debugged", "path", "session", "redispatch_of", "defers",
+                     "seeded_from", "same_output_as_parent"],
             "fitness_note": ("`fitness` is the search-split score, read by `lab eval` "
                              "only; higher or lower is better per campaign.toml "
                              "[report].higher_is_better. It is optimistic by construction; "
@@ -1295,6 +1296,12 @@ def main(argv: list[str] | None = None) -> None:
         lab_campaign.register(sub, sys.modules[__name__])
     except Exception as e:  # pragma: no cover
         warn(f"campaign commands unavailable: {e}")
+
+    try:
+        import lab_index
+        lab_index.register(sub)
+    except Exception as e:  # pragma: no cover
+        warn(f"index commands unavailable: {e}")
 
     args = p.parse_args(argv)
 

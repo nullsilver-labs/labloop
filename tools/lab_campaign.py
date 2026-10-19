@@ -56,7 +56,7 @@ L: Any = None          # the `lab` module, injected by register()
 
 POP_FILE = "population.json"
 CARD_FILE = "finding.json"
-MEMORY_POLICIES = ["legacy", "findings-v1", "findings-v2", "findings-v3"]
+MEMORY_POLICIES = ["legacy", "findings-v1", "findings-v2", "findings-v3", "index-v1"]
 CAND_DIR = "candidates"
 REPORT_FILE = "REPORT.md"
 OPERATORS = ["baseline", "draft", "improve", "crossover", "debug"]
@@ -84,13 +84,16 @@ WEIGHT_PATTERNS = ["*.pt", "*.pth", "*.ckpt", "*.safetensors", "*.bin", "*.npz",
 
 OPERATOR_TEXT = {
     "baseline": "Produce the trivial baseline exactly as the task describes it. No cleverness.",
-    "draft": "Write a complete solution from the task statement. Prefer simple and "
-             "runnable over ambitious. If the population below already holds candidates, "
-             "take a different approach from theirs, not a variant of one. State in "
-             "summary.md what you tried and why.",
-    "improve": "You inherit the parent's code. Make ONE hypothesised change, state it in "
-               "summary.md before running, run, and report what happened. Do not revert "
-               "to a different approach; that is a draft.",
+    # 2026-10-19: "Prefer simple and runnable over ambitious" (draft) and "Make ONE
+    # hypothesised change" (improve) dropped. On hrw with Haiku, 16 paired campaigns
+    # without them: final g +.109 (t 2.54), improves adding a planted rule 21/160 vs
+    # 4/160 (docs/labloop-v2-plan.md E1, E8). The old texts are the effort pair's controls.
+    "draft": "Write a complete solution from the task statement. If the population below "
+             "already holds candidates, take a different approach from theirs, not a "
+             "variant of one. State in summary.md what you tried and why.",
+    "improve": "You inherit the parent's code. State your hypothesis in summary.md before "
+               "running, run, and report what happened. Do not revert to a different "
+               "approach; that is a draft.",
     "crossover": "You inherit parent A's code and can read parent B's. Combine the stated "
                  "strengths of both into one candidate. Say which parts came from where.",
     "debug": "The parent failed to run or produced no predictions. Make it run correctly. "
@@ -192,6 +195,19 @@ def load_campaign(path: Path) -> dict:
     if not task.exists():
         L.die(f"{path.name}: campaign.task {task} does not exist")
     cfg["campaign"] = {"id": cid, "task": task, "kind": raw["campaign"].get("kind", "research")}
+    # B2 (v2, docs/labloop-v2-plan.md): start from a copy of another campaign's opening
+    # population (c0000..seed_upto: baseline, drafts and debugs only), for operator tests
+    # whose arms must share one start. Checked and applied once, when population.json is made.
+    sf, su = raw["campaign"].get("seed_from"), raw["campaign"].get("seed_upto")
+    if (sf is None) != (su is None):
+        L.die(f"{path.name}: [campaign] seed_from and seed_upto go together")
+    if sf is not None:
+        if not isinstance(sf, str) or not Path(sf).is_absolute() or not isinstance(su, str) \
+                or not re.fullmatch(r"c\d{4}", su):
+            L.die(f"{path.name}: [campaign] seed_from must be an absolute campaign dir and seed_upto a "
+                  f"candidate id like c0003 (got {sf!r}, {su!r})")
+    cfg["campaign"]["seed_from"] = Path(sf) if sf else None
+    cfg["campaign"]["seed_upto"] = su
 
     d = raw.get("data", {})
     for k in ("train", "evaluator", "baseline"):
@@ -260,7 +276,15 @@ def load_campaign(path: Path) -> dict:
     if not cmd or not isinstance(cmd, str):
         L.die(f"{path.name}: [worker] command is required (M0: a scripted worker; "
               "M1: the claude -p wrapper)")
-    cfg["worker"] = {"command": cmd}
+    # A policy pair can change what a worker is told and nothing else: per operator, the text
+    # replaces OPERATOR_TEXT whole (the effort pair, docs/meta-loop-plan.md §9). The campaign
+    # file is hashed, so an override is part of the campaign; job.json keeps the text shown.
+    texts = w.get("operator_text", {})
+    if not isinstance(texts, dict) or any(k not in OPERATOR_TEXT or not isinstance(v, str) or not v.strip()
+                                          for k, v in texts.items()):
+        L.die(f"{path.name}: [worker.operator_text] maps operators ({', '.join(OPERATOR_TEXT)}) "
+              f"to non-empty text (got {texts!r})")
+    cfg["worker"] = {"command": cmd, "operator_text": dict(texts)}
 
     s = raw.get("selection", {})
     cfg["selection"] = {
@@ -270,7 +294,24 @@ def load_campaign(path: Path) -> dict:
         "initial_drafts": int(s.get("initial_drafts", 1)),
         "max_debug_retries": int(s.get("max_debug_retries", 1)),
         "seed": int(s.get("seed", int(hashlib.sha256(cid.encode()).hexdigest()[:8], 16))),
+        # A blind arm: every job a fresh draft that sees no other candidate, no score and no
+        # best-so-far (admission rules v0.2, docs/meta-loop-plan.md §4: the crippled arm).
+        # Since v0.3 (item 3) its card is the one-shot's: the draft text and a population
+        # table holding only the baseline, as a lone draft after c0000 sees it.
+        "blind": bool(s.get("blind", False)),
+        # v2 C2 (docs/labloop-v2-plan.md), off by default until its pair is read: a fresh
+        # draft after `restart_after` settled improves/crossovers in a row that did not raise
+        # the best by at least `restart_min_step` (fitness units; a creeping chain is stuck too).
+        "restart_after": int(s.get("restart_after", 0)),
+        "restart_min_step": float(s.get("restart_min_step", 0.0)),
     }
+    if cfg["selection"]["restart_after"] < 0 or cfg["selection"]["restart_min_step"] < 0:
+        L.die(f"{path.name}: selection.restart_after and restart_min_step must be >= 0 (0 = off)")
+    if cfg["selection"]["restart_after"] and cfg["selection"]["blind"]:
+        L.die(f"{path.name}: selection.restart_after has no chain to restart in a blind arm")
+    if cfg["selection"]["blind"] and (cfg["selection"]["draft_p"] != 1.0 or cfg["selection"]["crossover_p"] != 0):
+        L.die(f"{path.name}: selection.blind needs draft_p = 1.0 and crossover_p = 0 (every job a "
+              f"fresh draft; got draft_p {cfg['selection']['draft_p']}, crossover_p {cfg['selection']['crossover_p']})")
     if not (0 <= cfg["selection"]["crossover_p"] <= 1):
         L.die(f"{path.name}: selection.crossover_p must be in [0,1]")
     if not (0 <= cfg["selection"]["draft_p"] <= 1):
@@ -317,7 +358,29 @@ def load_campaign(path: Path) -> dict:
                 or ".." in Path(knobs).parts:
             L.die(f"{path.name}: [memory] knobs must be a relative path inside the candidate "
                   f"dir (got {knobs!r})")
-    cfg["memory"] = {"mode": mode, "knobs": knobs or None}
+    # The embedder is chosen like the worker model: a name and where it is served. Unset,
+    # `lab index` is lexical only. It shapes what a worker can find, so it is frozen with
+    # the rest of the policy.
+    embedder = None
+    if isinstance(mem, dict) and mem.get("embedder") is not None:
+        if mode != F.POLICY_INDEX:
+            L.die(f"{path.name}: [memory.embedder] needs mode = \"{F.POLICY_INDEX}\" (got {mode!r})")
+        import lab_index
+        try:
+            embedder = lab_index.embedder_config(mem["embedder"])
+        except ValueError as e:
+            L.die(f"{path.name}: {e}")
+    cfg["memory"] = {"mode": mode, "knobs": knobs or None, "embedder": embedder}
+    if cfg["selection"]["blind"] and mode != "legacy":
+        L.die(f"{path.name}: selection.blind needs [memory] mode = \"legacy\" (a blind draft is "
+              f"shown no other candidate; got {mode!r})")
+
+    # B1 (v2): keys dropped before a child's predictions are compared with its parent's
+    # (timings and the like), so a change with no functional effect is recorded as such
+    ign = raw.get("data", {}).get("same_output_ignore", [])
+    if not isinstance(ign, list) or not all(isinstance(k, str) for k in ign):
+        L.die(f"{path.name}: [data] same_output_ignore must be a list of key names")
+    cfg["data"]["same_output_ignore"] = ign
 
     ev = raw.get("eval", {})
     cfg["eval"] = {"user": ev.get("user") or None,
@@ -461,6 +524,10 @@ then: tools/lab campaign check; see docs/campaign-setup.md (venv, trust, labeval
 
 def cmd_campaign_check(args) -> None:
     cfg = load_campaign(Path(args.file))
+    if cfg["campaign"].get("seed_from"):
+        why, _ = seed_checks(cfg)
+        if why:
+            L.die("seeding would be refused: " + "; ".join(why))
     print(json.dumps({
         "id": cfg["campaign"]["id"], "sha256": cfg["sha256"][:12],
         "slots": cfg["resources"]["slots"], "max_parallel_jobs": cfg["resources"]["max_parallel_jobs"],
@@ -471,6 +538,8 @@ def cmd_campaign_check(args) -> None:
         "worker_model": cfg["resources"]["worker_model"],
         "worker_model_by_operator": cfg["resources"]["worker_model_by_operator"],
         "worker_backends": campaign_models(cfg),
+        "operator_text_overrides": sorted(cfg["worker"]["operator_text"]),
+        "v2": {k: cfg["selection"][k] for k in ("restart_after", "restart_min_step")},
         "initial_drafts": cfg["selection"]["initial_drafts"],
         "usage_governor": ("estimate + rate-limit detection" if cfg["usage"]["window_budget"]
                            else "rate-limit detection only (no usage.window_budget)"),
@@ -481,8 +550,15 @@ def cmd_campaign_check(args) -> None:
         L.warn("no usage.window_budget: the loop cannot pace itself inside the Max window; "
                "it will only defer jobs after a rate-limit message. Calibrate one from "
                "`lab campaign usage` of a previous run before an unattended campaign.")
-    for model, r in auth_preflight(cfg)["pi"].items():
+    pre = auth_preflight(cfg)
+    for model, r in pre["pi"].items():
         (print if r["ok"] else L.warn)(f"pi {model}: {r['detail']}")
+    if pre.get("claude_trust"):
+        (print if pre["claude_trust"]["ok"] else L.warn)(f"claude trust: {pre['claude_trust']['detail']}")
+    if pre.get("embedder"):
+        (print if pre["embedder"]["ok"] else L.warn)(f"embedder: {pre['embedder']['detail']}")
+    elif cfg["memory"]["mode"] == F.POLICY_INDEX:
+        print("embedder: none configured; `lab index search` is lexical only")
 
 
 # ---------------------------------------------------------------------------
@@ -515,6 +591,24 @@ def campaign_models(cfg: dict) -> dict[str, str]:
     return {m: P.backend_for(m) for m in dict.fromkeys(ids)}
 
 
+def claude_trust(root: Path) -> dict:
+    """Claude Code ignores a project's permissions.allow until its dir is trusted, and trust on
+    a parent dir does not carry over: no campaign dir from pinf to popt was trusted, and every
+    job there ran without the allow list (popt READ, 2026-10-18). Admission rules v0.3, change
+    8: the human trusts each campaign dir before launch, and the launch checks it."""
+    cdir = os.environ.get("CLAUDE_CONFIG_DIR")
+    f = Path(cdir) / ".claude.json" if cdir else Path.home() / ".claude.json"
+    try:
+        projects = json.loads(f.read_text()).get("projects") or {}
+    except (OSError, ValueError) as e:
+        return {"ok": False, "detail": f"cannot read {f}: {e}"}
+    keys = dict.fromkeys([os.path.abspath(root), str(Path(root).resolve())])
+    ok = any((projects.get(k) or {}).get("hasTrustDialogAccepted") for k in keys)
+    return {"ok": ok, "detail": f"{next(iter(keys))} is {'' if ok else 'NOT '}trusted in {f}"
+                                + ("" if ok else " (open `claude` there once and accept the trust "
+                                                 "dialog; that is the human's step)")}
+
+
 def auth_preflight(cfg: dict | None = None) -> dict:
     """Claude Code sessions: refuse a paid or non-subscription route. Pi sessions: the
     provider must be configured and its endpoint must serve the requested model (a
@@ -532,9 +626,17 @@ def auth_preflight(cfg: dict | None = None) -> dict:
                 pre["pi"][model] = {"ok": False, "base_url": None, "served": [], "detail": "no `pi` on PATH"}
             else:
                 r = P.check_model(model)
-                pre["pi"][model] = {k: r[k] for k in ("ok", "base_url", "served", "context_declared",
+                pre["pi"][model] = {k: r[k] for k in ("ok", "base_url", "served", "context_declared", "server_build",
                                                        "context_served", "detail")}
             pre["ok"] = pre["ok"] and pre["pi"][model]["ok"]
+        if "claude" in pre["backends"].values() and \
+                Path(cfg["worker"]["command"].split()[0]).name == "lab-worker":
+            pre["claude_trust"] = claude_trust(L.ROOT)
+            pre["ok"] = pre["ok"] and pre["claude_trust"]["ok"]
+        if cfg["memory"].get("embedder"):
+            import lab_index
+            pre["embedder"] = lab_index.check_embedder(cfg["memory"]["embedder"])
+            pre["ok"] = pre["ok"] and pre["embedder"]["ok"]
     return pre
 
 
@@ -546,6 +648,10 @@ def init_pop(cfg: dict) -> dict:
     for model, r in pre["pi"].items():
         if not r["ok"]:
             L.die(f"refusing to start: Pi model {model}: {r['detail']}")
+    if pre.get("embedder") and not pre["embedder"]["ok"]:
+        L.die(f"refusing to start: [memory.embedder]: {pre['embedder']['detail']}")
+    if pre.get("claude_trust") and not pre["claude_trust"]["ok"]:
+        L.die(f"refusing to start: {pre['claude_trust']['detail']}")
     pop = {
         "format": L.FORMAT_VERSION,
         "campaign": cfg["campaign"]["id"],
@@ -568,13 +674,216 @@ def init_pop(cfg: dict) -> dict:
         "usage": usage_defaults(),
         "memory": memory_snapshot(cfg),
     }
+    seeded = seed_population(cfg, pop) if cfg["campaign"].get("seed_from") else None
     save_pop(pop)
     L.emit("campaign.start", f"campaign {cfg['campaign']['id']} started: "
            f"{len(cfg['resources']['slots'])} slot(s), stop {json.dumps(cfg['stop'])}",
            {"campaign": cfg["campaign"]["id"], "campaign_sha256": cfg["sha256"],
             "slots": cfg["resources"]["slots"], "stop": cfg["stop"],
             "success_threshold": cfg["report"]["success_threshold"]})
+    if seeded:
+        L.emit("note", seeded, {"campaign": cfg["campaign"]["id"], "seeded_from": str(cfg["campaign"]["seed_from"]),
+                                "upto": cfg["campaign"]["seed_upto"]})
     return pop
+
+
+SEED_FIELDS = ("operator", "parents", "status", "exec", "fitness", "n", "fail_reason",
+               "path", "ended", "exit_code")
+SEED_SKIP = {"predictions-final.json"}      # the source's final run never reaches the copy
+# what records a job rather than runs it: these name the source dir by design
+SEED_PROVENANCE = {"config.json", "job.json", "session.json", "session.stderr", "summary.md", "seeded.json"}
+
+
+def tree_sha256(p: Path) -> str:
+    """A file's sha256, or a dir's: every file under it (symlinked dirs followed), by
+    relative name and bytes."""
+    if p.is_file():
+        return sha256_file(p)
+    h = hashlib.sha256()
+    seen: set[str] = set()
+    files = []
+    for d, dns, fs in os.walk(p, followlinks=True):
+        real = os.path.realpath(d)
+        if real in seen:            # a symlink loop: walk each real dir once
+            dns[:] = []
+            continue
+        seen.add(real)
+        files += [Path(d) / f for f in fs]
+    files.sort()
+    for f in files:
+        h.update(str(f.relative_to(p)).encode() + b"\0" + sha256_file(f).encode() + b"\0")
+    return h.hexdigest()
+
+
+def _source_cfg(src: Path, spop: dict) -> tuple[dict | None, str | None]:
+    """The source campaign's TOML as it ran: population.json names the file and its hash."""
+    f = src / (spop.get("campaign_file") or "campaign.toml")
+    if not f.exists() or sha256_file(f) != spop.get("campaign_sha256"):
+        return None, f"the source's {f.name} is missing or changed since it ran"
+    return tomllib.loads(f.read_text()), None
+
+
+def seed_checks(cfg: dict) -> tuple[list[str], dict]:
+    """B2: every reason this campaign may not seed from its source, without writing or
+    evaluating anything (`lab campaign check` runs these too). The re-score of the seeded
+    fitness is done at seeding time, by seed_population."""
+    src, upto = cfg["campaign"]["seed_from"], cfg["campaign"]["seed_upto"]
+    why: list[str] = []
+    if cfg["memory"]["mode"] != "legacy":
+        why.append(f"[memory] mode {cfg['memory']['mode']!r}: seeding is legacy-only (copied cards would fail their source checks)")
+    if cfg["selection"].get("blind"):
+        why.append("a blind arm shows no other candidate, so a seeded population means nothing")
+    spop_f = src / POP_FILE
+    spop = json.loads(spop_f.read_text()) if spop_f.exists() else None
+    if spop is None:
+        return why + [f"{src} has no {POP_FILE}"], {}
+    ids = [f"c{i:04d}" for i in range(int(upto[1:]) + 1)]
+    sc = spop["candidates"]
+    if (spop.get("memory") or {}).get("policy", "legacy") != "legacy":
+        why.append("the source used a findings memory")
+    if spop.get("format") != L.FORMAT_VERSION:
+        why.append(f"the source's format {spop.get('format')} is not {L.FORMAT_VERSION}")
+    missing = [i for i in ids if i not in sc]
+    if missing:
+        return why + [f"the source lacks {', '.join(missing)}"], {}
+    if sc["c0000"]["operator"] != "baseline":
+        why.append("the source's c0000 is not its baseline")
+    bad_op = [i for i in ids if sc[i]["operator"] not in ("baseline", "draft", "debug")]
+    if bad_op:
+        why.append(f"{', '.join(bad_op)} are improves or crossovers: only the opening (baseline, "
+                   "drafts, debugs) is seeded, so both arms' operators act on the same start")
+    unsettled = [i for i in ids if sc[i]["status"] not in ("evaluated", "failed", "frozen")]
+    if unsettled:
+        why.append(f"{', '.join(unsettled)} are not settled in the source")
+    if any(j.get("from") in ids for j in (spop.get("usage") or {}).get("deferred_jobs", [])):
+        why.append("the source has a deferred job inside the prefix")
+    drafts = sum(1 for i in ids if sc[i]["operator"] == "draft" and not sc[i].get("redispatch_of"))
+    if cfg["selection"].get("initial_drafts", 1) > drafts:
+        why.append(f"initial_drafts {cfg['selection']['initial_drafts']} > the {drafts} seeded drafts")
+    # the model that made each seeded job is the one this campaign would use for it
+    for i in ids:
+        if sc[i]["operator"] == "baseline":
+            continue
+        try:
+            req = json.loads((src / "candidates" / i / "config.json").read_text())["agent"]["requested"]
+        except (OSError, ValueError, KeyError, TypeError):
+            req = None
+        mine = worker_model_for(cfg, sc[i]["operator"])[0]
+        if req != mine:
+            why.append(f"{i} was made by {req!r}, but this campaign's {sc[i]['operator']} model is {mine!r}")
+    scfg, err = _source_cfg(src, spop)
+    if err:
+        why.append(err)
+    else:
+        def r(v: str) -> Path:
+            q = Path(os.path.expandvars(os.path.expanduser(v)))
+            return q if q.is_absolute() else src / q
+        d = scfg["data"]
+        pairs = {"task statement": (r(scfg["campaign"]["task"]), cfg["campaign"]["task"]),
+                 "training data": (r(d["train"]), cfg["data"]["train"]),
+                 "search inputs": (r(d["search"]["inputs"]), cfg["data"]["search"]["inputs"]),
+                 "final inputs": (r(d["final"]["inputs"]), cfg["data"]["final"]["inputs"]),
+                 "evaluator": (r(d["evaluator"]), cfg["data"]["evaluator"])}
+        for k, (sp, mp) in pairs.items():
+            try:
+                if tree_sha256(sp) != tree_sha256(mp):
+                    why.append(f"the {k} differ from the source's")
+            except OSError as e:
+                why.append(f"cannot read the source's {k}: {e}")
+        if d.get("baseline") != cfg["data"]["baseline"]:
+            why.append("the baseline command differs from the source's")
+    # no link may survive the copy, and no file the final re-run could execute or read may
+    # name the source dir: everything is scanned but the provenance records, which name it
+    # by design (workers persist weights anywhere in the candidate dir: work/, scratch/...)
+    names = {str(src).encode(), str(src.resolve()).encode()}
+    for i in ids:
+        if sc[i].get("fitness") is not None and not (src / "candidates" / i / "fitness.json").exists():
+            why.append(f"{i} has a fitness but no fitness.json in the source")
+        for dp, dns, fns in os.walk(src / "candidates" / i):
+            for n in dns + fns:
+                f = Path(dp) / n
+                if f.is_symlink():
+                    why.append(f"{i} holds a symlink ({f.relative_to(src)}): a copy would still point at the source")
+                elif f.is_file() and n not in SEED_SKIP and n not in SEED_PROVENANCE \
+                        and f.stat().st_size < 256_000_000 and any(x in f.read_bytes() for x in names):
+                    why.append(f"{f.relative_to(src)} names the source dir: its final re-run would read the source")
+    return why, {"spop": spop, "ids": ids}
+
+
+def seed_population(cfg: dict, pop: dict) -> str:
+    """B2: copy the source's c0000..seed_upto into this new campaign and replay its
+    counters. Refuses (writing nothing) on any reason from seed_checks, or when a seeded
+    candidate's search fitness does not re-score to the same value here through the
+    evaluator, as the eval user when there is one: that is the check that the labels are
+    the source's, without lab reading them. The source's final read never comes along: its
+    predictions-final.json is not copied and fitness.json keeps only the search record, so
+    a seeded best gets its own final read here. Returns the note for the event feed."""
+    src, upto = cfg["campaign"]["seed_from"], cfg["campaign"]["seed_upto"]
+    why, ctx = seed_checks(cfg)
+    cands_dir = L.ROOT / "candidates"
+    stage = L.LAB_DIR / "seeding"
+    if cands_dir.exists() and any(cands_dir.iterdir()):
+        why.append("candidates/ is not empty here")
+    if stage.exists():
+        why.append(f"{rel(stage)} exists: an interrupted seeding; move it aside")
+    if why:
+        L.die("refusing to seed: " + "; ".join(why))
+    spop, ids = ctx["spop"], ctx["ids"]
+    sc = spop["candidates"]
+    ev_sha = sha256_file(cfg["data"]["evaluator"])
+    stage.mkdir(parents=True)
+    for i in ids:
+        sdir, sdst = src / "candidates" / i, stage / i
+        shutil.copytree(sdir, sdst, symlinks=False, ignore=lambda d, ns: [n for n in ns if n in SEED_SKIP])
+        fit = json.loads((sdir / "fitness.json").read_text()) if (sdir / "fitness.json").exists() else {}
+        if "search" in fit:
+            L.write_json_atomic(sdst / "fitness.json", {"search": fit["search"]})
+        L.write_json_atomic(sdst / "seeded.json", {"source_dir": str(src), "source_campaign": spop["campaign"],
+                                                  "source_campaign_sha256": spop.get("campaign_sha256"),
+                                                  "source_id": i, "source_tree_sha256": tree_sha256(sdir),
+                                                  "not_copied": sorted(SEED_SKIP), "fitness_kept": ["search"]})
+        # the bytes installed here must score as recorded, from here: as `lab eval` would
+        # (the eval user, when there is one), so lab never reads the labels itself
+        if sc[i].get("fitness") is None:
+            continue
+        if (fit.get("search") or {}).get("evaluator_sha256") != ev_sha:
+            why.append(f"{i} was scored by another evaluator")
+            continue
+        again = run_evaluator(cfg, sdst / "out" / "predictions-search.json", "search")
+        if again.get("score") is None or abs(again["score"] - sc[i]["fitness"]) > 1e-9 * max(1.0, abs(sc[i]["fitness"])):
+            why.append(f"{i} re-scores here to {again.get('score')}, not its recorded {sc[i]['fitness']} (other "
+                       "search labels, other evaluator helpers, or a nondeterministic evaluator)")
+    if why:
+        shutil.rmtree(stage)        # lab's own staging, never evidence: a refusal leaves nothing
+        L.die("refusing to seed: " + "; ".join(why))
+    cands_dir.mkdir(exist_ok=True)
+    for i in ids:
+        (stage / i).rename(cands_dir / i)
+    stage.rmdir()
+    debug_kids = {sc[i]["parents"][0] for i in ids if sc[i]["operator"] == "debug" and sc[i].get("parents")}
+    for i in ids:
+        e = {k: sc[i].get(k) for k in SEED_FIELDS}
+        e.update({"id": i, "status": "evaluated" if sc[i]["status"] == "frozen" else sc[i]["status"],
+                  "debugged": i in debug_kids, "watch": None, "gpu": None, "session": None,
+                  "launched": None, "redispatch_of": None, "defers": 0,
+                  "seeded_from": {"campaign": spop["campaign"], "dir": str(src), "id": i}})
+        pop["candidates"][i] = e
+    # the counters as the source had them at the cut, replayed in its settle order
+    for v in sorted((pop["candidates"][i] for i in ids), key=lambda v: (v.get("ended") or "", v["id"])):
+        pop["settled"] += 1
+        if v["status"] == "evaluated" and better(cfg, v["fitness"], pop["candidates"].get(pop["best"], {}).get("fitness") if pop["best"] else None):
+            pop["best"] = v["id"]
+            pop["settled_at_best"] = pop["settled"]
+    pop["seeded"] = {"from": str(src), "campaign": spop["campaign"], "campaign_sha256": spop.get("campaign_sha256"),
+                     "upto": upto, "n": len(ids)}
+    with ledger_lock():
+        for i in ids:
+            v = pop["candidates"][i]
+            L.ledger_upsert(i, {"run": cfg["campaign"]["id"], "exp": v["operator"],
+                                "status": "done" if v["status"] == "evaluated" else (v.get("exec") or v["status"]),
+                                "verdict": "", "path": v["path"],
+                                "note": f"seeded from {spop['campaign']}/{i}"})
+    return f"seeded c0000-{upto} from {spop['campaign']}"[:140]
 
 
 def memory_snapshot(cfg: dict) -> dict:
@@ -587,6 +896,8 @@ def memory_snapshot(cfg: dict) -> dict:
             # the configured knobs path is part of the frozen policy too: it decides
             # what every card records and what the ledger can diff
             snap["knobs"] = cfg["memory"]["knobs"]
+        if mode == F.POLICY_INDEX:
+            snap["embedder"] = cfg["memory"]["embedder"]      # None: lexical only
         return snap
     return {"policy": "legacy"}
 
@@ -602,7 +913,7 @@ def findings_limits(policy: str = F.POLICY) -> dict:
         lim.update({"ledger_max_bytes": F.LEDGER_MAX_BYTES, "ledger_row_max_bytes": F.LEDGER_ROW_MAX_BYTES,
                     "knobs_max": F.KNOBS_MAX, "knob_key_bytes": F.KNOB_KEY_BYTES,
                     "knob_value_bytes": F.KNOB_VALUE_BYTES})
-    if policy == F.POLICY_V3:
+    if policy in F.V3_CARD_POLICIES:
         # the exclusion set is part of the frozen policy: a later tooling change to what
         # counts as an outcome key must not change a running campaign's ledger
         lim.update({"knob_list_max": F.KNOB_LIST_MAX, "outcome_keys": sorted(F.OUTCOME_KEYS),
@@ -749,10 +1060,18 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
     }
     L.write_json_atomic(cdir / "config.json", snapshot)
 
+    blind = bool(cfg["selection"].get("blind"))
+    texts = {**OPERATOR_TEXT, **cfg["worker"]["operator_text"]}
+    rows = [{"id": k, "operator": v["operator"], "parents": list(v.get("parents") or []),
+             "status": v["status"], "fitness": v.get("fitness")}
+            for k, v in pop["candidates"].items() if not blind or v["operator"] == "baseline"]
     card = {
         "candidate": cid,
         "operator": operator,
-        "instructions": OPERATOR_TEXT[operator],
+        "instructions": texts[operator],
+        "blind": blind,
+        # v0.3's blind card: what a lone draft after the baseline is shown (rows above)
+        **({"blind_card": "oneshot"} if blind else {}),
         "task_file": rel(cfg["campaign"]["task"]),
         "candidate_dir": rel(cdir),
         "seed": seed,
@@ -772,10 +1091,9 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
                      "summary": read_summary(a, 400)}
                     for a in (lineage(pop, parents[0])[1:] if parents and findings is None else [])],
         "findings": findings,
-        "population": [{"id": k, "operator": v["operator"], "parents": list(v.get("parents") or []),
-                        "status": v["status"], "fitness": v.get("fitness")}
-                       for k, v in pop["candidates"].items()],
-        "best": pop.get("best"),
+        "population": rows,
+        "best": (next((r["id"] for r in rows if r["status"] == "evaluated"), None) if blind
+                 else pop.get("best")),
         "contract": {
             "write": "code/run.sh (reads $LAB_SPLIT_INPUTS, writes $LAB_PREDICTIONS_OUT) and summary.md",
             "run": "code/run.sh once for the search split before exiting, synchronously in the foreground "
@@ -789,10 +1107,16 @@ def new_candidate(cfg: dict, pop: dict, operator: str, parents: list[str],
                      "it must reuse what you trained (persist weights inside the candidate dir and "
                      "load them when present), so the final score is of the same model",
             "predictions": "out/predictions-search.json",
+            "train_stats": "Record `out/train_stats.json` with `{\"train_seconds\": <seconds your training "
+                           "loop ran>}` when run.sh trains; leave it alone when it only loads weights",
             "may_write": rel(cdir), "may_read": [rel(cfg["data"]["train"]),
                                                   rel(cfg["data"]["search"]["inputs"]),
                                                   rel(cfg["campaign"]["task"])] +
-                                                 [rel(cand_dir(p)) for p in parents],
+                                                 [rel(cand_dir(p)) for p in parents] +
+                                                 # a shown card names its candidate's summary and
+                                                 # code; what the card points at is readable
+                                                 [rel(cand_dir(c["id"])) for c in (findings or {}).get("cards", [])
+                                                  if c["id"] not in parents],
             "max_turns": cfg["resources"]["worker_max_turns"],
             "summary_format": F.SUMMARY_FORMAT if findings is not None else None,
         },
@@ -1029,6 +1353,65 @@ def _record_served(cdir: Path, sess: dict | None) -> None:
         pass
 
 
+TRAIN_FILES = ("out/train_stats.json", "code/train_stats.json", "out/memory_config.json",
+               "code/memory_config.json")
+TRAIN_KEYS = ("train_seconds", "train_sec", "train_wall_s", "train_wall_seconds", "wall_seconds")
+
+
+def train_seconds(cdir: Path) -> float | None:
+    """Seconds the candidate's training ran, as the candidate recorded them. The value
+    `lab run` copied into config.json at settlement wins: a later run of run.sh (the
+    final read loads the weights and trains nothing) rewrites the candidate's own file."""
+    try:
+        v = json.loads((cdir / "config.json").read_text()).get("train_seconds")
+        if isinstance(v, (int, float)):
+            return float(v)
+    except (OSError, json.JSONDecodeError):
+        pass
+    for rel in TRAIN_FILES:
+        try:
+            d = json.loads((cdir / rel).read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        for k in TRAIN_KEYS:
+            if isinstance(d, dict) and isinstance(d.get(k), (int, float)):
+                return float(d[k])
+    return None
+
+
+def _record_train(cdir: Path) -> None:
+    v = train_seconds(cdir)
+    if v is None:
+        return
+    try:
+        cfgp = cdir / "config.json"
+        snap = json.loads(cfgp.read_text())
+        if "train_seconds" not in snap:
+            snap["train_seconds"] = v
+            L.write_json_atomic(cfgp, snap)
+    except (OSError, json.JSONDecodeError):
+        pass
+
+
+def same_output(cfg: dict, a: Path, b: Path) -> bool | None:
+    """B1 (v2): True when two predictions files hold the same values once the keys named in
+    [data] same_output_ignore are dropped (at any depth); None when either is unreadable.
+    A metric, never a gate: 37 of 160 effort-pair children matched their parent this way
+    while only 2 had identical code (docs/labloop-v2-plan.md, E3)."""
+    ign = set(cfg["data"].get("same_output_ignore") or [])
+
+    def strip(x):
+        if isinstance(x, dict):
+            return {k: strip(v) for k, v in x.items() if k not in ign}
+        if isinstance(x, list):
+            return [strip(v) for v in x]
+        return x
+    try:
+        return strip(json.loads(a.read_text())) == strip(json.loads(b.read_text()))
+    except Exception:   # unreadable, malformed or pathologically nested: a metric, never a crash
+        return None
+
+
 def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
     c = pop["candidates"][cid]
     cdir = cand_dir(cid)
@@ -1041,6 +1424,7 @@ def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
     sess = read_session(cfg, cdir) if c["operator"] != "baseline" else None
     c["session"] = sess
     _record_served(cdir, sess)
+    _record_train(cdir)
 
     preds = cdir / "out" / "predictions-search.json"
     reason = None
@@ -1056,6 +1440,8 @@ def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
             exec_status, reason = "invalid", f"evaluator: {fit.get('error', 'no score')}"
         else:
             c["fitness"], c["n"] = fit["score"], fit.get("n")
+            if c["operator"] in ("improve", "crossover") and c["parents"]:
+                c["same_output_as_parent"] = same_output(cfg, preds, cand_dir(c["parents"][0]) / "out" / "predictions-search.json")
     elif exec_status == "killed" and kill_reason.startswith(KILL_PATTERN_PREFIX):
         # the CLI printed a usage-limit message and kept running; the watcher's kill
         # pattern (session_kill_regex) ended it. Deferred like any rate limit; the
@@ -1259,6 +1645,31 @@ def write_json_once(path: Path, obj: dict) -> None:
         tmp.unlink(missing_ok=True)
 
 
+def ensure_index(pop: dict) -> None:
+    """Under index-v1 the index is what a worker reads of the population, so it is
+    rebuilt whenever the set of settled candidates has changed — from scratch, from the
+    evidence, before the next job is dispatched. One writer: this loop."""
+    if memory_policy(pop)["policy"] != F.POLICY_INDEX:
+        return
+    import lab_index
+    settled = sorted(cid for cid, c in pop["candidates"].items() if c.get("ended"))
+    db = L.ROOT / lab_index.INDEX_REL
+    stamp = db.with_suffix(".settled")
+    want = ",".join(settled)
+    try:
+        if db.exists() and stamp.read_text() == want:
+            return
+    except OSError:
+        pass
+    info = lab_index.build(db, [("", L.ROOT)], embedder=lab_index.embedder_config(memory_policy(pop).get("embedder")))
+    if (info.get("vectors") or {}).get("missing"):
+        # searchable lexically now; the stamp is withheld so the next tick tries again
+        L.warn(f"index: {info['vectors']['missing']} row(s) without a vector "
+               f"({info['vectors']['error']}); search falls back to lexical for them")
+        return
+    stamp.write_text(want)
+
+
 def ensure_cards(cfg: dict, pop: dict) -> None:
     """Every settled candidate has a valid card that agrees with its sources; publish the
     missing ones. Dies — dispatch blocked, evidence untouched — on a corrupt or
@@ -1330,7 +1741,15 @@ def evaluate(cfg: dict, cdir: Path, split: str) -> dict:
     fitness = json.loads(fpath.read_text()) if fpath.exists() else {}
     if split in fitness:
         return fitness[split]                      # idempotent: a measurement is final
-    preds = cdir / "out" / f"predictions-{split}.json"
+    rec = run_evaluator(cfg, cdir / "out" / f"predictions-{split}.json", split)
+    fitness[split] = rec
+    L.write_json_atomic(fpath, fitness)
+    return rec
+
+
+def run_evaluator(cfg: dict, preds: Path, split: str) -> dict:
+    """One evaluator call, as `lab eval` makes it (as the eval user when there is one); the
+    record is returned, never written. evaluate() stores it; B2's re-score compares it."""
     labels = cfg["data"][split]["labels"]
     evaluator = cfg["data"]["evaluator"]
     cmd = ([sys.executable, str(evaluator)] if evaluator.suffix == ".py" else [str(evaluator)]) + \
@@ -1362,8 +1781,6 @@ def evaluate(cfg: dict, cdir: Path, split: str) -> dict:
         rec["error"] = f"evaluator timed out after {cfg['eval']['timeout_sec']}s"
     if rec["score"] is not None and not math.isfinite(rec["score"]):
         rec["score"], rec["error"] = None, "evaluator returned a non-finite score"
-    fitness[split] = rec
-    L.write_json_atomic(fpath, fitness)
     return rec
 
 
@@ -1547,6 +1964,34 @@ def rank_select(cfg: dict, pool: list[dict], rng: random.Random, k: int = 1) -> 
     return chosen
 
 
+def stalled_chain(cfg: dict, pop: dict) -> int:
+    """C2: settled improve/crossover jobs since the last new best or the last draft,
+    whichever is later, in settle order. A new best counts only when it beats the previous
+    best by at least `restart_min_step`, so a chain creeping up by tuning is stuck too.
+    Failed and invalid ones count; debugs neither count nor break the run; a draft resets it,
+    so a restart gives the chain K more tries."""
+    settled = sorted((v for v in pop["candidates"].values() if v["status"] in ("evaluated", "failed", "frozen")),
+                     key=lambda v: (v.get("ended") or "", v["id"]))
+    step = cfg["selection"].get("restart_min_step", 0.0)
+    sign = 1 if cfg["report"]["higher_is_better"] else -1
+    best, new_best = None, set()
+    for v in settled:
+        f = v.get("fitness")
+        if f is None:
+            continue
+        if best is None or sign * (f - best) >= max(step, 1e-12):
+            new_best.add(v["id"])
+        if best is None or better(cfg, f, best):
+            best = f
+    run = 0
+    for v in reversed(settled):
+        if v["operator"] in ("draft", "baseline") or v["id"] in new_best:
+            break
+        if v["operator"] in ("improve", "crossover"):
+            run += 1
+    return run
+
+
 def choose_job(cfg: dict, pop: dict, rng: random.Random) -> tuple[str, list[str], dict | None] | None:
     """(operator, parents, origin) — origin names the deferred job being re-dispatched."""
     cands = pop["candidates"]
@@ -1591,6 +2036,12 @@ def choose_job(cfg: dict, pop: dict, rng: random.Random) -> tuple[str, list[str]
         # with a second slot. Only when nothing is left running — every draft failed and
         # its debug retries are spent — does a fresh draft rescue a dead campaign.
         return None if running else ("draft", [], None)
+    # C2 (v2): the chain is stuck, so the next job is a fresh draft. It consumes no random
+    # number, so a campaign without the key draws exactly the stream it always did.
+    k_restart = cfg["selection"].get("restart_after", 0)
+    if k_restart and stalled_chain(cfg, pop) >= k_restart \
+            and not any(c["operator"] == "draft" for c in running):
+        return ("draft", [], None)
     # a fresh approach, not a tweak: drawn before crossover, and only when draft_p > 0 so
     # a campaign without the key consumes exactly the random stream it always did
     if cfg["selection"].get("draft_p", 0.0) > 0 and rng.random() < cfg["selection"]["draft_p"]:
@@ -1706,12 +2157,19 @@ def write_report(cfg: dict, pop: dict) -> None:
         f"| claim | **{pop['claim']}** |",
         f"| success threshold (fixed before the campaign) | {fmt(thr)} ({'higher' if cfg['report']['higher_is_better'] else 'lower'} is better) |",
         f"| final score (best candidate, final split, read once) | {fmt(fin.get('score'))}" + (f" — {fin['error']}" if fin.get("error") else "") + " |",
-        f"| best candidate by search fitness | {best['id'] if best else '—'} ({best['operator']}) {fmt(best['fitness']) if best else ''} |",
+        f"| best candidate by search fitness | {f"{best['id']} ({best['operator']}{', seeded' if best.get('seeded_from') else ''}) {fmt(best['fitness'])}" if best else '—'} |",
         f"| baseline search fitness | {fmt(base['fitness']) if base else '—'} |",
         f"| candidates settled | {pop['settled']} ({', '.join(f'{k} {v}' for k, v in sorted(counts.items()))}) |",
-        f"| GPU-hours | {hours:.2f} of {cfg['resources']['gpu_hours_total'] or '∞'} |",
+        *([f"| seeded (B2) | c0000–{pop['seeded']['upto']} copied from {pop['seeded']['campaign']}; "
+           "their sessions are not in this report's costs |"] if pop.get("seeded") else []),
+        *([f"| improves/crossovers with their parent's output (B1) | "
+            f"{sum(1 for c in pop['candidates'].values() if c.get('same_output_as_parent'))} of "
+            f"{sum(1 for c in pop['candidates'].values() if c.get('same_output_as_parent') is not None)} |"]
+          if any(c.get('same_output_as_parent') is not None for c in pop['candidates'].values()) else []),
+        f"| GPU-hours (slot lease: job launch to end, the worker session included) | {hours:.2f} of {cfg['resources']['gpu_hours_total'] or '∞'} |",
         f"| settled candidates per GPU-hour | {(pop['settled'] / hours):.2f} |" if hours > 0
         else "| settled candidates per GPU-hour | — (no GPU time recorded) |",
+        _training_row(pop, cands),
         f"| GPUs | {', '.join(str(g) for g in cfg['resources']['gpus']) or 'none (CPU)'}; "
         f"max parallel {cfg['resources']['max_parallel_jobs']}"
         + (f"; min free VRAM {cfg['resources']['min_free_vram_mb']} MiB" if cfg['resources']['min_free_vram_mb'] else "") + " |",
@@ -1891,6 +2349,7 @@ def tick(cfg: dict, pop: dict) -> None:
     reap(cfg, pop)
     save_pop(pop)          # settlement is durable before any card is published
     ensure_cards(cfg, pop)
+    ensure_index(pop)
     if pop["status"] in ("running", "waiting_usage"):
         reason = stop_reason(cfg, pop)
         if reason:
@@ -1932,6 +2391,14 @@ def cmd_run(args) -> None:
         L.die("another `lab run` holds .lab/campaign.lock")
     pop = load_pop()
     if pop is None:
+        # a stop file belongs to the campaign that was running here; a new campaign
+        # starts clean, otherwise `lab campaign stop` from the last run ends this one
+        # on its first tick
+        stale = L.LAB_DIR / "campaign.stop"
+        if stale.exists():
+            L.warn(f"removing stale {stale.relative_to(L.LAB_DIR.parent)} "
+                   f"(written {stale.read_text().strip() or '?'}) before this campaign starts")
+            stale.unlink()
         pop = init_pop(cfg)
     elif pop["campaign_sha256"] != cfg["sha256"]:
         L.die(f"{cfg['path'].name} changed since this campaign started (population.json records "
@@ -2073,6 +2540,20 @@ def population_table(rows: list[dict]) -> list[str]:
     return out
 
 
+def _training_row(pop: dict, cands: dict) -> str:
+    """Lease time charges the agent's session as GPU time; this row separates the two."""
+    rows = [(c, train_seconds(cand_dir(c["id"]))) for c in cands.values()
+            if c["operator"] != "baseline" and c.get("gpu") is not None]
+    have = [(c, t) for c, t in rows if t is not None]
+    if not have:
+        return "| fit time recorded by candidates | — (none wrote out/train_stats.json) |"
+    outside = sorted(_duration_sec(c.get("launched"), c.get("ended")) - t for c, t in have
+                     if c.get("launched") and c.get("ended"))
+    med = f"; median lease outside fitting {outside[len(outside) // 2] / 60:.1f} min" if outside else ""
+    return (f"| fit time recorded by candidates | {sum(t for _, t in have) / 3600:.2f} h in "
+            f"{len(have)} of {len(rows)} leased candidates{med} |")
+
+
 def render_job_card(card: dict, task: str) -> str:
     """The prompt a worker receives, from its job.json snapshot and the task text."""
     out = [f"# Job {card['candidate']} — operator `{card['operator']}`", "",
@@ -2085,6 +2566,7 @@ def render_job_card(card: dict, task: str) -> str:
            f"- Run `{card['contract']['run']}`; `{card['contract']['predictions']}` must exist when you exit.",
            f"- {card['contract']['final']}.",
            f"- Inherited: {card['contract'].get('inherited', 'nothing')}.",
+           *([f"- {card['contract']['train_stats']}."] if card['contract'].get('train_stats') else []),
            f"- Seed everything with {card['seed']}.",
            f"- Turn budget: {card['contract']['max_turns']}. If you cannot finish, write summary.md "
            "saying what you learned and exit; the job is re-dispatched once with your summary.",
@@ -2112,6 +2594,13 @@ def render_job_card(card: dict, task: str) -> str:
         for a in card["lineage"]:
             out += [f"- **{a['id']}** ({a['operator']}, fitness {a['fitness']}): {a['summary'] or '_no summary_'}"]
         out += [""]
+    if card.get("blind") and card.get("blind_card") != "oneshot":
+        # a v0.2 blind card (job.json before v0.3), rendered as it was shown
+        out += ["## Blind arm", "", "This campaign is blind: you are shown no other candidate, no "
+                "score and no best-so-far, and reading them (candidates/, population.json, "
+                "LEDGER.md, events.jsonl, REPORT.md, .lab/, `lab campaign`, `lab index`) is out "
+                "of scope. Work from the task statement and the training data only.", ""]
+        return "\n".join(out)
     out += ["## Population", ""] + population_table(card["population"])
     out += ["", f"Best so far: {card['best']}", ""]
     return "\n".join(out)
@@ -2124,9 +2613,6 @@ def render_job_card(card: dict, task: str) -> str:
 def register(sub, lab_module) -> None:
     global L
     L = lab_module
-    import lab_serve
-    lab_serve.register(sub, lab_module)
-
     sp = sub.add_parser("campaign", help="the search loop's campaign: check | status | stop")
     s2 = sp.add_subparsers(dest="campaign_cmd", required=True)
     q = s2.add_parser("init", help="scaffold campaign.toml, task.md, eval/, data/ here")

@@ -1,0 +1,3723 @@
+{
+ "campaign": "engram-mem-legacy-w0",
+ "project": "../labloop-engram-mem-legacy-20260913",
+ "backend": "jev",
+ "definition": "A line is EXHAUSTED when the next job built directly on this candidate is unlikely to beat this candidate's own search score: its recent changes were knob values without gain, the knobs it varies are already covered in the knob index, its children scored below it, or its card reports a ceiling the change cannot move. A line is OPEN when its card names an untried idea or a mechanism with headroom, its own change gained over its parent, or no job has been built on it yet and its idea is unlike the rest of the population.",
+ "levels": [
+  "exhausted: the next job on it will not beat its score",
+  "little headroom: a small gain is possible, a repeat more likely",
+  "some headroom: an untried change with a plausible gain exists",
+  "much headroom: the card names a mechanism nobody has followed up"
+ ],
+ "ticks": [
+  {
+   "tick": "c0002",
+   "launched": "2026-09-13T20:35:34Z",
+   "chance_parents": [
+    "c0001"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    0.6901382569922134
+   ],
+   "state_bytes": 6715,
+   "input_tokens": 2161,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.27,
+     "score": 1.73,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.35,
+      "1": 0.04,
+      "2": 0.15,
+      "3": 0.46
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 18,
+     "noul": 0.13,
+     "score": 2.88,
+     "score_confidence": 0.88,
+     "score_probabilities": {
+      "0": 0.0,
+      "1": 0.01,
+      "2": 0.09,
+      "3": 0.9
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0003",
+   "launched": "2026-09-13T20:48:24Z",
+   "chance_parents": [
+    "c0001"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    0.718760774936527
+   ],
+   "state_bytes": 10772,
+   "input_tokens": 3506,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.14,
+     "score": 1.92,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.23,
+      "1": 0.03,
+      "2": 0.33,
+      "3": 0.41
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 17,
+     "noul": 0.29,
+     "score": 1.48,
+     "score_confidence": 0.33,
+     "score_probabilities": {
+      "0": 0.17,
+      "1": 0.26,
+      "2": 0.5,
+      "3": 0.07
+     },
+     "rule": 0.5,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 0,
+     "later_descendants": 11,
+     "noul": 0.43,
+     "score": 1.08,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.33,
+      "1": 0.32,
+      "2": 0.28,
+      "3": 0.07
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0004",
+   "launched": "2026-09-13T20:59:14Z",
+   "chance_parents": [
+    "c0001"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    0.8932994910283014
+   ],
+   "state_bytes": 14486,
+   "input_tokens": 4675,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.1,
+     "score": 2.09,
+     "score_confidence": 0.09,
+     "score_probabilities": {
+      "0": 0.18,
+      "1": 0.04,
+      "2": 0.28,
+      "3": 0.5
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 16,
+     "noul": 0.3,
+     "score": 1.22,
+     "score_confidence": 0.13,
+     "score_probabilities": {
+      "0": 0.25,
+      "1": 0.33,
+      "2": 0.37,
+      "3": 0.05
+     },
+     "rule": 0.75,
+     "children": 2,
+     "jobs_in_line": 2
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 0,
+     "later_descendants": 11,
+     "noul": 0.62,
+     "score": 0.72,
+     "score_confidence": 0.28,
+     "score_probabilities": {
+      "0": 0.48,
+      "1": 0.33,
+      "2": 0.17,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.58,
+     "score": 0.66,
+     "score_confidence": 0.34,
+     "score_probabilities": {
+      "0": 0.51,
+      "1": 0.32,
+      "2": 0.15,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0005",
+   "launched": "2026-09-13T21:10:05Z",
+   "chance_parents": [
+    "c0002"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    0.8794475409667939
+   ],
+   "state_bytes": 18063,
+   "input_tokens": 5790,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.13,
+     "score": 1.95,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.24,
+      "1": 0.03,
+      "2": 0.26,
+      "3": 0.47
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 15,
+     "noul": 0.28,
+     "score": 1.33,
+     "score_confidence": 0.27,
+     "score_probabilities": {
+      "0": 0.18,
+      "1": 0.34,
+      "2": 0.45,
+      "3": 0.03
+     },
+     "rule": 0.75,
+     "children": 3,
+     "jobs_in_line": 3
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 0,
+     "later_descendants": 11,
+     "noul": 0.58,
+     "score": 0.69,
+     "score_confidence": 0.31,
+     "score_probabilities": {
+      "0": 0.5,
+      "1": 0.33,
+      "2": 0.15,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.56,
+     "score": 0.82,
+     "score_confidence": 0.18,
+     "score_probabilities": {
+      "0": 0.41,
+      "1": 0.37,
+      "2": 0.2,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0004",
+     "fitness": 0.0914306640625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.58,
+     "score": 0.85,
+     "score_confidence": 0.15,
+     "score_probabilities": {
+      "0": 0.5,
+      "1": 0.25,
+      "2": 0.16,
+      "3": 0.09
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0006",
+   "launched": "2026-09-13T21:22:25Z",
+   "chance_parents": [
+    "c0005"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    0.9486342320451513
+   ],
+   "state_bytes": 23208,
+   "input_tokens": 7327,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.16,
+     "score": 1.88,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.27,
+      "1": 0.03,
+      "2": 0.25,
+      "3": 0.45
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 14,
+     "noul": 0.11,
+     "score": 1.71,
+     "score_confidence": 0.61,
+     "score_probabilities": {
+      "0": 0.05,
+      "1": 0.25,
+      "2": 0.65,
+      "3": 0.05
+     },
+     "rule": 0.75,
+     "children": 3,
+     "jobs_in_line": 4
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 0,
+     "later_descendants": 10,
+     "noul": 0.15,
+     "score": 1.45,
+     "score_confidence": 0.37,
+     "score_probabilities": {
+      "0": 0.11,
+      "1": 0.38,
+      "2": 0.47,
+      "3": 0.04
+     },
+     "rule": 0.1,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.57,
+     "score": 0.79,
+     "score_confidence": 0.21,
+     "score_probabilities": {
+      "0": 0.49,
+      "1": 0.28,
+      "2": 0.19,
+      "3": 0.04
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0004",
+     "fitness": 0.0914306640625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.71,
+     "score": 0.84,
+     "score_confidence": 0.16,
+     "score_probabilities": {
+      "0": 0.55,
+      "1": 0.18,
+      "2": 0.16,
+      "3": 0.11
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0005",
+     "fitness": 0.4774169921875,
+     "label": 1,
+     "later_descendants": 9,
+     "noul": 0.3,
+     "score": 1.5,
+     "score_confidence": 0.2,
+     "score_probabilities": {
+      "0": 0.17,
+      "1": 0.31,
+      "2": 0.37,
+      "3": 0.15
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0007",
+   "launched": "2026-09-13T21:34:06Z",
+   "chance_parents": [
+    "c0005"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    0.944934040075168
+   ],
+   "state_bytes": 29573,
+   "input_tokens": 9328,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.17,
+     "score": 1.97,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.23,
+      "1": 0.03,
+      "2": 0.29,
+      "3": 0.45
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 13,
+     "noul": 0.13,
+     "score": 1.73,
+     "score_confidence": 0.56,
+     "score_probabilities": {
+      "0": 0.06,
+      "1": 0.24,
+      "2": 0.61,
+      "3": 0.09
+     },
+     "rule": 0.75,
+     "children": 3,
+     "jobs_in_line": 5
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 0,
+     "later_descendants": 9,
+     "noul": 0.14,
+     "score": 1.41,
+     "score_confidence": 0.37,
+     "score_probabilities": {
+      "0": 0.09,
+      "1": 0.43,
+      "2": 0.46,
+      "3": 0.02
+     },
+     "rule": 0.1,
+     "children": 1,
+     "jobs_in_line": 2
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.63,
+     "score": 0.8,
+     "score_confidence": 0.2,
+     "score_probabilities": {
+      "0": 0.49,
+      "1": 0.27,
+      "2": 0.19,
+      "3": 0.05
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0004",
+     "fitness": 0.0914306640625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.74,
+     "score": 0.75,
+     "score_confidence": 0.25,
+     "score_probabilities": {
+      "0": 0.61,
+      "1": 0.15,
+      "2": 0.12,
+      "3": 0.12
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0005",
+     "fitness": 0.4774169921875,
+     "label": 1,
+     "later_descendants": 8,
+     "noul": 0.34,
+     "score": 1.5,
+     "score_confidence": 0.44,
+     "score_probabilities": {
+      "0": 0.09,
+      "1": 0.35,
+      "2": 0.53,
+      "3": 0.03
+     },
+     "rule": 0.5,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0006",
+     "fitness": 0.3243408203125,
+     "label": 0,
+     "later_descendants": 3,
+     "noul": 0.42,
+     "score": 1.22,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.32,
+      "1": 0.27,
+      "2": 0.28,
+      "3": 0.13
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0008",
+   "launched": "2026-09-13T21:45:56Z",
+   "chance_parents": [
+    "c0002"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    0.970410929992795
+   ],
+   "state_bytes": 35419,
+   "input_tokens": 11164,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.13,
+     "score": 2.12,
+     "score_confidence": 0.12,
+     "score_probabilities": {
+      "0": 0.18,
+      "1": 0.03,
+      "2": 0.3,
+      "3": 0.49
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 12,
+     "noul": 0.13,
+     "score": 1.62,
+     "score_confidence": 0.51,
+     "score_probabilities": {
+      "0": 0.07,
+      "1": 0.29,
+      "2": 0.59,
+      "3": 0.05
+     },
+     "rule": 0.75,
+     "children": 3,
+     "jobs_in_line": 6
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 0,
+     "later_descendants": 8,
+     "noul": 0.13,
+     "score": 1.38,
+     "score_confidence": 0.35,
+     "score_probabilities": {
+      "0": 0.11,
+      "1": 0.41,
+      "2": 0.46,
+      "3": 0.02
+     },
+     "rule": 0.1,
+     "children": 1,
+     "jobs_in_line": 3
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.67,
+     "score": 0.84,
+     "score_confidence": 0.16,
+     "score_probabilities": {
+      "0": 0.5,
+      "1": 0.25,
+      "2": 0.18,
+      "3": 0.07
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0004",
+     "fitness": 0.0914306640625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.79,
+     "score": 0.71,
+     "score_confidence": 0.29,
+     "score_probabilities": {
+      "0": 0.66,
+      "1": 0.09,
+      "2": 0.14,
+      "3": 0.11
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0005",
+     "fitness": 0.4774169921875,
+     "label": 1,
+     "later_descendants": 7,
+     "noul": 0.37,
+     "score": 1.19,
+     "score_confidence": 0.42,
+     "score_probabilities": {
+      "0": 0.19,
+      "1": 0.44,
+      "2": 0.35,
+      "3": 0.02
+     },
+     "rule": 0.75,
+     "children": 2,
+     "jobs_in_line": 2
+    },
+    {
+     "id": "c0006",
+     "fitness": 0.3243408203125,
+     "label": 0,
+     "later_descendants": 3,
+     "noul": 0.5,
+     "score": 0.92,
+     "score_confidence": 0.08,
+     "score_probabilities": {
+      "0": 0.48,
+      "1": 0.21,
+      "2": 0.2,
+      "3": 0.11
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0007",
+     "fitness": 0.3756103515625,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.5,
+     "score": 0.81,
+     "score_confidence": 0.39,
+     "score_probabilities": {
+      "0": 0.4,
+      "1": 0.41,
+      "2": 0.17,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0009",
+   "launched": "2026-09-13T21:58:46Z",
+   "chance_parents": [
+    "c0006"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    0.9602218320360407
+   ],
+   "state_bytes": 40078,
+   "input_tokens": 12668,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.16,
+     "score": 1.98,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.22,
+      "1": 0.04,
+      "2": 0.28,
+      "3": 0.46
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 11,
+     "noul": 0.13,
+     "score": 1.69,
+     "score_confidence": 0.57,
+     "score_probabilities": {
+      "0": 0.07,
+      "1": 0.24,
+      "2": 0.63,
+      "3": 0.06
+     },
+     "rule": 0.75,
+     "children": 3,
+     "jobs_in_line": 7
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 0,
+     "later_descendants": 7,
+     "noul": 0.15,
+     "score": 1.36,
+     "score_confidence": 0.32,
+     "score_probabilities": {
+      "0": 0.11,
+      "1": 0.43,
+      "2": 0.44,
+      "3": 0.02
+     },
+     "rule": 0.1,
+     "children": 2,
+     "jobs_in_line": 4
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.64,
+     "score": 0.88,
+     "score_confidence": 0.12,
+     "score_probabilities": {
+      "0": 0.5,
+      "1": 0.21,
+      "2": 0.2,
+      "3": 0.09
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0004",
+     "fitness": 0.0914306640625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.77,
+     "score": 1.13,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.5,
+      "1": 0.1,
+      "2": 0.17,
+      "3": 0.23
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0005",
+     "fitness": 0.4774169921875,
+     "label": 1,
+     "later_descendants": 7,
+     "noul": 0.35,
+     "score": 1.2,
+     "score_confidence": 0.4,
+     "score_probabilities": {
+      "0": 0.2,
+      "1": 0.42,
+      "2": 0.36,
+      "3": 0.02
+     },
+     "rule": 0.75,
+     "children": 2,
+     "jobs_in_line": 2
+    },
+    {
+     "id": "c0006",
+     "fitness": 0.3243408203125,
+     "label": 0,
+     "later_descendants": 3,
+     "noul": 0.52,
+     "score": 1.08,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.4,
+      "1": 0.25,
+      "2": 0.23,
+      "3": 0.12
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0007",
+     "fitness": 0.3756103515625,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.57,
+     "score": 0.72,
+     "score_confidence": 0.28,
+     "score_probabilities": {
+      "0": 0.46,
+      "1": 0.38,
+      "2": 0.14,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0008",
+     "fitness": 0.35400390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.49,
+     "score": 1.31,
+     "score_confidence": 0.19,
+     "score_probabilities": {
+      "0": 0.25,
+      "1": 0.33,
+      "2": 0.28,
+      "3": 0.14
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0010",
+   "launched": "2026-09-13T22:09:57Z",
+   "chance_parents": [
+    "c0005"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    1.1282107119914144
+   ],
+   "state_bytes": 47050,
+   "input_tokens": 14799,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.13,
+     "score": 1.96,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.23,
+      "1": 0.03,
+      "2": 0.29,
+      "3": 0.45
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 10,
+     "noul": 0.11,
+     "score": 1.69,
+     "score_confidence": 0.59,
+     "score_probabilities": {
+      "0": 0.05,
+      "1": 0.25,
+      "2": 0.65,
+      "3": 0.05
+     },
+     "rule": 0.75,
+     "children": 3,
+     "jobs_in_line": 8
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 0,
+     "later_descendants": 6,
+     "noul": 0.14,
+     "score": 1.41,
+     "score_confidence": 0.36,
+     "score_probabilities": {
+      "0": 0.1,
+      "1": 0.41,
+      "2": 0.46,
+      "3": 0.03
+     },
+     "rule": 0.1,
+     "children": 2,
+     "jobs_in_line": 5
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.62,
+     "score": 0.93,
+     "score_confidence": 0.07,
+     "score_probabilities": {
+      "0": 0.45,
+      "1": 0.26,
+      "2": 0.2,
+      "3": 0.09
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0004",
+     "fitness": 0.0914306640625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.82,
+     "score": 0.95,
+     "score_confidence": 0.05,
+     "score_probabilities": {
+      "0": 0.57,
+      "1": 0.09,
+      "2": 0.15,
+      "3": 0.19
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0005",
+     "fitness": 0.4774169921875,
+     "label": 1,
+     "later_descendants": 6,
+     "noul": 0.32,
+     "score": 1.21,
+     "score_confidence": 0.4,
+     "score_probabilities": {
+      "0": 0.19,
+      "1": 0.42,
+      "2": 0.37,
+      "3": 0.02
+     },
+     "rule": 0.75,
+     "children": 2,
+     "jobs_in_line": 3
+    },
+    {
+     "id": "c0006",
+     "fitness": 0.3243408203125,
+     "label": 0,
+     "later_descendants": 2,
+     "noul": 0.28,
+     "score": 1.36,
+     "score_confidence": 0.3,
+     "score_probabilities": {
+      "0": 0.15,
+      "1": 0.38,
+      "2": 0.44,
+      "3": 0.03
+     },
+     "rule": 0.1,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0007",
+     "fitness": 0.3756103515625,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.64,
+     "score": 0.64,
+     "score_confidence": 0.36,
+     "score_probabilities": {
+      "0": 0.56,
+      "1": 0.28,
+      "2": 0.12,
+      "3": 0.04
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0008",
+     "fitness": 0.35400390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.59,
+     "score": 1.33,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.31,
+      "1": 0.25,
+      "2": 0.24,
+      "3": 0.2
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0009",
+     "fitness": 0.417724609375,
+     "label": 1,
+     "later_descendants": 2,
+     "noul": 0.34,
+     "score": 1.38,
+     "score_confidence": 0.33,
+     "score_probabilities": {
+      "0": 0.15,
+      "1": 0.42,
+      "2": 0.33,
+      "3": 0.1
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0011",
+   "launched": "2026-09-13T22:22:47Z",
+   "chance_parents": [
+    "c0001"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    1.1816451859194785
+   ],
+   "state_bytes": 52591,
+   "input_tokens": 16565,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.19,
+     "score": 1.78,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.27,
+      "1": 0.05,
+      "2": 0.3,
+      "3": 0.38
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 9,
+     "noul": 0.1,
+     "score": 1.71,
+     "score_confidence": 0.57,
+     "score_probabilities": {
+      "0": 0.06,
+      "1": 0.24,
+      "2": 0.63,
+      "3": 0.07
+     },
+     "rule": 0.75,
+     "children": 3,
+     "jobs_in_line": 9
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 1,
+     "later_descendants": 5,
+     "noul": 0.13,
+     "score": 1.48,
+     "score_confidence": 0.41,
+     "score_probabilities": {
+      "0": 0.08,
+      "1": 0.39,
+      "2": 0.49,
+      "3": 0.04
+     },
+     "rule": 0.1,
+     "children": 2,
+     "jobs_in_line": 6
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.66,
+     "score": 0.65,
+     "score_confidence": 0.35,
+     "score_probabilities": {
+      "0": 0.6,
+      "1": 0.2,
+      "2": 0.14,
+      "3": 0.06
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0004",
+     "fitness": 0.0914306640625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.8,
+     "score": 0.7,
+     "score_confidence": 0.3,
+     "score_probabilities": {
+      "0": 0.64,
+      "1": 0.13,
+      "2": 0.13,
+      "3": 0.1
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0005",
+     "fitness": 0.4774169921875,
+     "label": 1,
+     "later_descendants": 5,
+     "noul": 0.22,
+     "score": 1.33,
+     "score_confidence": 0.29,
+     "score_probabilities": {
+      "0": 0.14,
+      "1": 0.41,
+      "2": 0.43,
+      "3": 0.02
+     },
+     "rule": 0.75,
+     "children": 3,
+     "jobs_in_line": 4
+    },
+    {
+     "id": "c0006",
+     "fitness": 0.3243408203125,
+     "label": 0,
+     "later_descendants": 2,
+     "noul": 0.31,
+     "score": 1.05,
+     "score_confidence": 0.4,
+     "score_probabilities": {
+      "0": 0.28,
+      "1": 0.42,
+      "2": 0.28,
+      "3": 0.02
+     },
+     "rule": 0.1,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0007",
+     "fitness": 0.3756103515625,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.64,
+     "score": 0.44,
+     "score_confidence": 0.56,
+     "score_probabilities": {
+      "0": 0.66,
+      "1": 0.24,
+      "2": 0.08,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0008",
+     "fitness": 0.35400390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.6,
+     "score": 1.16,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.39,
+      "1": 0.22,
+      "2": 0.23,
+      "3": 0.16
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0009",
+     "fitness": 0.417724609375,
+     "label": 1,
+     "later_descendants": 2,
+     "noul": 0.36,
+     "score": 1.12,
+     "score_confidence": 0.35,
+     "score_probabilities": {
+      "0": 0.26,
+      "1": 0.43,
+      "2": 0.25,
+      "3": 0.06
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0010",
+     "fitness": 0.4443359375,
+     "label": 1,
+     "later_descendants": 2,
+     "noul": 0.28,
+     "score": 1.32,
+     "score_confidence": 0.35,
+     "score_probabilities": {
+      "0": 0.16,
+      "1": 0.43,
+      "2": 0.33,
+      "3": 0.08
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0012",
+   "launched": "2026-09-13T22:33:58Z",
+   "chance_parents": [
+    "c0009"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    1.1998919910984114
+   ],
+   "state_bytes": 56619,
+   "input_tokens": 17793,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.17,
+     "score": 1.69,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.34,
+      "1": 0.04,
+      "2": 0.21,
+      "3": 0.41
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 8,
+     "noul": 0.1,
+     "score": 1.63,
+     "score_confidence": 0.49,
+     "score_probabilities": {
+      "0": 0.09,
+      "1": 0.26,
+      "2": 0.58,
+      "3": 0.07
+     },
+     "rule": 0.1,
+     "children": 4,
+     "jobs_in_line": 10
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 1,
+     "later_descendants": 5,
+     "noul": 0.13,
+     "score": 1.42,
+     "score_confidence": 0.36,
+     "score_probabilities": {
+      "0": 0.1,
+      "1": 0.42,
+      "2": 0.45,
+      "3": 0.03
+     },
+     "rule": 0.1,
+     "children": 2,
+     "jobs_in_line": 6
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.64,
+     "score": 0.8,
+     "score_confidence": 0.2,
+     "score_probabilities": {
+      "0": 0.52,
+      "1": 0.23,
+      "2": 0.18,
+      "3": 0.07
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0004",
+     "fitness": 0.0914306640625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.74,
+     "score": 0.88,
+     "score_confidence": 0.12,
+     "score_probabilities": {
+      "0": 0.56,
+      "1": 0.15,
+      "2": 0.16,
+      "3": 0.13
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0005",
+     "fitness": 0.4774169921875,
+     "label": 1,
+     "later_descendants": 5,
+     "noul": 0.17,
+     "score": 1.37,
+     "score_confidence": 0.32,
+     "score_probabilities": {
+      "0": 0.13,
+      "1": 0.4,
+      "2": 0.45,
+      "3": 0.02
+     },
+     "rule": 0.75,
+     "children": 3,
+     "jobs_in_line": 4
+    },
+    {
+     "id": "c0006",
+     "fitness": 0.3243408203125,
+     "label": 0,
+     "later_descendants": 2,
+     "noul": 0.37,
+     "score": 1.15,
+     "score_confidence": 0.39,
+     "score_probabilities": {
+      "0": 0.23,
+      "1": 0.42,
+      "2": 0.32,
+      "3": 0.03
+     },
+     "rule": 0.1,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0007",
+     "fitness": 0.3756103515625,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.66,
+     "score": 0.49,
+     "score_confidence": 0.51,
+     "score_probabilities": {
+      "0": 0.64,
+      "1": 0.25,
+      "2": 0.09,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0008",
+     "fitness": 0.35400390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.61,
+     "score": 1.28,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.35000000000000003,
+      "1": 0.23,
+      "2": 0.23,
+      "3": 0.19
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0009",
+     "fitness": 0.417724609375,
+     "label": 1,
+     "later_descendants": 2,
+     "noul": 0.39,
+     "score": 1.19,
+     "score_confidence": 0.39,
+     "score_probabilities": {
+      "0": 0.21,
+      "1": 0.45,
+      "2": 0.29,
+      "3": 0.05
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0010",
+     "fitness": 0.4443359375,
+     "label": 1,
+     "later_descendants": 2,
+     "noul": 0.35,
+     "score": 1.22,
+     "score_confidence": 0.3,
+     "score_probabilities": {
+      "0": 0.24,
+      "1": 0.4,
+      "2": 0.26,
+      "3": 0.1
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0011",
+     "fitness": 0.563232421875,
+     "label": 0,
+     "later_descendants": 1,
+     "noul": 0.31,
+     "score": 2.35,
+     "score_confidence": 0.35,
+     "score_probabilities": {
+      "0": 0.05,
+      "1": 0.08,
+      "2": 0.35,
+      "3": 0.52
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0013",
+   "launched": "2026-09-13T22:48:18Z",
+   "chance_parents": [
+    "c0010"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    1.262075630016625
+   ],
+   "state_bytes": 63595,
+   "input_tokens": 19972,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.15,
+     "score": 1.8,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.26,
+      "1": 0.04,
+      "2": 0.33,
+      "3": 0.37
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 7,
+     "noul": 0.09,
+     "score": 1.63,
+     "score_confidence": 0.53,
+     "score_probabilities": {
+      "0": 0.07,
+      "1": 0.27,
+      "2": 0.61,
+      "3": 0.05
+     },
+     "rule": 0.1,
+     "children": 4,
+     "jobs_in_line": 11
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 1,
+     "later_descendants": 4,
+     "noul": 0.13,
+     "score": 1.48,
+     "score_confidence": 0.44,
+     "score_probabilities": {
+      "0": 0.08,
+      "1": 0.38,
+      "2": 0.52,
+      "3": 0.02
+     },
+     "rule": 0.1,
+     "children": 2,
+     "jobs_in_line": 7
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.68,
+     "score": 0.73,
+     "score_confidence": 0.27,
+     "score_probabilities": {
+      "0": 0.56,
+      "1": 0.22,
+      "2": 0.14,
+      "3": 0.07
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0004",
+     "fitness": 0.0914306640625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.83,
+     "score": 0.64,
+     "score_confidence": 0.36,
+     "score_probabilities": {
+      "0": 0.68,
+      "1": 0.11,
+      "2": 0.11,
+      "3": 0.1
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0005",
+     "fitness": 0.4774169921875,
+     "label": 1,
+     "later_descendants": 4,
+     "noul": 0.2,
+     "score": 1.33,
+     "score_confidence": 0.42,
+     "score_probabilities": {
+      "0": 0.13,
+      "1": 0.43,
+      "2": 0.43,
+      "3": 0.01
+     },
+     "rule": 0.75,
+     "children": 3,
+     "jobs_in_line": 5
+    },
+    {
+     "id": "c0006",
+     "fitness": 0.3243408203125,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.4,
+     "score": 1.01,
+     "score_confidence": 0.45,
+     "score_probabilities": {
+      "0": 0.27,
+      "1": 0.47,
+      "2": 0.24,
+      "3": 0.02
+     },
+     "rule": 0.1,
+     "children": 1,
+     "jobs_in_line": 2
+    },
+    {
+     "id": "c0007",
+     "fitness": 0.3756103515625,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.71,
+     "score": 0.46,
+     "score_confidence": 0.54,
+     "score_probabilities": {
+      "0": 0.68,
+      "1": 0.21,
+      "2": 0.09,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0008",
+     "fitness": 0.35400390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.64,
+     "score": 1.08,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.43,
+      "1": 0.22,
+      "2": 0.18,
+      "3": 0.17
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0009",
+     "fitness": 0.417724609375,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.45,
+     "score": 0.95,
+     "score_confidence": 0.53,
+     "score_probabilities": {
+      "0": 0.26,
+      "1": 0.54,
+      "2": 0.19,
+      "3": 0.01
+     },
+     "rule": 0.5,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0010",
+     "fitness": 0.4443359375,
+     "label": 1,
+     "later_descendants": 2,
+     "noul": 0.43,
+     "score": 1.32,
+     "score_confidence": 0.2,
+     "score_probabilities": {
+      "0": 0.24,
+      "1": 0.33999999999999997,
+      "2": 0.27,
+      "3": 0.15
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0011",
+     "fitness": 0.563232421875,
+     "label": 0,
+     "later_descendants": 1,
+     "noul": 0.41,
+     "score": 2.45,
+     "score_confidence": 0.45,
+     "score_probabilities": {
+      "0": 0.07,
+      "1": 0.07,
+      "2": 0.22,
+      "3": 0.64
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0012",
+     "fitness": 0.386474609375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.57,
+     "score": 0.73,
+     "score_confidence": 0.49,
+     "score_probabilities": {
+      "0": 0.39,
+      "1": 0.5,
+      "2": 0.1,
+      "3": 0.01
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0014",
+   "launched": "2026-09-13T23:00:59Z",
+   "chance_parents": [
+    "c0001"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    1.2483962790574878
+   ],
+   "state_bytes": 69435,
+   "input_tokens": 21904,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.15,
+     "score": 1.84,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.25,
+      "1": 0.04,
+      "2": 0.32,
+      "3": 0.39
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 6,
+     "noul": 0.1,
+     "score": 1.72,
+     "score_confidence": 0.55,
+     "score_probabilities": {
+      "0": 0.07,
+      "1": 0.22,
+      "2": 0.62,
+      "3": 0.09
+     },
+     "rule": 0.1,
+     "children": 4,
+     "jobs_in_line": 12
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 1,
+     "later_descendants": 3,
+     "noul": 0.16,
+     "score": 1.49,
+     "score_confidence": 0.43,
+     "score_probabilities": {
+      "0": 0.07,
+      "1": 0.39,
+      "2": 0.51,
+      "3": 0.03
+     },
+     "rule": 0.1,
+     "children": 2,
+     "jobs_in_line": 8
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.7,
+     "score": 0.81,
+     "score_confidence": 0.19,
+     "score_probabilities": {
+      "0": 0.53,
+      "1": 0.22,
+      "2": 0.17,
+      "3": 0.08
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0004",
+     "fitness": 0.0914306640625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.83,
+     "score": 0.66,
+     "score_confidence": 0.34,
+     "score_probabilities": {
+      "0": 0.64,
+      "1": 0.14,
+      "2": 0.12,
+      "3": 0.1
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0005",
+     "fitness": 0.4774169921875,
+     "label": 1,
+     "later_descendants": 3,
+     "noul": 0.21,
+     "score": 1.4,
+     "score_confidence": 0.36,
+     "score_probabilities": {
+      "0": 0.11,
+      "1": 0.4,
+      "2": 0.47,
+      "3": 0.02
+     },
+     "rule": 0.75,
+     "children": 3,
+     "jobs_in_line": 6
+    },
+    {
+     "id": "c0006",
+     "fitness": 0.3243408203125,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.41,
+     "score": 1.13,
+     "score_confidence": 0.45,
+     "score_probabilities": {
+      "0": 0.21,
+      "1": 0.47,
+      "2": 0.3,
+      "3": 0.02
+     },
+     "rule": 0.1,
+     "children": 1,
+     "jobs_in_line": 2
+    },
+    {
+     "id": "c0007",
+     "fitness": 0.3756103515625,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.7,
+     "score": 0.47,
+     "score_confidence": 0.53,
+     "score_probabilities": {
+      "0": 0.6900000000000001,
+      "1": 0.19,
+      "2": 0.09,
+      "3": 0.03
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0008",
+     "fitness": 0.35400390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.64,
+     "score": 1.24,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.39,
+      "1": 0.2,
+      "2": 0.2,
+      "3": 0.21
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0009",
+     "fitness": 0.417724609375,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.44,
+     "score": 0.94,
+     "score_confidence": 0.54,
+     "score_probabilities": {
+      "0": 0.26,
+      "1": 0.55,
+      "2": 0.18,
+      "3": 0.01
+     },
+     "rule": 0.5,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0010",
+     "fitness": 0.4443359375,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.5,
+     "score": 1.14,
+     "score_confidence": 0.47,
+     "score_probabilities": {
+      "0": 0.19,
+      "1": 0.5,
+      "2": 0.29,
+      "3": 0.02
+     },
+     "rule": 0.75,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0011",
+     "fitness": 0.563232421875,
+     "label": 0,
+     "later_descendants": 1,
+     "noul": 0.43,
+     "score": 2.47,
+     "score_confidence": 0.47,
+     "score_probabilities": {
+      "0": 0.08,
+      "1": 0.06,
+      "2": 0.2,
+      "3": 0.66
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0012",
+     "fitness": 0.386474609375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.55,
+     "score": 0.67,
+     "score_confidence": 0.33,
+     "score_probabilities": {
+      "0": 0.46,
+      "1": 0.42,
+      "2": 0.11,
+      "3": 0.01
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0013",
+     "fitness": 0.3394775390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.6,
+     "score": 0.78,
+     "score_confidence": 0.22,
+     "score_probabilities": {
+      "0": 0.46,
+      "1": 0.34,
+      "2": 0.16,
+      "3": 0.04
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0015",
+   "launched": "2026-09-13T23:16:39Z",
+   "chance_parents": [
+    "c0005"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    1.268638804089278
+   ],
+   "state_bytes": 73891,
+   "input_tokens": 23268,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.12,
+     "score": 1.79,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.25,
+      "1": 0.06,
+      "2": 0.34,
+      "3": 0.35
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 5,
+     "noul": 0.1,
+     "score": 1.74,
+     "score_confidence": 0.53,
+     "score_probabilities": {
+      "0": 0.07,
+      "1": 0.23,
+      "2": 0.6,
+      "3": 0.1
+     },
+     "rule": 0.1,
+     "children": 5,
+     "jobs_in_line": 13
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 1,
+     "later_descendants": 3,
+     "noul": 0.15,
+     "score": 1.49,
+     "score_confidence": 0.42,
+     "score_probabilities": {
+      "0": 0.08,
+      "1": 0.38,
+      "2": 0.5,
+      "3": 0.04
+     },
+     "rule": 0.1,
+     "children": 2,
+     "jobs_in_line": 8
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.69,
+     "score": 0.69,
+     "score_confidence": 0.31,
+     "score_probabilities": {
+      "0": 0.55,
+      "1": 0.26,
+      "2": 0.13,
+      "3": 0.06
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0004",
+     "fitness": 0.0914306640625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.81,
+     "score": 0.57,
+     "score_confidence": 0.43,
+     "score_probabilities": {
+      "0": 0.6799999999999999,
+      "1": 0.13,
+      "2": 0.12,
+      "3": 0.07
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0005",
+     "fitness": 0.4774169921875,
+     "label": 1,
+     "later_descendants": 3,
+     "noul": 0.21,
+     "score": 1.32,
+     "score_confidence": 0.28,
+     "score_probabilities": {
+      "0": 0.16,
+      "1": 0.38,
+      "2": 0.44,
+      "3": 0.02
+     },
+     "rule": 0.75,
+     "children": 3,
+     "jobs_in_line": 6
+    },
+    {
+     "id": "c0006",
+     "fitness": 0.3243408203125,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.42,
+     "score": 1.11,
+     "score_confidence": 0.47,
+     "score_probabilities": {
+      "0": 0.21,
+      "1": 0.49,
+      "2": 0.28,
+      "3": 0.02
+     },
+     "rule": 0.1,
+     "children": 1,
+     "jobs_in_line": 2
+    },
+    {
+     "id": "c0007",
+     "fitness": 0.3756103515625,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.71,
+     "score": 0.47,
+     "score_confidence": 0.53,
+     "score_probabilities": {
+      "0": 0.66,
+      "1": 0.24,
+      "2": 0.08,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0008",
+     "fitness": 0.35400390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.63,
+     "score": 1.16,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.38,
+      "1": 0.25,
+      "2": 0.2,
+      "3": 0.17
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0009",
+     "fitness": 0.417724609375,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.39,
+     "score": 1.02,
+     "score_confidence": 0.53,
+     "score_probabilities": {
+      "0": 0.22,
+      "1": 0.55,
+      "2": 0.22,
+      "3": 0.01
+     },
+     "rule": 0.5,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0010",
+     "fitness": 0.4443359375,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.51,
+     "score": 1.04,
+     "score_confidence": 0.41,
+     "score_probabilities": {
+      "0": 0.27,
+      "1": 0.44,
+      "2": 0.27,
+      "3": 0.02
+     },
+     "rule": 0.75,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0011",
+     "fitness": 0.563232421875,
+     "label": 0,
+     "later_descendants": 1,
+     "noul": 0.39,
+     "score": 2.51,
+     "score_confidence": 0.51,
+     "score_probabilities": {
+      "0": 0.06,
+      "1": 0.05,
+      "2": 0.22,
+      "3": 0.67
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0012",
+     "fitness": 0.386474609375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.52,
+     "score": 0.7,
+     "score_confidence": 0.46,
+     "score_probabilities": {
+      "0": 0.42,
+      "1": 0.47,
+      "2": 0.1,
+      "3": 0.01
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0013",
+     "fitness": 0.3394775390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.64,
+     "score": 0.66,
+     "score_confidence": 0.34,
+     "score_probabilities": {
+      "0": 0.55,
+      "1": 0.29,
+      "2": 0.13,
+      "3": 0.03
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0014",
+     "fitness": 0.149169921875,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.48,
+     "score": 2.48,
+     "score_confidence": 0.48,
+     "score_probabilities": {
+      "0": 0.05,
+      "1": 0.07,
+      "2": 0.22,
+      "3": 0.66
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0016",
+   "launched": "2026-09-13T23:29:00Z",
+   "chance_parents": [
+    "c0001"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    1.2895126830553636
+   ],
+   "state_bytes": 80445,
+   "input_tokens": 25365,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.14,
+     "score": 1.84,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.25,
+      "1": 0.04,
+      "2": 0.34,
+      "3": 0.37
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 4,
+     "noul": 0.1,
+     "score": 1.7,
+     "score_confidence": 0.54,
+     "score_probabilities": {
+      "0": 0.07,
+      "1": 0.24,
+      "2": 0.61,
+      "3": 0.08
+     },
+     "rule": 0.1,
+     "children": 5,
+     "jobs_in_line": 14
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 1,
+     "later_descendants": 2,
+     "noul": 0.15,
+     "score": 1.42,
+     "score_confidence": 0.37,
+     "score_probabilities": {
+      "0": 0.11,
+      "1": 0.39,
+      "2": 0.47,
+      "3": 0.03
+     },
+     "rule": 0.1,
+     "children": 2,
+     "jobs_in_line": 9
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.73,
+     "score": 0.52,
+     "score_confidence": 0.48,
+     "score_probabilities": {
+      "0": 0.66,
+      "1": 0.19,
+      "2": 0.11,
+      "3": 0.04
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0004",
+     "fitness": 0.0914306640625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.82,
+     "score": 0.44,
+     "score_confidence": 0.56,
+     "score_probabilities": {
+      "0": 0.76,
+      "1": 0.1,
+      "2": 0.09,
+      "3": 0.05
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0005",
+     "fitness": 0.4774169921875,
+     "label": 1,
+     "later_descendants": 2,
+     "noul": 0.22,
+     "score": 1.33,
+     "score_confidence": 0.3,
+     "score_probabilities": {
+      "0": 0.14,
+      "1": 0.4,
+      "2": 0.44,
+      "3": 0.02
+     },
+     "rule": 0.75,
+     "children": 4,
+     "jobs_in_line": 7
+    },
+    {
+     "id": "c0006",
+     "fitness": 0.3243408203125,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.43,
+     "score": 1.03,
+     "score_confidence": 0.5,
+     "score_probabilities": {
+      "0": 0.24,
+      "1": 0.51,
+      "2": 0.23,
+      "3": 0.02
+     },
+     "rule": 0.1,
+     "children": 1,
+     "jobs_in_line": 2
+    },
+    {
+     "id": "c0007",
+     "fitness": 0.3756103515625,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.71,
+     "score": 0.46,
+     "score_confidence": 0.54,
+     "score_probabilities": {
+      "0": 0.67,
+      "1": 0.22,
+      "2": 0.09,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0008",
+     "fitness": 0.35400390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.67,
+     "score": 1.02,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.48,
+      "1": 0.19,
+      "2": 0.16,
+      "3": 0.17
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0009",
+     "fitness": 0.417724609375,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.45,
+     "score": 0.91,
+     "score_confidence": 0.52,
+     "score_probabilities": {
+      "0": 0.28,
+      "1": 0.54,
+      "2": 0.17,
+      "3": 0.01
+     },
+     "rule": 0.5,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0010",
+     "fitness": 0.4443359375,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.52,
+     "score": 1.04,
+     "score_confidence": 0.42,
+     "score_probabilities": {
+      "0": 0.27,
+      "1": 0.44,
+      "2": 0.27,
+      "3": 0.02
+     },
+     "rule": 0.75,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0011",
+     "fitness": 0.563232421875,
+     "label": 0,
+     "later_descendants": 1,
+     "noul": 0.42,
+     "score": 2.4,
+     "score_confidence": 0.4,
+     "score_probabilities": {
+      "0": 0.08,
+      "1": 0.06,
+      "2": 0.22,
+      "3": 0.64
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0012",
+     "fitness": 0.386474609375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.56,
+     "score": 0.65,
+     "score_confidence": 0.35,
+     "score_probabilities": {
+      "0": 0.48,
+      "1": 0.4,
+      "2": 0.11,
+      "3": 0.01
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0013",
+     "fitness": 0.3394775390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.66,
+     "score": 0.6,
+     "score_confidence": 0.4,
+     "score_probabilities": {
+      "0": 0.56,
+      "1": 0.3,
+      "2": 0.12,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0014",
+     "fitness": 0.149169921875,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.63,
+     "score": 2.3,
+     "score_confidence": 0.3,
+     "score_probabilities": {
+      "0": 0.1,
+      "1": 0.07,
+      "2": 0.25,
+      "3": 0.58
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0015",
+     "fitness": 0.3594970703125,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.49,
+     "score": 1.53,
+     "score_confidence": 0.14,
+     "score_probabilities": {
+      "0": 0.19,
+      "1": 0.28,
+      "2": 0.33,
+      "3": 0.2
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0017",
+   "launched": "2026-09-13T23:41:40Z",
+   "chance_parents": [
+    "c0010"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    1.2503733549965546
+   ],
+   "state_bytes": 84186,
+   "input_tokens": 26535,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.15,
+     "score": 1.81,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.29,
+      "1": 0.04,
+      "2": 0.25,
+      "3": 0.42
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 3,
+     "noul": 0.11,
+     "score": 1.71,
+     "score_confidence": 0.56,
+     "score_probabilities": {
+      "0": 0.07,
+      "1": 0.23,
+      "2": 0.63,
+      "3": 0.07
+     },
+     "rule": 0.1,
+     "children": 6,
+     "jobs_in_line": 15
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 1,
+     "later_descendants": 2,
+     "noul": 0.15,
+     "score": 1.47,
+     "score_confidence": 0.42,
+     "score_probabilities": {
+      "0": 0.08,
+      "1": 0.4,
+      "2": 0.49,
+      "3": 0.03
+     },
+     "rule": 0.1,
+     "children": 2,
+     "jobs_in_line": 9
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.64,
+     "score": 0.76,
+     "score_confidence": 0.24,
+     "score_probabilities": {
+      "0": 0.54,
+      "1": 0.23,
+      "2": 0.14,
+      "3": 0.08
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0004",
+     "fitness": 0.0914306640625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.81,
+     "score": 0.79,
+     "score_confidence": 0.21,
+     "score_probabilities": {
+      "0": 0.61,
+      "1": 0.13,
+      "2": 0.14,
+      "3": 0.12
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0005",
+     "fitness": 0.4774169921875,
+     "label": 1,
+     "later_descendants": 2,
+     "noul": 0.25,
+     "score": 1.4,
+     "score_confidence": 0.36,
+     "score_probabilities": {
+      "0": 0.11,
+      "1": 0.39,
+      "2": 0.48,
+      "3": 0.02
+     },
+     "rule": 0.75,
+     "children": 4,
+     "jobs_in_line": 7
+    },
+    {
+     "id": "c0006",
+     "fitness": 0.3243408203125,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.39,
+     "score": 1.0,
+     "score_confidence": 0.45,
+     "score_probabilities": {
+      "0": 0.28,
+      "1": 0.45999999999999996,
+      "2": 0.24,
+      "3": 0.02
+     },
+     "rule": 0.1,
+     "children": 1,
+     "jobs_in_line": 2
+    },
+    {
+     "id": "c0007",
+     "fitness": 0.3756103515625,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.66,
+     "score": 0.5,
+     "score_confidence": 0.5,
+     "score_probabilities": {
+      "0": 0.64,
+      "1": 0.25,
+      "2": 0.09,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0008",
+     "fitness": 0.35400390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.62,
+     "score": 1.13,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.43,
+      "1": 0.2,
+      "2": 0.19,
+      "3": 0.18
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0009",
+     "fitness": 0.417724609375,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.5,
+     "score": 0.91,
+     "score_confidence": 0.49,
+     "score_probabilities": {
+      "0": 0.3,
+      "1": 0.5,
+      "2": 0.19,
+      "3": 0.01
+     },
+     "rule": 0.5,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0010",
+     "fitness": 0.4443359375,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.57,
+     "score": 1.08,
+     "score_confidence": 0.44,
+     "score_probabilities": {
+      "0": 0.24,
+      "1": 0.47000000000000003,
+      "2": 0.27,
+      "3": 0.02
+     },
+     "rule": 0.75,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0011",
+     "fitness": 0.563232421875,
+     "label": 0,
+     "later_descendants": 1,
+     "noul": 0.37,
+     "score": 2.53,
+     "score_confidence": 0.53,
+     "score_probabilities": {
+      "0": 0.05,
+      "1": 0.05,
+      "2": 0.2,
+      "3": 0.7
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0012",
+     "fitness": 0.386474609375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.56,
+     "score": 0.57,
+     "score_confidence": 0.43,
+     "score_probabilities": {
+      "0": 0.55,
+      "1": 0.34,
+      "2": 0.1,
+      "3": 0.01
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0013",
+     "fitness": 0.3394775390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.63,
+     "score": 0.77,
+     "score_confidence": 0.23,
+     "score_probabilities": {
+      "0": 0.48,
+      "1": 0.31,
+      "2": 0.17,
+      "3": 0.04
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0014",
+     "fitness": 0.149169921875,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.61,
+     "score": 2.01,
+     "score_confidence": 0.01,
+     "score_probabilities": {
+      "0": 0.15,
+      "1": 0.14,
+      "2": 0.29,
+      "3": 0.42
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0015",
+     "fitness": 0.3594970703125,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.52,
+     "score": 1.65,
+     "score_confidence": 0.08,
+     "score_probabilities": {
+      "0": 0.21,
+      "1": 0.22,
+      "2": 0.29,
+      "3": 0.28
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0016",
+     "fitness": 0.3272705078125,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.51,
+     "score": 1.64,
+     "score_confidence": 0.16,
+     "score_probabilities": {
+      "0": 0.16,
+      "1": 0.28,
+      "2": 0.32,
+      "3": 0.24
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0018",
+   "launched": "2026-09-13T23:54:31Z",
+   "chance_parents": [
+    "c0011"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    1.359053572989069
+   ],
+   "state_bytes": 89721,
+   "input_tokens": 28354,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.22,
+     "score": 1.59,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.36,
+      "1": 0.04,
+      "2": 0.23,
+      "3": 0.37
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 0,
+     "later_descendants": 2,
+     "noul": 0.12,
+     "score": 1.66,
+     "score_confidence": 0.46,
+     "score_probabilities": {
+      "0": 0.1,
+      "1": 0.24,
+      "2": 0.56,
+      "3": 0.1
+     },
+     "rule": 0.1,
+     "children": 6,
+     "jobs_in_line": 16
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.17,
+     "score": 1.43,
+     "score_confidence": 0.38,
+     "score_probabilities": {
+      "0": 0.09,
+      "1": 0.42,
+      "2": 0.46,
+      "3": 0.03
+     },
+     "rule": 0.1,
+     "children": 2,
+     "jobs_in_line": 10
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.69,
+     "score": 0.86,
+     "score_confidence": 0.14,
+     "score_probabilities": {
+      "0": 0.47,
+      "1": 0.28,
+      "2": 0.17,
+      "3": 0.08
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0004",
+     "fitness": 0.0914306640625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.8,
+     "score": 0.92,
+     "score_confidence": 0.08,
+     "score_probabilities": {
+      "0": 0.52,
+      "1": 0.17,
+      "2": 0.17,
+      "3": 0.14
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0005",
+     "fitness": 0.4774169921875,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.27,
+     "score": 1.3,
+     "score_confidence": 0.26,
+     "score_probabilities": {
+      "0": 0.15,
+      "1": 0.41,
+      "2": 0.42,
+      "3": 0.02
+     },
+     "rule": 0.75,
+     "children": 4,
+     "jobs_in_line": 8
+    },
+    {
+     "id": "c0006",
+     "fitness": 0.3243408203125,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.43,
+     "score": 1.02,
+     "score_confidence": 0.47,
+     "score_probabilities": {
+      "0": 0.25,
+      "1": 0.49,
+      "2": 0.24,
+      "3": 0.02
+     },
+     "rule": 0.1,
+     "children": 1,
+     "jobs_in_line": 2
+    },
+    {
+     "id": "c0007",
+     "fitness": 0.3756103515625,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.7,
+     "score": 0.46,
+     "score_confidence": 0.54,
+     "score_probabilities": {
+      "0": 0.67,
+      "1": 0.22,
+      "2": 0.09,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0008",
+     "fitness": 0.35400390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.66,
+     "score": 1.16,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.39,
+      "1": 0.24,
+      "2": 0.21,
+      "3": 0.16
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0009",
+     "fitness": 0.417724609375,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.54,
+     "score": 0.9,
+     "score_confidence": 0.5,
+     "score_probabilities": {
+      "0": 0.3,
+      "1": 0.51,
+      "2": 0.18,
+      "3": 0.01
+     },
+     "rule": 0.5,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0010",
+     "fitness": 0.4443359375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.51,
+     "score": 1.08,
+     "score_confidence": 0.44,
+     "score_probabilities": {
+      "0": 0.24,
+      "1": 0.47000000000000003,
+      "2": 0.27,
+      "3": 0.02
+     },
+     "rule": 1.0,
+     "children": 2,
+     "jobs_in_line": 2
+    },
+    {
+     "id": "c0011",
+     "fitness": 0.563232421875,
+     "label": 0,
+     "later_descendants": 1,
+     "noul": 0.39,
+     "score": 2.52,
+     "score_confidence": 0.52,
+     "score_probabilities": {
+      "0": 0.05,
+      "1": 0.05,
+      "2": 0.21,
+      "3": 0.6900000000000001
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0012",
+     "fitness": 0.386474609375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.58,
+     "score": 0.65,
+     "score_confidence": 0.35,
+     "score_probabilities": {
+      "0": 0.48,
+      "1": 0.39,
+      "2": 0.12,
+      "3": 0.01
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0013",
+     "fitness": 0.3394775390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.66,
+     "score": 0.68,
+     "score_confidence": 0.32,
+     "score_probabilities": {
+      "0": 0.51,
+      "1": 0.34,
+      "2": 0.13,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0014",
+     "fitness": 0.149169921875,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.64,
+     "score": 2.07,
+     "score_confidence": 0.07,
+     "score_probabilities": {
+      "0": 0.14,
+      "1": 0.11,
+      "2": 0.27,
+      "3": 0.48
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0015",
+     "fitness": 0.3594970703125,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.57,
+     "score": 1.38,
+     "score_confidence": 0.01,
+     "score_probabilities": {
+      "0": 0.27,
+      "1": 0.26,
+      "2": 0.28,
+      "3": 0.19
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0016",
+     "fitness": 0.3272705078125,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.62,
+     "score": 1.56,
+     "score_confidence": 0.05,
+     "score_probabilities": {
+      "0": 0.23,
+      "1": 0.24,
+      "2": 0.27,
+      "3": 0.26
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0017",
+     "fitness": 0.3568115234375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.6,
+     "score": 0.88,
+     "score_confidence": 0.36,
+     "score_probabilities": {
+      "0": 0.38,
+      "1": 0.39,
+      "2": 0.2,
+      "3": 0.03
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  },
+  {
+   "tick": "c0019",
+   "launched": "2026-09-14T00:05:21Z",
+   "chance_parents": [
+    "c0007",
+    "c0009"
+   ],
+   "calls": 1,
+   "errors": [],
+   "latency_s": [
+    1.3307468360289931
+   ],
+   "state_bytes": 94291,
+   "input_tokens": 29751,
+   "model": "jev-1.13.0",
+   "candidates": [
+    {
+     "id": "c0000",
+     "fitness": 0.0625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.17,
+     "score": 1.53,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.35,
+      "1": 0.06,
+      "2": 0.29,
+      "3": 0.3
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0001",
+     "fitness": 0.3958740234375,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.09,
+     "score": 1.73,
+     "score_confidence": 0.61,
+     "score_probabilities": {
+      "0": 0.05,
+      "1": 0.23,
+      "2": 0.66,
+      "3": 0.06
+     },
+     "rule": 0.1,
+     "children": 6,
+     "jobs_in_line": 17
+    },
+    {
+     "id": "c0002",
+     "fitness": 0.3892822265625,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.14,
+     "score": 1.47,
+     "score_confidence": 0.41,
+     "score_probabilities": {
+      "0": 0.07,
+      "1": 0.42,
+      "2": 0.48,
+      "3": 0.03
+     },
+     "rule": 0.1,
+     "children": 2,
+     "jobs_in_line": 10
+    },
+    {
+     "id": "c0003",
+     "fitness": 0.374755859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.76,
+     "score": 0.71,
+     "score_confidence": 0.29,
+     "score_probabilities": {
+      "0": 0.58,
+      "1": 0.21,
+      "2": 0.13,
+      "3": 0.08
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0004",
+     "fitness": 0.0914306640625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.84,
+     "score": 0.62,
+     "score_confidence": 0.38,
+     "score_probabilities": {
+      "0": 0.66,
+      "1": 0.15,
+      "2": 0.1,
+      "3": 0.09
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0005",
+     "fitness": 0.4774169921875,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.19,
+     "score": 1.38,
+     "score_confidence": 0.35,
+     "score_probabilities": {
+      "0": 0.13,
+      "1": 0.38,
+      "2": 0.47,
+      "3": 0.02
+     },
+     "rule": 0.75,
+     "children": 4,
+     "jobs_in_line": 8
+    },
+    {
+     "id": "c0006",
+     "fitness": 0.3243408203125,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.36,
+     "score": 1.09,
+     "score_confidence": 0.49,
+     "score_probabilities": {
+      "0": 0.21,
+      "1": 0.51,
+      "2": 0.27,
+      "3": 0.01
+     },
+     "rule": 0.1,
+     "children": 1,
+     "jobs_in_line": 2
+    },
+    {
+     "id": "c0007",
+     "fitness": 0.3756103515625,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.71,
+     "score": 0.36,
+     "score_confidence": 0.64,
+     "score_probabilities": {
+      "0": 0.75,
+      "1": 0.17,
+      "2": 0.06,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0008",
+     "fitness": 0.35400390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.71,
+     "score": 0.92,
+     "score_confidence": 0.08,
+     "score_probabilities": {
+      "0": 0.52,
+      "1": 0.2,
+      "2": 0.13,
+      "3": 0.15
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0009",
+     "fitness": 0.417724609375,
+     "label": 1,
+     "later_descendants": 1,
+     "noul": 0.47,
+     "score": 0.91,
+     "score_confidence": 0.52,
+     "score_probabilities": {
+      "0": 0.28,
+      "1": 0.53,
+      "2": 0.17,
+      "3": 0.01
+     },
+     "rule": 0.5,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0010",
+     "fitness": 0.4443359375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.47,
+     "score": 1.0,
+     "score_confidence": 0.45,
+     "score_probabilities": {
+      "0": 0.27,
+      "1": 0.47,
+      "2": 0.24,
+      "3": 0.02
+     },
+     "rule": 1.0,
+     "children": 2,
+     "jobs_in_line": 2
+    },
+    {
+     "id": "c0011",
+     "fitness": 0.563232421875,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.13,
+     "score": 1.31,
+     "score_confidence": 0.49,
+     "score_probabilities": {
+      "0": 0.1,
+      "1": 0.51,
+      "2": 0.37,
+      "3": 0.02
+     },
+     "rule": 0.1,
+     "children": 1,
+     "jobs_in_line": 1
+    },
+    {
+     "id": "c0012",
+     "fitness": 0.386474609375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.61,
+     "score": 0.52,
+     "score_confidence": 0.48,
+     "score_probabilities": {
+      "0": 0.59,
+      "1": 0.32,
+      "2": 0.08,
+      "3": 0.01
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0013",
+     "fitness": 0.3394775390625,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.68,
+     "score": 0.45,
+     "score_confidence": 0.55,
+     "score_probabilities": {
+      "0": 0.67,
+      "1": 0.23,
+      "2": 0.08,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0014",
+     "fitness": 0.149169921875,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.68,
+     "score": 1.83,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.26,
+      "1": 0.1,
+      "2": 0.19,
+      "3": 0.45
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0015",
+     "fitness": 0.3594970703125,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.65,
+     "score": 0.97,
+     "score_confidence": 0.03,
+     "score_probabilities": {
+      "0": 0.43,
+      "1": 0.27,
+      "2": 0.2,
+      "3": 0.1
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0016",
+     "fitness": 0.3272705078125,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.6,
+     "score": 1.45,
+     "score_confidence": 0.0,
+     "score_probabilities": {
+      "0": 0.29,
+      "1": 0.22,
+      "2": 0.24,
+      "3": 0.25
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0017",
+     "fitness": 0.3568115234375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.61,
+     "score": 0.63,
+     "score_confidence": 0.37,
+     "score_probabilities": {
+      "0": 0.53,
+      "1": 0.31,
+      "2": 0.14,
+      "3": 0.02
+     },
+     "rule": 0.25,
+     "children": 0,
+     "jobs_in_line": 0
+    },
+    {
+     "id": "c0018",
+     "fitness": 0.577880859375,
+     "label": null,
+     "later_descendants": 0,
+     "noul": 0.39,
+     "score": 1.41,
+     "score_confidence": 0.22,
+     "score_probabilities": {
+      "0": 0.18,
+      "1": 0.33,
+      "2": 0.4,
+      "3": 0.09
+     },
+     "rule": 0.0,
+     "children": 0,
+     "jobs_in_line": 0
+    }
+   ]
+  }
+ ]
+}

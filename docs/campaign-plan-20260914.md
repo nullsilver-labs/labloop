@@ -302,6 +302,78 @@ show: that model selection beats chance in general; one seed, one world, and D1 
 already shown that a single draft roll moves the final by .15 at the same seed, so a gap
 between two single arms is descriptive until more seeds exist.
 
+**Read against Dream-RSI (2026-09-16).** Zheng et al., "Dream-RSI: Recursive
+Self-Improvement through Evolving Worlds" (arXiv 2609.14858, September 2026), is the replay
+above made a method: a finished run's tree of attempts, each node with its workspace
+snapshot, diagnostics and score, is kept as a frozen simulator; a candidate exploration
+policy (Python code, revised by a development agent) is scored by walking the recorded
+tree and choosing different branches; the best replayed policy is redeployed, and its new
+tree joins the pool (a plain union: no pruning, no index, no summarisation). Two things
+follow for §5. First, the caveat: a replay can only follow recorded children. Their trees
+are wide; ours have one or two children per parent, so almost every choice the
+orchestrator makes differently walks off the recorded tree at once. That is why the replay
+here reports parse failures, agreement with chance and a blind read of the reasons, and no
+value: their replay objective (best score, minus a cost term, plus a parallelism bonus)
+would be undefined on our trees. A value read from replay needs width at every node, a
+separate and expensive treatment, not a change to this one. Second, their §5.1: under
+equal budgets, explicit directional guidance distilled from history and injected into the
+prompt underperformed the unguided agent, in their paradigm and in the fixed-exploration
+baseline alike. Their guidance is advice, not facts, so it says nothing about the cards;
+but it is one more reason variant B (the orchestrator's reason written into the job card)
+stays a separate preregistration, and a point for the shape of
+`docs/experiment-index-plan.md` (§3.3 there).
+
+**A decision model instead of a text model (added 2026-09-16, access obtained).**
+TypeSafe's Jev (its first "System One" model,
+`typesafe.ai/blog/introducing-system-one-models-and-jev`) is a hosted model that takes
+unstructured state and returns a typed choice with a calibrated probability, and no text:
+cardinality up to 255, 70–500 ms end to end, input $0.042 per million tokens, output
+unmetered, early access through their API, no weights. The §5 decision is exactly that
+shape: `(operator, parents)` over a population of 20 to 200 with the digest as state. So
+it is a second orchestrator candidate beside the CPU-hosted open model, cheaper by orders
+of magnitude in latency and cost, and without the parse-failure class (the schema is
+enforced by construction; their "0 % hallucination" claim means that and no more). What
+it cannot do is variant B: no reason line, only a confidence, which a job card could carry
+instead (a third treatment, preregistered apart, not B). What it costs: the population
+digest leaves the machine (cards and summaries only, never labels, never the search
+split; the same text nullsilver.com publishes), and the model is hosted and versioned by
+someone else, so every decision's `job.json` block and `REPORT.md` record the model
+version and endpoint, and a version change under a running campaign is the "changed
+campaign file" case: the campaign ends there and is reported as ended. Same replay
+first, on the same recorded ticks, with the same kill criteria minus latency (irrelevant
+at this speed) plus one of its own, reported without a threshold: calibration, whether
+the returned confidence separates the ticks where it agrees with chance from those where
+it does not, and whether its high-confidence choices sit on the lineage that produced
+each arm's frozen candidate. The replay needs no GPU and no usage window, so it can run
+beside the local-model campaign. If it passes, this rather than the open model is the
+first `[selection] mode = "model"` pair, because it holds neither a GPU nor the window;
+the open-model variant stays as the reproducible control if that pair reads anything.
+
+**Replay done (2026-09-16 morning), `docs/orchestrator-replay-20260916/READ.md`.**
+`scripts/orchestrator_replay.py` over D4, mem2 F and mem3 F (51 ticks, 210 calls with and
+without scores, served `jev-1.13.0`, 0 errors, 0.72 s median, ≈ $0.02). The gate passed
+(no parse failures, latency trivial). What the decisions are: a slightly sharper rank
+selection, argmax on the current leader at 78–100 % of ticks, never a crossover at argmax;
+with the scores hidden it still recovers the score ordering from the cards and sticks to
+one parent for ten ticks at a stretch, so it does not weigh the jobs already spent on a
+line as instructed. The second replay, with the bookkeeping (children per candidate, jobs per line,
+knobs the change moved) explicit in the state, ran the same day: the argmax stayed on the
+leader (.87 / .72 / .94 of ticks), the twelve-tick run on one parent in mem3 F survived
+every variant, crossover never reached argmax. **Jev is a ranker; no chance-vs-Jev pair is
+proposed.** It remains an optional `[selection]` backend if one is ever built (record the
+served version per decision), never a dependency. The per-candidate **headroom** formulation (a Noul "is this line exhausted?" per
+candidate, scored against the hindsight label the recorded history gives) ran the same
+afternoon over nine arms: AUC .73 pooled / .62 per candidate, right on 79 % of the pairs the
+score orders wrongly, better than a bookkeeping rule (.62) and far better than child counts;
+as a multiplier on the rank weight it would move ≈ 4 points of selection mass off exhausted
+lines per tick (≈ 8 with a sharp transform). Real, modest, not separable from draft noise at
+one seed; **not proposed as the next campaign** (`docs/orchestrator-replay-20260916/READ.md`,
+third replay). If ever used: `headroom` per candidate from a named source (`none` | `rule` |
+model), multiplied into the rank weight, logged per decision; the rule is the control. The worker
+model is never chosen by the orchestrator; that stays a campaign file setting. The
+CPU-hosted open-model variant of §5 is unaffected by this read and still needs its own
+replay before anything.
+
 ## 6. `mem3`: knob ledger v3, then a third memory seed (decided 2026-09-15, next after the mixed arm)
 
 Decided with the human after the mem2 read, while the mixed arm was running (launched

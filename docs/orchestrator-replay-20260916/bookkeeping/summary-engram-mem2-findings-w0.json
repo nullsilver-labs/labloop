@@ -1,0 +1,54 @@
+{
+ "campaign": "engram-mem2-findings-w0",
+ "ticks": 18,
+ "calls": 39,
+ "errors": 0,
+ "error_samples": [],
+ "latency_median_s": 0.734,
+ "latency_p95_s": 0.966,
+ "state_bytes_median": 21627,
+ "state_bytes_max": 37760,
+ "est_input_tokens_total": 210684,
+ "est_cost_usd": 0.0088,
+ "parent_agreement_argmax": 0.278,
+ "parent_agreement_sampled": 0.167,
+ "operator_agreement_argmax": 1.0,
+ "full_agreement_argmax": 0.278,
+ "argmax_is_best_so_far": 0.722,
+ "chance_took_best_so_far": 0.389,
+ "mean_p_on_chance_parents": 0.208,
+ "mean_p_on_frozen_lineage": 0.686,
+ "chance_parent_in_frozen_lineage": 0.611,
+ "argmax_in_frozen_lineage": 0.722,
+ "crossover_rate_chance": 0.0,
+ "crossover_rate_argmax": 0.0,
+ "crossover_rate_sampled": 0.167,
+ "confidence_median": 0.285,
+ "calibration_terciles": [
+  {
+   "confidence_range": [
+    0.18,
+    0.24
+   ],
+   "n": 6,
+   "agreement": 0.167
+  },
+  {
+   "confidence_range": [
+    0.25,
+    0.31
+   ],
+   "n": 6,
+   "agreement": 0.333
+  },
+  {
+   "confidence_range": [
+    0.32,
+    0.6
+   ],
+   "n": 6,
+   "agreement": 0.333
+  }
+ ],
+ "model": "jev-1.13.0"
+}
