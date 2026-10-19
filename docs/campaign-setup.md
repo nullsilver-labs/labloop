@@ -103,7 +103,7 @@ and `[memory] mode = "legacy"`, and `lab campaign check` refuses anything else.
   - the arm is blind;
   - `initial_drafts` exceeds the seeded drafts;
   - the worker model differs;
-  - copied code names the source dir.
+  - copied code names the source dir (bytecode caches, `__pycache__/` and `*.pyc`, are neither checked nor copied).
 - **What the copy records:** each copied dir gets a `seeded.json` saying where it came from. population.json marks the entries `seeded_from` and replays the source's counters. The LEDGER gets one row per seeded candidate, and REPORT says what was seeded.
 - **Accounting:** seeded candidates count toward `max_candidates`, and their sessions are left out of the cost lines.
 - **Reading results:** use per-job metrics. A final-g comparison between two seeded arms is diluted when the best candidate stays a seeded one.

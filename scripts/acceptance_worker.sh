@@ -179,6 +179,8 @@ EOF
 WSRC="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-seedsrc.XXXXXX")"
 scripted_repo "$WSRC" acc-seed-src 3 "initial_drafts = 2"
 ( cd "$WSRC" && LAB_ROOT="$WSRC" timeout 300 "$WSRC/tools/lab" run --poll-sec 1 >/dev/null 2>&1 )
+# a worker's bytecode cache names the source dir; it is neither scanned nor copied
+mkdir -p "$WSRC/candidates/c0001/scratch/__pycache__" && printf '%s' "$WSRC/candidates/c0001/scratch/x.py" > "$WSRC/candidates/c0001/scratch/__pycache__/x.cpython-312.pyc"
 WSEED="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-seeded.XXXXXX")"
 scripted_repo "$WSEED" acc-seeded 7 "seed_from = \"$WSRC\"|seed_upto = \"c0002\""
 cd "$WSEED" || return 1
@@ -189,7 +191,9 @@ assert_eq   "B2: c0000-c0002 are the source's, marked seeded; new jobs start at 
   "$(python3 -c "import json;p=json.load(open('population.json'));c=p['candidates'];print([k for k in sorted(c) if c[k].get('seeded_from')], c['c0003']['operator'], p['seeded']['n'])")" \
   "['c0000', 'c0001', 'c0002'] improve 3"
 assert_ok   "B2: every seeded dir is byte-identical to its source but for seeded.json, fitness.json and the final run; the source is unchanged" \
-  bash -c 'for i in c0000 c0001 c0002; do diff -r -x seeded.json -x fitness.json -x predictions-final.json "$0/candidates/$i" "candidates/$i" >/dev/null || exit 1; done; python3 -c "import json,sys;sys.exit(0 if len(json.load(open(\"$0/population.json\"))[\"candidates\"])==3 else 1)"' "$WSRC"
+  bash -c 'for i in c0000 c0001 c0002; do diff -r -x seeded.json -x fitness.json -x predictions-final.json -x __pycache__ "$0/candidates/$i" "candidates/$i" >/dev/null || exit 1; done; python3 -c "import json,sys;sys.exit(0 if len(json.load(open(\"$0/population.json\"))[\"candidates\"])==3 else 1)"' "$WSRC"
+assert_ok   "B2: a bytecode cache naming the source dir is not copied (and does not refuse the seed)" \
+  bash -c '[ -e "$0/candidates/c0001/scratch/__pycache__/x.cpython-312.pyc" ] && [ ! -e candidates/c0001/scratch/__pycache__ ]' "$WSRC"
 assert_ok   "B2: the source's final read never comes along (no predictions-final.json, fitness.json keeps search only)" \
   bash -c 'b=$(python3 -c "import json;print(json.load(open(\"$0/population.json\"))[\"best\"])"); [ -e "$0/candidates/$b/out/predictions-final.json" ] && ! ls candidates/c000[012]/out/predictions-final.json >/dev/null 2>&1 && python3 -c "import json,sys;sys.exit(0 if all(list(json.load(open(f\"candidates/{i}/fitness.json\")))==[\"search\"] for i in (\"c0001\",\"c0002\")) else 1)"' "$WSRC"
 assert_eq   "B2: the run stopped on max_candidates, seeded ones counted" \

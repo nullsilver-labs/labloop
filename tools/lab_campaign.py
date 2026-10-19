@@ -690,6 +690,12 @@ def init_pop(cfg: dict) -> dict:
 SEED_FIELDS = ("operator", "parents", "status", "exec", "fitness", "n", "fail_reason",
                "path", "ended", "exit_code")
 SEED_SKIP = {"predictions-final.json"}      # the source's final run never reaches the copy
+# bytecode caches embed the path they were compiled at; Python rebuilds them from the copied source
+SEED_SKIP_CACHE = ("__pycache__", ".pyc")
+
+
+def seed_skipped(n: str) -> bool:
+    return n in SEED_SKIP or n == SEED_SKIP_CACHE[0] or n.endswith(SEED_SKIP_CACHE[1])
 # what records a job rather than runs it: these name the source dir by design
 SEED_PROVENANCE = {"config.json", "job.json", "session.json", "session.stderr", "summary.md", "seeded.json"}
 
@@ -800,11 +806,12 @@ def seed_checks(cfg: dict) -> tuple[list[str], dict]:
         if sc[i].get("fitness") is not None and not (src / "candidates" / i / "fitness.json").exists():
             why.append(f"{i} has a fitness but no fitness.json in the source")
         for dp, dns, fns in os.walk(src / "candidates" / i):
+            dns[:] = [n for n in dns if n != SEED_SKIP_CACHE[0]]
             for n in dns + fns:
                 f = Path(dp) / n
                 if f.is_symlink():
                     why.append(f"{i} holds a symlink ({f.relative_to(src)}): a copy would still point at the source")
-                elif f.is_file() and n not in SEED_SKIP and n not in SEED_PROVENANCE \
+                elif f.is_file() and not seed_skipped(n) and n not in SEED_PROVENANCE \
                         and f.stat().st_size < 256_000_000 and any(x in f.read_bytes() for x in names):
                     why.append(f"{f.relative_to(src)} names the source dir: its final re-run would read the source")
     return why, {"spop": spop, "ids": ids}
@@ -834,14 +841,14 @@ def seed_population(cfg: dict, pop: dict) -> str:
     stage.mkdir(parents=True)
     for i in ids:
         sdir, sdst = src / "candidates" / i, stage / i
-        shutil.copytree(sdir, sdst, symlinks=False, ignore=lambda d, ns: [n for n in ns if n in SEED_SKIP])
+        shutil.copytree(sdir, sdst, symlinks=False, ignore=lambda d, ns: [n for n in ns if seed_skipped(n)])
         fit = json.loads((sdir / "fitness.json").read_text()) if (sdir / "fitness.json").exists() else {}
         if "search" in fit:
             L.write_json_atomic(sdst / "fitness.json", {"search": fit["search"]})
         L.write_json_atomic(sdst / "seeded.json", {"source_dir": str(src), "source_campaign": spop["campaign"],
                                                   "source_campaign_sha256": spop.get("campaign_sha256"),
                                                   "source_id": i, "source_tree_sha256": tree_sha256(sdir),
-                                                  "not_copied": sorted(SEED_SKIP), "fitness_kept": ["search"]})
+                                                  "not_copied": sorted(SEED_SKIP) + ["__pycache__/", "*.pyc"], "fitness_kept": ["search"]})
         # the bytes installed here must score as recorded, from here: as `lab eval` would
         # (the eval user, when there is one), so lab never reads the labels itself
         if sc[i].get("fitness") is None:
