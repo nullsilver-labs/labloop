@@ -112,18 +112,6 @@ The major version changes when a reader that ignored the change would misread th
 
 </details>
 
-## The plate
-
-<p>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/labloop-construction-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="docs/assets/labloop-construction-light.svg">
-    <img src="docs/assets/labloop-construction-light.svg" alt="The labloop plate with its construction" width="360">
-  </picture>
-</p>
-
-Labloop's plate shows how the project works. The thin thread is the loop. The two heavy terminals at its ends are the gate, and the slot between them is the only way out. The loop goes round many times on search scores, which are optimistic. A candidate passes the gate once, and that is the only measurement that counts. [Plate](https://nullsilver.com/artifacts/plate) draws the marks of all the lab's projects.
-
 ## License
 
 MIT, see `LICENSE`.
