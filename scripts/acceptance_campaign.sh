@@ -341,7 +341,13 @@ def variant(path, lines, mem=None):
 variant("blind-ok.toml", ["blind = true", "draft_p = 1.0", "crossover_p = 0.0"])
 variant("blind-mix.toml", ["blind = true", "draft_p = 0.5", "crossover_p = 0.0"])
 variant("blind-mem.toml", ["blind = true", "draft_p = 1.0", "crossover_p = 0.0"], mem="findings-v3")
+variant("pair-ok.toml", ["crossover_p = 0.5", 'crossover_pairing = "complementary"', 'components_key = "per_target"', "complement_min = 0.1"])
+variant("pair-nokey.toml", ["crossover_p = 0.5", 'crossover_pairing = "complementary"'])
+variant("pair-bad.toml", ["crossover_p = 0.5", 'crossover_pairing = "nearest"', 'components_key = "per_target"'])
 EOF
+assert_ok   "campaign check accepts complementary crossover pairing with a components key" "$LAB2" campaign check pair-ok.toml
+assert_fail "campaign check refuses complementary pairing without components_key" "$LAB2" campaign check pair-nokey.toml
+assert_fail "campaign check refuses an unknown crossover_pairing"               "$LAB2" campaign check pair-bad.toml
 assert_ok   "campaign check accepts a blind draft-only arm"           "$LAB2" campaign check blind-ok.toml
 assert_fail "campaign check refuses blind with draft_p < 1"           "$LAB2" campaign check blind-mix.toml
 assert_fail "campaign check refuses blind with a findings memory"     "$LAB2" campaign check blind-mem.toml

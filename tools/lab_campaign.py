@@ -310,7 +310,25 @@ def load_campaign(path: Path) -> dict:
         # the best by at least `restart_min_step` (fitness units; a creeping chain is stuck too).
         "restart_after": int(s.get("restart_after", 0)),
         "restart_min_step": float(s.get("restart_min_step", 0.0)),
+        # Crossover pairing (A3 follow-up, docs/campaign-setup.md): "rank" draws both parents by
+        # fitness rank; "complementary" draws A by rank, then pairs it only with a B that beats
+        # A on some component by complement_min while A beats B on another, so the child has
+        # something to combine. Components come from the evaluator's search output under
+        # components_key ({name: score}, same direction as the fitness). No such B: an improve.
+        "crossover_pairing": s.get("crossover_pairing", "rank"),
+        "components_key": s.get("components_key"),
+        "complement_min": float(s.get("complement_min", 0.05)),
     }
+    if cfg["selection"]["crossover_pairing"] not in ("rank", "complementary"):
+        L.die(f"{path.name}: selection.crossover_pairing is \"rank\" or \"complementary\" "
+              f"(got {cfg['selection']['crossover_pairing']!r})")
+    ck = cfg["selection"]["components_key"]
+    if ck is not None and (not isinstance(ck, str) or not ck):
+        L.die(f"{path.name}: selection.components_key names a key of the evaluator's output (got {ck!r})")
+    if cfg["selection"]["crossover_pairing"] == "complementary" and not ck:
+        L.die(f"{path.name}: selection.crossover_pairing = \"complementary\" needs selection.components_key")
+    if cfg["selection"]["complement_min"] < 0:
+        L.die(f"{path.name}: selection.complement_min must be >= 0")
     if cfg["selection"]["restart_after"] < 0 or cfg["selection"]["restart_min_step"] < 0:
         L.die(f"{path.name}: selection.restart_after and restart_min_step must be >= 0 (0 = off)")
     if cfg["selection"]["restart_after"] and cfg["selection"]["blind"]:
@@ -862,6 +880,7 @@ def seed_population(cfg: dict, pop: dict) -> str:
     sc = spop["candidates"]
     ev_sha = sha256_file(cfg["data"]["evaluator"])
     rescored: dict[str, float] = {}     # within seed_rescore_tol but not exact: said in the note
+    comps: dict[str, dict] = {}
     stage.mkdir(parents=True)
     for i in ids:
         sdir, sdst = src / "candidates" / i, stage / i
@@ -881,6 +900,8 @@ def seed_population(cfg: dict, pop: dict) -> str:
             why.append(f"{i} was scored by another evaluator")
             continue
         again = run_evaluator(cfg, sdst / "out" / "predictions-search.json", "search")
+        if again.get("components"):
+            comps[i] = again["components"]      # the source may predate components_key
         tol = 0.0 if sc[i]["operator"] == "baseline" else cfg["campaign"].get("seed_rescore_tol", 0.0)
         if again.get("score") is not None and abs(again["score"] - sc[i]["fitness"]) > 1e-9 * max(1.0, abs(sc[i]["fitness"])):
             rescored[i] = again["score"]
@@ -901,6 +922,8 @@ def seed_population(cfg: dict, pop: dict) -> str:
                   "debugged": i in debug_kids, "watch": None, "gpu": None, "session": None,
                   "launched": None, "redispatch_of": None, "defers": 0,
                   "seeded_from": {"campaign": spop["campaign"], "dir": str(src), "id": i}})
+        if i in comps:
+            e["components"] = comps[i]
         pop["candidates"][i] = e
     # the counters as the source had them at the cut, replayed in its settle order
     for v in sorted((pop["candidates"][i] for i in ids), key=lambda v: (v.get("ended") or "", v["id"])):
@@ -1476,6 +1499,8 @@ def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
             exec_status, reason = "invalid", f"evaluator: {fit.get('error', 'no score')}"
         else:
             c["fitness"], c["n"] = fit["score"], fit.get("n")
+            if fit.get("components"):
+                c["components"] = fit["components"]
             if c["operator"] in ("improve", "crossover") and c["parents"]:
                 c["same_output_as_parent"] = same_output(cfg, preds, cand_dir(c["parents"][0]) / "out" / "predictions-search.json")
     elif exec_status == "killed" and kill_reason.startswith(KILL_PATTERN_PREFIX):
@@ -1809,6 +1834,12 @@ def run_evaluator(cfg: dict, preds: Path, split: str) -> dict:
                 val = None
             if isinstance(val, dict) and isinstance(val.get("score"), (int, float)):
                 rec["score"], rec["n"] = float(val["score"]), val.get("n")
+                ck = cfg["selection"].get("components_key")
+                comp = val.get(ck) if ck and split == "search" else None
+                if isinstance(comp, dict) and comp and all(
+                        isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+                        for v in comp.values()):
+                    rec["components"] = {str(k): float(v) for k, v in comp.items()}
             elif isinstance(val, (int, float)):
                 rec["score"] = float(val)
             else:
@@ -2000,6 +2031,30 @@ def rank_select(cfg: dict, pool: list[dict], rng: random.Random, k: int = 1) -> 
     return chosen
 
 
+def complementary_partner(cfg: dict, pool: list[dict], a: dict) -> tuple[dict | None, dict | None]:
+    """The B that A can gain most from: B beats A by complement_min on some components and A
+    beats B by as much on others (so the union is larger than either). Gain is the sum of B's
+    margins where it is ahead; ties go to the fitter B, then the later id. Deterministic: it
+    consumes no random number."""
+    sign = 1 if cfg["report"]["higher_is_better"] else -1
+    m = cfg["selection"].get("complement_min", 0.05)
+    ca, best = a["components"], None
+    for b in pool:
+        if b["id"] == a["id"]:
+            continue
+        cb = b["components"]
+        d = {k: sign * (cb[k] - ca[k]) for k in ca.keys() & cb.keys()}
+        b_over = sorted(k for k, v in d.items() if v >= m)
+        a_over = sorted(k for k, v in d.items() if -v >= m)
+        if b_over and a_over:
+            gain = sum(d[k] for k in b_over)
+            key = (gain, sign * b["fitness"], b["id"])
+            if best is None or key > best[0]:
+                best = (key, b, {"pairing": "complementary", "b_over_a": b_over, "a_over_b": a_over,
+                                 "gain": round(gain, 6)})
+    return (best[1], best[2]) if best else (None, None)
+
+
 def stalled_chain(cfg: dict, pop: dict) -> int:
     """C2: settled improve/crossover jobs since the last new best or the last draft,
     whichever is later, in settle order. A new best counts only when it beats the previous
@@ -2028,8 +2083,9 @@ def stalled_chain(cfg: dict, pop: dict) -> int:
     return run
 
 
-def choose_job(cfg: dict, pop: dict, rng: random.Random) -> tuple[str, list[str], dict | None] | None:
-    """(operator, parents, origin) — origin names the deferred job being re-dispatched."""
+def choose_job(cfg: dict, pop: dict, rng: random.Random) -> tuple | None:
+    """(operator, parents, origin[, note]) — origin names the deferred job being re-dispatched;
+    note, when present, is stored as the candidate's `pairing` (complementary crossover)."""
     cands = pop["candidates"]
     running = [c for c in cands.values() if c["status"] in ("queued", "running")]
     if not any(c["operator"] == "baseline" for c in cands.values()):
@@ -2083,8 +2139,18 @@ def choose_job(cfg: dict, pop: dict, rng: random.Random) -> tuple[str, list[str]
     if cfg["selection"].get("draft_p", 0.0) > 0 and rng.random() < cfg["selection"]["draft_p"]:
         return ("draft", [], None)
     if len(evaluated) >= 2 and rng.random() < cfg["selection"]["crossover_p"]:
-        a, b = rank_select(cfg, evaluated, rng, k=2)
-        return ("crossover", [a["id"], b["id"]], None)
+        if cfg["selection"].get("crossover_pairing", "rank") == "complementary":
+            pool = [c for c in evaluated if c.get("components")]
+            if len(pool) >= 2:
+                (a,) = rank_select(cfg, pool, rng, k=1)
+                b, note = complementary_partner(cfg, pool, a)
+                if b is not None:
+                    return ("crossover", [a["id"], b["id"]], None, note)
+                return ("improve", [a["id"]], None, {"pairing": "complementary", "fallback": "no complementary partner"})
+            # too few candidates with components to pair: the improve below, as with no crossover
+        else:
+            a, b = rank_select(cfg, evaluated, rng, k=2)
+            return ("crossover", [a["id"], b["id"]], None)
     (a,) = rank_select(cfg, evaluated, rng, k=1)
     return ("improve", [a["id"]], None)
 
@@ -2206,6 +2272,11 @@ def write_report(cfg: dict, pop: dict) -> None:
             f"{sum(1 for c in pop['candidates'].values() if c.get('same_output_as_parent'))} of "
             f"{sum(1 for c in pop['candidates'].values() if c.get('same_output_as_parent') is not None)} |"]
           if any(c.get('same_output_as_parent') is not None for c in pop['candidates'].values()) else []),
+        *([f"| complementary pairing ({cfg['selection'].get('components_key')}, min {cfg['selection'].get('complement_min')}) | "
+           f"{sum(1 for c in pop['candidates'].values() if (c.get('pairing') or {}).get('b_over_a'))} crossovers paired; "
+           f"{sum(1 for c in pop['candidates'].values() if (c.get('pairing') or {}).get('fallback'))} crossover draws "
+           "found no complementary partner and ran as improves |"]
+          if cfg["selection"].get("crossover_pairing") == "complementary" else []),
         f"| GPU-hours (slot lease: job launch to end, the worker session included) | {hours:.2f} of {cfg['resources']['gpu_hours_total'] or '∞'} |",
         f"| settled candidates per GPU-hour | {(pop['settled'] / hours):.2f} |" if hours > 0
         else "| settled candidates per GPU-hour | — (no GPU time recorded) |",
@@ -2412,9 +2483,11 @@ def tick(cfg: dict, pop: dict) -> None:
             job = pick_job(cfg, pop, rng, in_flight)
             if job is None:
                 break
-            op, parents, origin = job
+            op, parents, origin, *note = job
             in_flight.add((op, tuple(parents)))
             cid = new_candidate(cfg, pop, op, parents, gpu, rng, origin)
+            if note and note[0]:
+                pop["candidates"][cid]["pairing"] = note[0]
             save_pop(pop)
             launch(cfg, pop, cid)
             save_pop(pop)

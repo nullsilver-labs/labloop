@@ -69,6 +69,60 @@ never = run({'crossover_p': 0.0, 'draft_p': 0.0})
 legacy = run({'crossover_p': 0.0})
 print(always[0], always[1] == [], never == legacy, never[0])")" "draft True True improve"
 
+# complementary crossover pairing: B must lead A on one component and trail it on another
+_PAIR_SETUP="
+import sys, random; sys.path.insert(0, 'tools'); import lab_campaign as m
+def cand(i, fit, comps):
+    return {'id': i, 'operator': 'baseline' if i == 'c0000' else 'draft', 'parents': [], 'status': 'evaluated',
+            'fitness': fit, 'debugged': False, 'components': comps}
+C = {'c0000': cand('c0000', .1, {'t1': 0, 't2': 0}), 'c0001': cand('c0001', .9, {'t1': .9, 't2': .2}),
+     'c0002': cand('c0002', .8, {'t1': .88, 't2': .22}), 'c0003': cand('c0003', .5, {'t1': .1, 't2': .9})}
+sel = dict(temperature=1.0, max_debug_retries=1, crossover_p=1.0, crossover_pairing='complementary', components_key='t', complement_min=0.05)
+cfg = {'selection': sel, 'report': {'higher_is_better': True}, 'resources': {'max_parallel_jobs': 1}}
+"
+assert_eq   "complementary pairing picks the B that complements A, not the fitter near-twin, and says why" \
+  "$(python3 -c "$_PAIR_SETUP
+b, note = m.complementary_partner(cfg, list(C.values()), C['c0001'])
+print(b['id'], note['b_over_a'], note['a_over_b'], note['gain'])")" "c0003 ['t2'] ['t1'] 0.7"
+assert_eq   "every crossover drawn under complementary pairing is complementary; an A with no partner runs as a marked improve" \
+  "$(python3 -c "$_PAIR_SETUP
+jobs = [m.choose_job(cfg, {'candidates': C, 'usage': m.usage_defaults()}, random.Random(s)) for s in range(30)]
+xs = [j for j in jobs if j[0] == 'crossover']
+ok = all({tuple(sorted(j[1]))} <= {('c0001', 'c0003'), ('c0002', 'c0003')} and j[3]['b_over_a'] for j in xs)
+imp = [j for j in jobs if j[0] == 'improve']
+print(bool(xs), ok, all(j[3].get('fallback') for j in imp))")" "True True True"
+assert_eq   "a population with nested components never crosses under complementary pairing" \
+  "$(python3 -c "$_PAIR_SETUP
+N = {'c0000': cand('c0000', .1, {'t1': 0, 't2': 0}), 'c0001': cand('c0001', .9, {'t1': .9, 't2': .8}), 'c0002': cand('c0002', .5, {'t1': .5, 't2': .5})}
+print(sorted({m.choose_job(cfg, {'candidates': N, 'usage': m.usage_defaults()}, random.Random(s))[0] for s in range(20)}))")" "['improve']"
+assert_eq   "complementary pairing follows the fitness direction (lower is better)" \
+  "$(python3 -c "$_PAIR_SETUP
+cfg['report']['higher_is_better'] = False
+b, note = m.complementary_partner(cfg, list(C.values()), C['c0003'])
+print(b['id'], note['b_over_a'], note['a_over_b'])")" "c0001 ['t2'] ['t1']"
+assert_eq   "crossover_pairing = \"rank\" draws exactly the stream a campaign without the key draws" \
+  "$(python3 -c "$_PAIR_SETUP
+P = {'candidates': C, 'usage': m.usage_defaults()}
+r = lambda extra: [m.choose_job({**cfg, 'selection': dict(temperature=1.0, max_debug_retries=1, crossover_p=1.0, **extra)}, P, random.Random(s))[:3] for s in range(10)]
+print(r({}) == r({'crossover_pairing': 'rank'}), {j[0] for j in r({})})")" "True {'crossover'}"
+_evc="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-evcomp.XXXXXX")"
+printf 'import json\nprint(json.dumps({"score": 0.5, "n": 4, "per_target": {"a": 1.0, "b": 0.25}}))\n' > "$_evc/ev.py"
+printf 'import json\nprint(json.dumps({"score": 0.5, "per_target": {"a": "x"}}))\n' > "$_evc/bad.py"
+echo '[]' > "$_evc/p.json"
+assert_eq   "the evaluator's components_key is kept on the search split only, and malformed components are dropped, never the score" \
+  "$(python3 -c "
+import sys, types; sys.path.insert(0, 'tools'); import lab_campaign as m
+from pathlib import Path
+m.L = types.SimpleNamespace(ROOT=Path.cwd(), now_iso=lambda: 't')
+d = Path('$_evc')
+def cfg(e, key='per_target'):
+    return {'data': {'search': {'labels': d}, 'final': {'labels': d}, 'evaluator': d / e},
+            'eval': {'user': None, 'timeout_sec': 30}, 'selection': {'components_key': key}}
+r = lambda e, split='search', key='per_target': m.run_evaluator(cfg(e, key), d / 'p.json', split)
+print(r('ev.py').get('components'), r('ev.py', 'final').get('components'), r('ev.py', key=None).get('components'), r('bad.py').get('components'), r('bad.py')['score'])")" \
+  "{'a': 1.0, 'b': 0.25} None None None 0.5"
+[ "${KEEP:-0}" = "1" ] || rm -rf "$_evc"
+
 assert_eq   "selection.initial_drafts: 1 is today's stream, N drafts come before the first improve, a re-dispatch is not a second draft" \
   "$(python3 -c "
 import sys, random; sys.path.insert(0, 'tools'); import lab_campaign as m

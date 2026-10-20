@@ -79,6 +79,26 @@ and `[memory] mode = "legacy"`, and `lab campaign check` refuses anything else.
 - **The limit.** Like the rest of the read scope, this is a deterrent, not a wall: a path
   built at run time by code the worker writes is not seen.
 
+**`[selection] crossover_pairing = "complementary"`** (default `"rank"`), with
+`components_key = "per_target"` and optional `complement_min` (default 0.05), crosses only
+parents that have something to combine.
+- **Why.** In A3 (`../labloop-v2a3-20261019/READ.md`), only 7 of 63 rank-drawn crossovers
+  paired parents whose rule sets differed. The rest could not combine, whatever the card said.
+- **Components.** The evaluator may print, beside `score`, a `{name: score}` dict under
+  `components_key`. lab keeps it, for the search split only, in the candidate's `fitness.json`
+  and its population entry (`components`), in the same direction as the fitness. Seeded
+  candidates get theirs from the B2 re-score.
+- **Pairing.** Parent A is drawn by rank as before. Parent B must beat A by at least
+  `complement_min` on some component, while A beats B by as much on another. Among those,
+  the B with the largest summed margin wins, then the fitter, then the later id. This draws
+  no random number.
+- **No partner.** When A has no such B, the draw runs as an improve on A, marked
+  `pairing.fallback`. REPORT counts paired crossovers and fallbacks; each crossover's
+  `pairing` records the components each parent leads on.
+- **Disclosure.** Non-blind workers can read `population.json`, so search-split component
+  scores are visible to them, like the fitness itself. The labels stay hidden.
+- `lab campaign check` refuses `"complementary"` without `components_key`.
+
 ### v2 keys (branch `v2`, each off by default; see [labloop-v2-plan.md](labloop-v2-plan.md))
 
 **`[selection] restart_after = K`** (with optional `restart_min_step`) dispatches a fresh draft once K settled improve or crossover jobs in a row have failed to raise the best search fitness by at least `restart_min_step`.
