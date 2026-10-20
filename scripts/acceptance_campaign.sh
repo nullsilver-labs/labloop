@@ -357,7 +357,19 @@ variant("blind-mem.toml", ["blind = true", "draft_p = 1.0", "crossover_p = 0.0"]
 variant("pair-ok.toml", ["crossover_p = 0.5", 'crossover_pairing = "complementary"', 'components_key = "per_target"', "complement_min = 0.1"])
 variant("pair-nokey.toml", ["crossover_p = 0.5", 'crossover_pairing = "complementary"'])
 variant("pair-bad.toml", ["crossover_p = 0.5", 'crossover_pairing = "nearest"', 'components_key = "per_target"'])
+variant("pair-default.toml", ["crossover_p = 0.5", 'components_key = "per_target"', "complement_min = 0.2"])
+variant("pair-nomin.toml", ["crossover_p = 0.5", 'components_key = "per_target"'])
+variant("pair-rank.toml", ["crossover_p = 0.5", 'components_key = "per_target"', 'crossover_pairing = "rank"'])
+variant("pair-noxover.toml", ["crossover_p = 0.0", 'components_key = "per_target"'])
 EOF
+assert_ok   "complementary pairing is the default with components_key (campaign check shows it)" \
+  bash -c '"$0" campaign check pair-default.toml 2>/dev/null | grep -q "\"crossover_pairing\": \"complementary\""' "$LAB2"
+assert_fail "campaign check refuses complementary pairing (by default) without complement_min" "$LAB2" campaign check pair-nomin.toml
+assert_ok   "crossover_pairing = \"rank\" with components_key needs no complement_min" \
+  bash -c '"$0" campaign check pair-rank.toml 2>/dev/null | grep -q "\"crossover_pairing\": \"rank\""' "$LAB2"
+assert_ok   "components_key without crossover needs no complement_min"   "$LAB2" campaign check pair-noxover.toml
+assert_ok   "no components_key: rank pairing, as before" \
+  bash -c '"$0" campaign check blind-ok.toml 2>/dev/null | grep -q "\"crossover_pairing\": \"rank\""' "$LAB2"
 assert_ok   "campaign check accepts complementary crossover pairing with a components key" "$LAB2" campaign check pair-ok.toml
 assert_fail "campaign check refuses complementary pairing without components_key" "$LAB2" campaign check pair-nokey.toml
 assert_fail "campaign check refuses an unknown crossover_pairing"               "$LAB2" campaign check pair-bad.toml

@@ -310,14 +310,17 @@ def load_campaign(path: Path) -> dict:
         # the best by at least `restart_min_step` (fitness units; a creeping chain is stuck too).
         "restart_after": int(s.get("restart_after", 0)),
         "restart_min_step": float(s.get("restart_min_step", 0.0)),
-        # Crossover pairing (A3 follow-up, docs/campaign-setup.md): "rank" draws both parents by
-        # fitness rank; "complementary" draws A by rank, then pairs it only with a B that beats
-        # A on some component by complement_min while A beats B on another, so the child has
-        # something to combine. Components come from the evaluator's search output under
-        # components_key ({name: score}, same direction as the fitness). No such B: an improve.
-        "crossover_pairing": s.get("crossover_pairing", "rank"),
+        # Crossover pairing (A3/A4, docs/campaign-setup.md): "rank" draws both parents by fitness
+        # rank; "complementary" draws A by rank, then pairs it only with a B that beats A on some
+        # component by complement_min while A beats B on another, so the child has something to
+        # combine. Components come from the evaluator's search output under components_key
+        # ({name: score}, same direction as the fitness). No such B: an improve. The default is
+        # "complementary" when components_key is set (A4: it pairs only parents that can
+        # combine, at no visible cost), "rank" otherwise; complement_min is in the components'
+        # own units, so it has no default and must be set whenever pairing is complementary.
+        "crossover_pairing": s.get("crossover_pairing", "complementary" if s.get("components_key") else "rank"),
         "components_key": s.get("components_key"),
-        "complement_min": float(s.get("complement_min", 0.05)),
+        "complement_min": s.get("complement_min"),
     }
     if cfg["selection"]["crossover_pairing"] not in ("rank", "complementary"):
         L.die(f"{path.name}: selection.crossover_pairing is \"rank\" or \"complementary\" "
@@ -327,8 +330,14 @@ def load_campaign(path: Path) -> dict:
         L.die(f"{path.name}: selection.components_key names a key of the evaluator's output (got {ck!r})")
     if cfg["selection"]["crossover_pairing"] == "complementary" and not ck:
         L.die(f"{path.name}: selection.crossover_pairing = \"complementary\" needs selection.components_key")
-    if cfg["selection"]["complement_min"] < 0:
-        L.die(f"{path.name}: selection.complement_min must be >= 0")
+    cm = cfg["selection"]["complement_min"]
+    if cm is not None and (isinstance(cm, bool) or not isinstance(cm, (int, float)) or cm < 0):
+        L.die(f"{path.name}: selection.complement_min is a number >= 0, in the components' units (got {cm!r})")
+    if cfg["selection"]["crossover_pairing"] == "complementary" and cfg["selection"]["crossover_p"] > 0 and cm is None:
+        L.die(f"{path.name}: complementary crossover pairing (the default with components_key) needs "
+              f"selection.complement_min, in the components' own units (e.g. 0.2 for per-target accuracy); "
+              f"or set crossover_pairing = \"rank\"")
+    cfg["selection"]["complement_min"] = float(cm) if cm is not None else None
     if cfg["selection"]["restart_after"] < 0 or cfg["selection"]["restart_min_step"] < 0:
         L.die(f"{path.name}: selection.restart_after and restart_min_step must be >= 0 (0 = off)")
     if cfg["selection"]["restart_after"] and cfg["selection"]["blind"]:
@@ -564,6 +573,7 @@ def cmd_campaign_check(args) -> None:
         "worker_backends": campaign_models(cfg),
         "operator_text_overrides": sorted(cfg["worker"]["operator_text"]),
         "v2": {k: cfg["selection"][k] for k in ("restart_after", "restart_min_step")},
+        "crossover_pairing": {k: cfg["selection"][k] for k in ("crossover_pairing", "components_key", "complement_min")},
         "initial_drafts": cfg["selection"]["initial_drafts"],
         "usage_governor": ("estimate + rate-limit detection" if cfg["usage"]["window_budget"]
                            else "rate-limit detection only (no usage.window_budget)"),
@@ -2042,15 +2052,15 @@ def complementary_partner(cfg: dict, pool: list[dict], a: dict) -> tuple[dict | 
     margins where it is ahead; ties go to the fitter B, then the later id. Deterministic: it
     consumes no random number."""
     sign = 1 if cfg["report"]["higher_is_better"] else -1
-    m = cfg["selection"].get("complement_min", 0.05)
+    m = cfg["selection"].get("complement_min") or 0.0
     ca, best = a["components"], None
     for b in pool:
         if b["id"] == a["id"]:
             continue
         cb = b["components"]
         d = {k: sign * (cb[k] - ca[k]) for k in ca.keys() & cb.keys()}
-        b_over = sorted(k for k, v in d.items() if v >= m)
-        a_over = sorted(k for k, v in d.items() if -v >= m)
+        b_over = sorted(k for k, v in d.items() if v >= m and v > 0)       # a lead is never a tie,
+        a_over = sorted(k for k, v in d.items() if -v >= m and -v > 0)     # even at complement_min 0
         if b_over and a_over:
             gain = sum(d[k] for k in b_over)
             key = (gain, sign * b["fitness"], b["id"])

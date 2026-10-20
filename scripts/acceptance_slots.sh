@@ -95,6 +95,12 @@ assert_eq   "a population with nested components never crosses under complementa
   "$(python3 -c "$_PAIR_SETUP
 N = {'c0000': cand('c0000', .1, {'t1': 0, 't2': 0}), 'c0001': cand('c0001', .9, {'t1': .9, 't2': .8}), 'c0002': cand('c0002', .5, {'t1': .5, 't2': .5})}
 print(sorted({m.choose_job(cfg, {'candidates': N, 'usage': m.usage_defaults()}, random.Random(s))[0] for s in range(20)}))")" "['improve']"
+assert_eq   "equal components are never complementary, even at complement_min 0" \
+  "$(python3 -c "$_PAIR_SETUP
+cfg['selection']['complement_min'] = 0.0
+E = [cand('c0001', .9, {'t1': .5, 't2': .5}), cand('c0002', .8, {'t1': .5, 't2': .5})]
+b, note = m.complementary_partner(cfg, E, E[0])
+print(b)")" "None"
 assert_eq   "complementary pairing follows the fitness direction (lower is better)" \
   "$(python3 -c "$_PAIR_SETUP
 cfg['report']['higher_is_better'] = False

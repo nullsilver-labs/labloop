@@ -79,9 +79,18 @@ and `[memory] mode = "legacy"`, and `lab campaign check` refuses anything else.
 - **The limit.** Like the rest of the read scope, this is a deterrent, not a wall: a path
   built at run time by code the worker writes is not seen.
 
-**`[selection] crossover_pairing = "complementary"`** (default `"rank"`), with
-`components_key = "per_target"` and optional `complement_min` (default 0.05), crosses only
-parents that have something to combine.
+**`[selection] components_key = "per_target"`** with **`complement_min`** turns on
+complementary crossover pairing, which crosses only parents that have something to combine.
+- **Default.** With `components_key` set, `crossover_pairing` defaults to `"complementary"`; set
+  `crossover_pairing = "rank"` to keep drawing both parents by fitness rank. Without
+  `components_key`, it is `"rank"`, as before. A4 (`../labloop-v2a4-20261020/READ.md`)
+  supports this mechanistically, not as a supported outcome line. Every complementary-arm
+  crossover had complementary parents, against 3 of 18 under rank, and 5 of 11 combined,
+  against 2 of 18. There was no visible cost.
+- **`complement_min` has no default.** It is in the components' own units (0.2 for hrw's
+  per-target accuracy, where a found rule sits near .85 and a missed one near .3), so
+  `lab campaign check` refuses complementary pairing without it unless `crossover_p = 0`. A
+  lead must be strictly positive, so equal components never count as complementary, even at 0.
 - **Why.** In A3 (`../labloop-v2a3-20261019/READ.md`), only 7 of 63 rank-drawn crossovers
   paired parents whose rule sets differed. The rest could not combine, whatever the card said.
 - **Components.** The evaluator may print, beside `score`, a `{name: score}` dict under
@@ -97,7 +106,8 @@ parents that have something to combine.
   `pairing` records the components each parent leads on.
 - **Disclosure.** Non-blind workers can read `population.json`, so search-split component
   scores are visible to them, like the fitness itself. The labels stay hidden.
-- `lab campaign check` refuses `"complementary"` without `components_key`.
+- `lab campaign check` refuses `"complementary"` without `components_key`, and shows the
+  effective pairing, key and margin.
 
 ### v2 keys (branch `v2`, each off by default; see [labloop-v2-plan.md](labloop-v2-plan.md))
 

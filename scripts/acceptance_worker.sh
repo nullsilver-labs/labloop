@@ -256,10 +256,10 @@ assert_fail "B2: campaign check refuses seed_rescore_tol without seed_from, or p
 assert_fail "B2: campaign check refuses seed_from without seed_upto" bash -c 'd=$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-seedck.XXXXXX"); cp campaign.toml "$d/c.toml"; sed -i "/^seed_upto/d" "$d/c.toml"; "$0" campaign check "$d/c.toml"' "$LABS"
 [ "${KEEP:-0}" = "1" ] || rm -rf "$WSRC" "$WSEED"
 
-# complementary crossover pairing, end to end: every later job is either a crossover whose note
+# complementary crossover pairing (the default with components_key), end to end: every later job is either a crossover whose note
 # names components each parent leads on, or an improve marked as a fallback; REPORT agrees
 WPAIR="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-pair.XXXXXX")"
-scripted_repo "$WPAIR" acc-pair 7 "initial_drafts = 2|crossover_p = 1.0|crossover_pairing = \"complementary\"|components_key = \"parts\""
+scripted_repo "$WPAIR" acc-pair 7 "initial_drafts = 2|crossover_p = 1.0|components_key = \"parts\"|complement_min = 0.01"
 assert_ok   "complementary pairing: a campaign runs to completion" \
   bash -c 'cd "$0" && LAB_ROOT="$0" timeout 300 tools/lab run --poll-sec 1 >/dev/null 2>&1' "$WPAIR"
 _pair="$(python3 -c "
