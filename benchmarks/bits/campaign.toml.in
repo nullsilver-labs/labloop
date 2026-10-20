@@ -1,0 +1,65 @@
+# bits: one world of the generated next-symbol benchmark (benchmarks/bits in labloop).
+# A mini-campaign: CPU only, two slots, about 30-45 minutes. Pair it with a second arm
+# on the same world name and change one thing; see benchmarks/bits/README.md.
+
+[campaign]
+id   = "@CAMPAIGN@"
+task = "task.md"
+kind = "research"
+
+[data]
+train     = "data/train"
+evaluator = "eval/score.py"
+baseline  = "bash eval/baseline.sh"
+
+[data.search]
+inputs = "data/search"
+labels = "$LAB_PRIVATE/@CAMPAIGN@/search"
+
+[data.final]
+inputs = "data/final"
+labels = "$LAB_PRIVATE/@CAMPAIGN@/final"
+
+[eval]
+# user = "labeval"
+timeout = "5m"
+
+[resources]
+gpus              = []           # CPU only
+max_parallel_jobs = 2            # each told to use @THREADS@ threads
+gpu_hours_total   = 4            # counts slot-lease hours on CPU too
+job_wall_clock    = "25m"        # session plus run.sh; run.sh itself is told @MINUTES@ min
+stall_min         = 10
+worker_model      = "claude-sonnet-5"
+worker_max_turns  = 30
+
+[worker]
+command = "tools/lab-worker"
+
+[selection]
+temperature    = 0.3
+crossover_p    = 0.15
+draft_p        = 0.0
+initial_drafts = 2
+max_debug_retries = 1
+# seed = fixed per pair in PREREG.md
+
+[memory]
+# the arm's change goes here, or in [selection], and nowhere else
+
+[usage]
+window       = "5h"
+soft         = 0.70
+hard         = 0.90
+session_cost = 0.50
+retry        = "30m"
+max_defers   = 3
+
+[stop]
+max_candidates     = 10
+no_improvement_for = 6
+wall_clock         = "2h"
+
+[report]
+success_threshold = 0.60         # REPLACE after calibration, before any arm runs
+higher_is_better  = true
