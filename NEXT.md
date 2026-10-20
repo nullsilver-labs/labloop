@@ -8,9 +8,18 @@ implementation notes are in `docs/aira2-loop-design.md`; this file is only what 
 true now and what comes next. Milestone criteria are read from the design doc, never
 revised here after the fact.
 
-## Resume here: 2026-10-19 afternoon
+## Resume here: 2026-10-20
 
-Written by the operator session. **Update 2026-10-19 ~21:10Z: A3 is done and read; nothing of A3 is running.** All 16 arms settled by 20:07Z; `../labbench` is 775. The read (`../labloop-v2a3-20261019/READ.md`): **primary not supported**, combination rate 2/31 per-target against 1/32 default, exact p .32. Crossover keeps ~90 % of the parents' union and almost never beats the better parent, with either text. The arms ran labloop branch `a3-tools-20261019`, not 5d5354c (hub `DEVIATION.md`). Post-hoc (in READ.md, hub f2d39b6): only 7/63 crossovers had parents with complementary rules; there, per-target combined 2/4 (full union), default 0/3. So the test was nearly blind, and the binding constraint looks like parent pairing. Cheapest next test: complementary pairing + per-target text. The separate DISPLIB campaign (Opus workers) was set up by another session and is running in its own sibling dir.
+Written by the operator session, 2026-10-20. **Nothing of this session's is running.**
+- **A4 (complementary crossover pairing) is scaffolded, not launched.** The hub is `../labloop-v2a4-20261020` (PREREG 052a3d3). Your steps: `bash ../labloop-v2a4-20261020/trust.sh` (24 dirs), then `bash ../labloop-v2a4-20261020/launch1.sh`. Then phase 2, as in step 5 below.
+- **A3 is done:** not supported. The post-hoc points at parent pairing. Complementary pairing is built on main (`ced82d8`, acceptance 666/0).
+- **DISPLIB (Opus workers, set up by another session):**
+  - `../labloop-displib-20261019` finished with claim **inconclusive**. That session reports an evaluator race, and its private logs put c0005's final at 0.874 against a 0.75 threshold. lab's record is unchanged.
+  - `../labloop-displib-v2-20261020` (`restart_after` 4) is **running**.
+- Main has local commits, none pushed. Grep for labbench details before any push.
+
+Earlier update (2026-10-19 evening):
+Written by the operator session. **Update 2026-10-19 ~21:10Z: A3 is done and read; nothing of A3 is running.** All 16 arms settled by 20:07Z; `../labbench` is 775. The read (`../labloop-v2a3-20261019/READ.md`): **primary not supported**, combination rate 2/31 per-target against 1/32 default, exact p .32. Crossover keeps ~90 % of the parents' union and almost never beats the better parent, with either text. The arms ran labloop branch `a3-tools-20261019`, not 5d5354c (hub `DEVIATION.md`). Post-hoc (in READ.md, hub f2d39b6): only 7/63 crossovers had parents with complementary rules; there, per-target combined 2/4 (full union), default 0/3. So the test was nearly blind, and the binding constraint looks like parent pairing. Cheapest next test: complementary pairing + per-target text. 
 
 **Where things stand.**
 - `main` is pushed to GitHub as one squashed commit on top of the September history.
