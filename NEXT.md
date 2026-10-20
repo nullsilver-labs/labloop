@@ -10,7 +10,7 @@ revised here after the fact.
 
 ## Resume here: 2026-10-19 afternoon
 
-Written by the operator session before the human went out. **Nothing is running.**
+Written by the operator session. **Update 2026-10-19 ~21:10Z: A3 is done and read; nothing of A3 is running.** All 16 arms settled by 20:07Z; `../labbench` is 775. The read (`../labloop-v2a3-20261019/READ.md`): **primary not supported**, combination rate 2/31 per-target against 1/32 default, exact p .32. Crossover keeps ~90 % of the parents' union and almost never beats the better parent, with either text. The arms ran labloop branch `a3-tools-20261019`, not 5d5354c (hub `DEVIATION.md`). Post-hoc (in READ.md, hub f2d39b6): only 7/63 crossovers had parents with complementary rules; there, per-target combined 2/4 (full union), default 0/3. So the test was nearly blind, and the binding constraint looks like parent pairing. Cheapest next test: complementary pairing + per-target text. The separate DISPLIB campaign (Opus workers) was set up by another session and is running in its own sibling dir.
 
 **Where things stand.**
 - `main` is pushed to GitHub as one squashed commit on top of the September history.
@@ -20,22 +20,27 @@ Written by the operator session before the human went out. **Nothing is running.
 - The default cards no longer say "Make ONE hypothesised change" or "Prefer simple and runnable".
 - The v2 keys are on main: `restart_after`, `seed_from`/`seed_upto`, `same_output_ignore`, `[worker.operator_text]`. The plan is in `docs/labloop-v2-plan.md`.
 
-**In flight: A3, the crossover card test** (hub `../labloop-v2a3-20261019`; its PREREG holds the one primary line).
+**Done: A3, the crossover card test** (hub `../labloop-v2a3-20261019`; its PREREG holds the one primary line).
 - **Interrupted.** A power cut at about 11:40Z killed phase 1. The first snapshots, `../labloop-a3src-*`, are left as evidence; their dead watchers were repaired with `tools/lab watch check`.
-- **Replacements:** `../labloop-a3src2-i{13,14}{a,b}-20261019`, scaffolded but **not trusted and not launched**.
+- **Replacements:** `../labloop-a3src2-i{13,14}{a,b}-20261019`, trusted by the human and launched 16:02Z (baselines .3109 on i13, .2852 on i14). 17:00Z: i13b and i14a REPORTs done; i13a in its final read, i14b on its last draft (c0004).
 
 **Steps to finish A3:**
-1. **Human:** `bash ../labloop-v2a3-20261019/trust2.sh`. It should print `trusted 4`.
-2. **Session:** `bash ../labloop-v2a3-20261019/launch12.sh`. It refuses if `../labbench` is mode 000 or another unlock watcher is running. The 4 snapshots (c0000 + 4 drafts each, Haiku) take about 45 minutes; check hourly.
-3. **When all 4 snapshot REPORTs exist and `../labbench` is 775:**
+1. ~~**Human:** `bash ../labloop-v2a3-20261019/trust2.sh`.~~ Done.
+2. ~~**Session:** `bash ../labloop-v2a3-20261019/launch12.sh`.~~ Done 16:02Z. It refuses if `../labbench` is mode 000 or another unlock watcher is running. The 4 snapshots (c0000 + 4 drafts each, Haiku) take about 45 minutes; check hourly.
+3. ~~Phase 2~~ Done, with deviations (hub `DEVIATION.md`). Phase 1 finished 17:26Z. Seeding refused three times, all in the B2 seed check, never a label problem:
+   - bytecode caches naming the snapshot;
+   - Haiku scratch scripts hardcoding `<snapshot>/data/train/dev/`;
+   - nondeterministic learners re-scoring within ±.007 under the Docker evaluator.
+   Fixes on main `4802a9d`, `0386c9e`, `25aa790`, `4859c0c` (local, not pushed), cherry-picked onto local branch `a3-tools-20261019` as `ea68be2`, `073f4fd`, `23b598a`, `ed03c69` (the arms use `073f4fd` and `23b598a`, identical but for the tolerance). Branch acceptance 654/0. **Main's acceptance with these commits has not been run** (only the branch's): run it when the machine is quiet. The branch is checked out in a session-scratchpad worktree; if that dir is gone, `git worktree prune`. The original phase 2 notes follow.
+   **When all 4 snapshot REPORTs exist and `../labbench` is 775:**
    - from `../labbench`, run `python3 -m tools.make_a3 phase2 20261019 5d5354c`. It scaffolds the 16 seeded arms at paths already trusted by `trust.sh`, reading `plan.json`, which now points at the `a3src2` snapshots.
    - then run `bash ../labloop-v2a3-20261019/launch2.sh`.
    - Each arm re-scores its 4 seeded drafts at start (B2), so the first tick is slow. The arms take about 1–2 hours and about $4.
-4. **Read A3:**
+4. ~~**Read A3:**~~ Done 21:10Z (READ.md, hub commit e747b8b). Main's acceptance ran 2026-10-20 with the seed-check commits and complementary pairing: 666/0. The original notes:
    - from `../labbench`, run `python3 -m tools.a3_read 20261019 > ../labloop-v2a3-20261019/read.json` as a tracked background task (it re-runs learners in Docker).
    - then write `READ.md` in the hub against the PREREG's one primary line.
    - add a dated entry here; keep labbench generator details out of this public repo.
-5. **After A3:** next steps per `docs/labloop-v2-plan.md` §4. If crossover can be made to combine rules, that is a harness change worth a default. If not, check on a second task family that the card change carries over.
+5. **After A3:** the human chose complementary pairing (2026-10-20). Built on main as `[selection] crossover_pairing = "complementary"` with `components_key` (docs/campaign-setup.md). It needs the evaluator to print per-component scores; hrw's evaluator already prints `per_target`. Next: an A4 pair, rank against complementary, prereg'd on the combination rate. Earlier text: crossover earned no new default text. READ.md lists the options. The first is complementary pairing (lab picks parent B by per-target rules A lacks) with the per-target text; the others are a mechanical per-target combination done by lab, a smaller crossover share, or the same test with a stronger worker. Next steps per `docs/labloop-v2-plan.md` §4. If crossover can be made to combine rules, that is a harness change worth a default. If not, check on a second task family that the card change carries over.
 
 **Habits learned this week:**
 - Before pushing main, grep the outgoing diff for labbench generator details. The repo is public; the generators are not.
@@ -46,7 +51,7 @@ Written by the operator session before the human went out. **Nothing is running.
   - a campaign whose first draft died mid-run is better replaced than resumed, because the dead draft costs a debug slot.
 - Trust is the human's step (`trust*.sh` scripts in each hub). The agent cannot edit `~/.claude.json`.
 
-**For the human:** `trust2.sh` above. Also delete `/tmp/nullsilver-*`, acceptance leftovers from one `KEEP=1` debug run that the agent may not remove.
+**For the human:** delete `/tmp/nullsilver-*`, acceptance leftovers from one `KEEP=1` debug run that the agent may not remove.
 
 ## Current status — reviewed 2026-09-12
 
