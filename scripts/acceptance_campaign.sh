@@ -161,6 +161,19 @@ assert_ok   "status --once renders the live layout"           bash -c '"$0" camp
 assert_ok   "status --once fits 80 columns"                   bash -c 'COLUMNS=80 "$0" campaign status --once | awk "length(\$0) > 80 {exit 1}"' "$LAB2"
 assert_ok   "status --once names the best candidate"          bash -c '"$0" campaign status --once | grep -q " best$"' "$LAB2"
 assert_ok   "status --plain keeps the text shape"             bash -c '"$0" campaign status --plain | head -1 | grep -q "^campaign .* status finished "' "$LAB2"
+_ph="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-phase.XXXXXX")"
+assert_eq   "status phase: the session comes first, a predictions file alone is not 'predicted'" \
+  "$(cd "$WORK2/tools" && python3 -c "
+import sys; from pathlib import Path; import lab_status as S
+d = Path(sys.argv[1]); o = d / 'out'; o.mkdir()
+r = [S.phase(d, False)]
+(o / 'predictions-search.json').write_text('')           # a run.sh redirect, mid-session
+r += [S.phase(d, False), S.phase(d, True)]
+(o / 'predictions-search.json').write_text('[1]')
+r += [S.phase(d, False), S.phase(d, True), S.phase(d, True, True)]
+print('|'.join(r))" "$_ph")" \
+  "in session|in session|session ended|in session, measured|predicted|evaluating"
+rm -rf "$_ph"
 assert_ok   "job card renders"                                "$LAB2" job card candidates/c0003
 [ -z "$(ls .lab/watch/*.json 2>/dev/null)" ] && ok "every watcher was archived" || bad "watchers left in .lab/watch: $(ls .lab/watch/*.json)"
 

@@ -230,14 +230,25 @@ def read_events(limit: int = 40) -> list[dict]:
 train_seconds = C.train_seconds
 
 
-def phase(cdir: Path, sess_written: bool) -> str:
-    """What a running candidate has produced so far, from the files it leaves."""
-    if (cdir / "out" / "predictions-search.json").exists():
-        return "predicted"
-    if train_seconds(cdir) is not None:
-        return "fitted"
+def phase(cdir: Path, sess_written: bool, job_ended: bool = False) -> str:
+    """What a running candidate has produced so far, from the files it leaves. The
+    session comes first: a worker that runs code/run.sh as its test loop creates the
+    predictions file (a shell redirect, even empty) long before it is done, so a file
+    alone never reads as "predicted" while the session is live. Once the job's watcher
+    has ended, lab run is settling it: evaluating before the status changes."""
+    preds = cdir / "out" / "predictions-search.json"
+    try:
+        measured = preds.stat().st_size > 0
+    except OSError:
+        measured = False
+    if job_ended:
+        return "evaluating" if preds.exists() else "settling"
     if sess_written:
-        return "session ended"
+        return "predicted" if measured else "session ended"
+    if measured:
+        return "in session, measured"
+    if train_seconds(cdir) is not None:
+        return "in session, fitted"
     return "in session"
 
 
@@ -288,7 +299,8 @@ def snapshot(probe: Probe) -> dict:
             "model": short_model(models[-1] if models else None),
             "budget_sec": w.get("budget_min", 0) * 60 if w else None,
             "heartbeat_age": (now - hb) if hb else None,
-            "phase": phase(cdir, sess_written) if running else None,
+            "phase": phase(cdir, sess_written, w.get("status") not in (None, "running"))
+                     if running else None,
             "redispatch_of": c.get("redispatch_of"),
         })
 
@@ -444,7 +456,8 @@ def job_segs(r: dict, room: int) -> Seg:
     if room > 70:
         seg.append((f"  ·  {r['phase']}", "muted"))
         if r["train"] is not None:
-            seg.append((f", fitted {dur(r['train'])}", "muted"))
+            said = (r["phase"] or "").endswith("fitted")
+            seg.append((f"{' ' if said else ', fitted '}{dur(r['train'])}", "muted"))
         if r["heartbeat_age"] is not None and r["heartbeat_age"] > 60:
             seg.append((f"  ·  heartbeat {dur(r['heartbeat_age'])} ago", "strong"))
     return seg
