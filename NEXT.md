@@ -11,7 +11,7 @@ revised here after the fact.
 ## Resume here: 2026-10-20
 
 Written by the operator session, 2026-10-20.
-- **A4 phase 1 is running** (launched by the human 15:10Z). Hub `../labloop-v2a4-20261020`, PREREG 052a3d3. Watchers: `20261020T1510-campaign` in each `labloop-a4src-*` dir, and `20261020T1510-unlock-labbench` in i15a. `../labbench` is 000 until all 8 REPORTs exist. Search components are recorded from the real evaluator (checked on i15a c0000). Next: phase 2, then `launch2.sh`, as in step 5 below.
+- **A4 phase 2 is running** (launched 16:36Z, hub `../labloop-v2a4-20261020`). Phase 1 finished 16:28Z. **Gate:** only 2 of 8 snapshots held a complementary draft pair at .2 (i16a, i16b; 3 pairs each), so 8 arms run in slots s1–s2 (36 arrangements, smallest p .028). The arms run labloop main `b075c97`, not d449625: one more seed-check fix allows a candidate's own top-level dirs except `out/` (hub `DEVIATION.md`; acceptance 669/0). All 8 seeded exactly. Pairing works live: the c arms' first crossovers paired complementary parents. Watchers: `20261020T1636-campaign` per arm, and `20261020T1636-unlock-labbench` in s1-r1. `../labbench` is 000. When all 8 REPORTs exist: from ../labbench `python3 -m tools.a4_read 20261020 > ../labloop-v2a4-20261020/read.json` (background), then the hub READ.md.
 - **A3 is done:** not supported. The post-hoc points at parent pairing. Complementary pairing is built on main (`ced82d8`, acceptance 666/0).
 - **DISPLIB (Opus workers, set up by another session):**
   - `../labloop-displib-20261019` finished with claim **inconclusive**. That session reports an evaluator race, and its private logs put c0005's final at 0.874 against a 0.75 threshold. lab's record is unchanged.
