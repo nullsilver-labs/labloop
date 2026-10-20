@@ -836,16 +836,21 @@ def seed_checks(cfg: dict) -> tuple[list[str], dict]:
     # name the source dir: everything is scanned but the provenance records, which name it
     # by design (workers persist weights anywhere in the candidate dir: work/, scratch/...).
     # A path into one of the inputs verified above is allowed (workers hardcode the dev data
-    # path in scratch scripts), and so is a path into the candidate's own code/, copied byte
-    # for byte: either reads bytes this campaign holds too. Anything else that names the
-    # source (another candidate, out/ with its final read, the -private sibling) refuses.
+    # path in scratch scripts), and so is a path into one of the candidate's own top-level
+    # dirs but out/ (code/, scratch/, work/...: copied byte for byte, caches aside): either
+    # reads bytes this campaign holds too. Anything else that names the source (another
+    # candidate, out/ with its final read, a top-level file such as fitness.json, which the
+    # copy rewrites, the -private sibling) refuses.
     names = {str(src).encode(), str(src.resolve()).encode()}
     for i in ids:
         if sc[i].get("fitness") is not None and not (src / "candidates" / i / "fitness.json").exists():
             why.append(f"{i} has a fitness but no fitness.json in the source")
-        own = src / "candidates" / i / "code"
-        ok = sorted({*verified, str(own), str(own.resolve())}, key=len, reverse=True)
-        ok_ref = re.compile(b"(?:" + b"|".join(re.escape(q.encode()) for q in ok) + rb")(?![\w.-])(?:/[\w./-]*)?")
+        cd = src / "candidates" / i
+        own = [q for q in (cd.iterdir() if cd.is_dir() else []) if q.is_dir() and not q.is_symlink()
+               and q.name != "out" and not seed_skipped(q.name)]
+        ok = sorted({*verified, *(str(q) for q in own), *(str(q.resolve()) for q in own)}, key=len, reverse=True)
+        ok_ref = re.compile(b"(?:" + b"|".join(re.escape(q.encode()) for q in ok) + rb")(?![\w.-])(?:/[\w./-]*)?") \
+            if ok else re.compile(rb"(?!)")       # nothing allowed: an empty alternation would match anywhere
         for dp, dns, fns in os.walk(src / "candidates" / i):
             dns[:] = [n for n in dns if n != SEED_SKIP_CACHE[0]]
             for n in dns + fns:

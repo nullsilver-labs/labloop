@@ -181,8 +181,8 @@ scripted_repo "$WSRC" acc-seed-src 3 "initial_drafts = 2"
 ( cd "$WSRC" && LAB_ROOT="$WSRC" timeout 300 "$WSRC/tools/lab" run --poll-sec 1 >/dev/null 2>&1 )
 # a worker's bytecode cache names the source dir; it is neither scanned nor copied
 mkdir -p "$WSRC/candidates/c0001/scratch/__pycache__" && printf '%s' "$WSRC/candidates/c0001/scratch/x.py" > "$WSRC/candidates/c0001/scratch/__pycache__/x.cpython-312.pyc"
-# a scratch script hardcoding the verified dev data and its own code/ is allowed: both read bytes the seeded copy holds
-printf "D='%s/data/train/'\nC='%s/candidates/c0001/code/run.sh'\n" "$WSRC" "$WSRC" > "$WSRC/candidates/c0001/scratch/load.py"
+# a scratch script hardcoding the verified dev data and its own code/ and scratch/ is allowed: all read bytes the seeded copy holds
+printf "D='%s/data/train/'\nC='%s/candidates/c0001/code/run.sh'\nS='%s/candidates/c0001/scratch'\n" "$WSRC" "$WSRC" "$WSRC" > "$WSRC/candidates/c0001/scratch/load.py"
 WSEED="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-seeded.XXXXXX")"
 scripted_repo "$WSEED" acc-seeded 7 "seed_from = \"$WSRC\"|seed_upto = \"c0002\""
 cd "$WSEED" || return 1
@@ -233,6 +233,8 @@ printf "P='%s/candidates/c0002/out/'\n" "$WSRC" > "$WSRC/candidates/c0001/scratc
 _refuse "a script naming another source candidate" "seed_from = \"$WSRC\"|seed_upto = \"c0002\"" "scratch/bad.py names the source dir"
 printf "P='%s/data/train/../../candidates/c0002'\n" "$WSRC" > "$WSRC/candidates/c0001/scratch/bad.py"
 _refuse "a verified-input path climbing out with .." "seed_from = \"$WSRC\"|seed_upto = \"c0002\"" "scratch/bad.py names the source dir"
+printf "P='%s/candidates/c0001/out/predictions-final.json'\n" "$WSRC" > "$WSRC/candidates/c0001/scratch/bad.py"
+_refuse "a script naming its own out/ (where the source's final read lives)" "seed_from = \"$WSRC\"|seed_upto = \"c0002\"" "scratch/bad.py names the source dir"
 rm -f "$WSRC/candidates/c0001/scratch/bad.py"
 # seed_rescore_tol: an evaluator re-running a nondeterministic learner scores it a hair differently
 # each time (a copy of the source with c0001's predictions nudged by 1e-5 stands in: about 1e-3 on this
