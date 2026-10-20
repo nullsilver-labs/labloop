@@ -10,8 +10,8 @@ revised here after the fact.
 
 ## Resume here: 2026-10-20
 
-Written by the operator session, 2026-10-20. **Nothing of this session's is running.**
-- **A4 (complementary crossover pairing) is scaffolded, not launched.** The hub is `../labloop-v2a4-20261020` (PREREG 052a3d3). Your steps: `bash ../labloop-v2a4-20261020/trust.sh` (24 dirs), then `bash ../labloop-v2a4-20261020/launch1.sh`. Then phase 2, as in step 5 below.
+Written by the operator session, 2026-10-20.
+- **A4 phase 1 is running** (launched by the human 15:10Z). Hub `../labloop-v2a4-20261020`, PREREG 052a3d3. Watchers: `20261020T1510-campaign` in each `labloop-a4src-*` dir, and `20261020T1510-unlock-labbench` in i15a. `../labbench` is 000 until all 8 REPORTs exist. Search components are recorded from the real evaluator (checked on i15a c0000). Next: phase 2, then `launch2.sh`, as in step 5 below.
 - **A3 is done:** not supported. The post-hoc points at parent pairing. Complementary pairing is built on main (`ced82d8`, acceptance 666/0).
 - **DISPLIB (Opus workers, set up by another session):**
   - `../labloop-displib-20261019` finished with claim **inconclusive**. That session reports an evaluator race, and its private logs put c0005's final at 0.874 against a 0.75 threshold. lab's record is unchanged.
