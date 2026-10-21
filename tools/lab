@@ -20,6 +20,7 @@ Subcommands (the campaign loop itself lives in tools/lab_campaign.py):
     lab usage [--since --json]    token usage per session, model and role
     lab validate                  lint the repo against the contract
     lab format show|sync|version  the output-format contract for consumers
+    lab graph build|show          the claims graph across studies (tools/lab_graph.py)
 """
 from __future__ import annotations
 
@@ -1302,6 +1303,12 @@ def main(argv: list[str] | None = None) -> None:
         lab_index.register(sub)
     except Exception as e:  # pragma: no cover
         warn(f"index commands unavailable: {e}")
+
+    try:
+        import lab_graph
+        lab_graph.register(sub)
+    except Exception as e:  # pragma: no cover
+        warn(f"graph commands unavailable: {e}")
 
     args = p.parse_args(argv)
 
