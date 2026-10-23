@@ -1,0 +1,5 @@
+{"step": 0, "epoch": 0, "train_bpb": 8.000689363245385, "val_bpb": 8.000469822372612, "seconds": 0}
+{"step": 10, "epoch": 0.167, "train_bpb": 6.004533671891395, "val_bpb": 6.0098287246048425, "seconds": 70.0, "grad_cos": 0.975}
+{"step": 20, "epoch": 0.333, "train_bpb": 4.9034800228464075, "val_bpb": 4.9146486685421, "seconds": 133.6, "grad_cos": 0.9623}
+{"step": 30, "epoch": 0.5, "train_bpb": 4.536434923744211, "val_bpb": 4.555560400986719, "seconds": 196.0, "grad_cos": 0.9087}
+{"step": 40, "epoch": 0.667, "train_bpb": 4.3267080622657845, "val_bpb": 4.351174022409295, "seconds": 255.0, "grad_cos": 0.751}

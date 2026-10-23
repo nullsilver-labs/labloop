@@ -1,0 +1,26 @@
+{
+ "method": "bp_sgd",
+ "data": "/tmp/claude-0/-home-user-labloop/76ecc31a-e52e-5381-b2b3-e3be54981b08/scratchpad/exp1/data125k",
+ "out": "/tmp/claude-0/-home-user-labloop/76ecc31a-e52e-5381-b2b3-e3be54981b08/scratchpad/exp1/runs/bp_sgd",
+ "epochs": 40,
+ "batch": 8,
+ "lr": null,
+ "wd": 0.0,
+ "sigma": 0.2,
+ "seed": 0,
+ "evals_per_epoch": 1,
+ "threads": 4,
+ "max_minutes": 1000000000.0,
+ "params": 917768,
+ "config": {
+  "sequence_len": 256,
+  "vocab_size": 256,
+  "n_layer": 4,
+  "n_head": 4,
+  "n_kv_head": 4,
+  "n_embd": 128,
+  "window_pattern": "SSSL"
+ },
+ "train_bytes": 125159,
+ "torch": "2.14.1+cpu"
+}

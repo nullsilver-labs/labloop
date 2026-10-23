@@ -1,0 +1,13 @@
+{"step": 0, "epoch": 0, "train_bpb": 8.000689363245385, "val_bpb": 8.000469822372612, "seconds": 0}
+{"step": 60, "epoch": 1.0, "train_bpb": 3.0759258221766714, "val_bpb": 3.12844853945575, "seconds": 9.5}
+{"step": 120, "epoch": 2.0, "train_bpb": 2.719591969199316, "val_bpb": 2.792070926250492, "seconds": 16.9}
+{"step": 180, "epoch": 3.0, "train_bpb": 2.378000790266653, "val_bpb": 2.473120765424182, "seconds": 24.1}
+{"step": 240, "epoch": 4.0, "train_bpb": 2.156578537038568, "val_bpb": 2.294645556018673, "seconds": 31.0}
+{"step": 300, "epoch": 5.0, "train_bpb": 2.0032305757913877, "val_bpb": 2.179627595694973, "seconds": 38.3}
+{"step": 360, "epoch": 6.0, "train_bpb": 1.903923395914724, "val_bpb": 2.107835380760136, "seconds": 45.8}
+{"step": 420, "epoch": 7.0, "train_bpb": 1.7953827893951626, "val_bpb": 2.037108114520714, "seconds": 53.5}
+{"step": 480, "epoch": 8.0, "train_bpb": 1.7142395076690782, "val_bpb": 2.0054020976680804, "seconds": 60.6}
+{"step": 540, "epoch": 9.0, "train_bpb": 1.666665797280081, "val_bpb": 1.983177298321805, "seconds": 68.1}
+{"step": 600, "epoch": 10.0, "train_bpb": 1.623625073102273, "val_bpb": 1.9721554548754716, "seconds": 76.0}
+{"step": 660, "epoch": 11.0, "train_bpb": 1.5634536850654508, "val_bpb": 1.9361655348871667, "seconds": 83.7}
+{"step": 720, "epoch": 12.0, "train_bpb": 1.5476937450171886, "val_bpb": 1.930581620247169, "seconds": 90.9}
