@@ -1,0 +1,25 @@
+{"step": 0, "epoch": 0, "train_bpb": 8.000689363245385, "val_bpb": 8.000469822372612, "seconds": 0}
+{"step": 30, "epoch": 0.5, "train_bpb": 3.9454155375876057, "val_bpb": 3.976908833315304, "seconds": 206.2, "grad_cos": 0.606}
+{"step": 60, "epoch": 1.0, "train_bpb": 3.5581382709528144, "val_bpb": 3.5907655386387334, "seconds": 401.6, "grad_cos": 0.2698}
+{"step": 90, "epoch": 1.5, "train_bpb": 3.4311967855660694, "val_bpb": 3.462044518649817, "seconds": 587.5, "grad_cos": 0.2204}
+{"step": 120, "epoch": 2.0, "train_bpb": 3.2885968526476397, "val_bpb": 3.3252353366113714, "seconds": 756.5, "grad_cos": 0.1847}
+{"step": 150, "epoch": 2.5, "train_bpb": 3.2187818767446346, "val_bpb": 3.2556332270482247, "seconds": 943.3, "grad_cos": 0.1885}
+{"step": 180, "epoch": 3.0, "train_bpb": 3.1929050231305145, "val_bpb": 3.2235729667555977, "seconds": 1124.8, "grad_cos": 0.1082}
+{"step": 210, "epoch": 3.5, "train_bpb": 3.1564224933022627, "val_bpb": 3.1978627957822447, "seconds": 1318.2, "grad_cos": 0.2107}
+{"step": 240, "epoch": 4.0, "train_bpb": 3.1265278224886637, "val_bpb": 3.1735544306359253, "seconds": 1519.3, "grad_cos": 0.1422}
+{"step": 270, "epoch": 4.5, "train_bpb": 3.10928103955743, "val_bpb": 3.1526657002616565, "seconds": 1709.5, "grad_cos": 0.1789}
+{"step": 300, "epoch": 5.0, "train_bpb": 3.050672742276106, "val_bpb": 3.1021783140063897, "seconds": 1900.3, "grad_cos": 0.0574}
+{"step": 330, "epoch": 5.5, "train_bpb": 3.0445496151821296, "val_bpb": 3.099144742141515, "seconds": 2092.1, "grad_cos": 0.1497}
+{"step": 360, "epoch": 6.0, "train_bpb": 3.021001179135007, "val_bpb": 3.0749470762717364, "seconds": 2274.8, "grad_cos": 0.1545}
+{"step": 390, "epoch": 6.5, "train_bpb": 2.998358449232464, "val_bpb": 3.0519233285095084, "seconds": 2468.7, "grad_cos": 0.3115}
+{"step": 420, "epoch": 7.0, "train_bpb": 2.9810382317168913, "val_bpb": 3.0348575710367687, "seconds": 2661.4, "grad_cos": 0.2233}
+{"step": 450, "epoch": 7.5, "train_bpb": 2.9613087808490537, "val_bpb": 3.0173427628474667, "seconds": 2858.7, "grad_cos": 0.1927}
+{"step": 480, "epoch": 8.0, "train_bpb": 2.950712034348902, "val_bpb": 3.0029480184049806, "seconds": 3059.3, "grad_cos": 0.2111}
+{"step": 510, "epoch": 8.5, "train_bpb": 2.943273578587582, "val_bpb": 3.0004849651900862, "seconds": 3252.9, "grad_cos": 0.1342}
+{"step": 540, "epoch": 9.0, "train_bpb": 2.9330911362857797, "val_bpb": 2.9948816519777806, "seconds": 3439.8, "grad_cos": 0.1677}
+{"step": 570, "epoch": 9.5, "train_bpb": 2.9235663623328088, "val_bpb": 2.9802997281761887, "seconds": 3638.3, "grad_cos": 0.1364}
+{"step": 600, "epoch": 10.0, "train_bpb": 2.9232145661323266, "val_bpb": 2.9843322542420725, "seconds": 3829.5, "grad_cos": 0.0756}
+{"step": 630, "epoch": 10.5, "train_bpb": 2.9058270425036867, "val_bpb": 2.9609332911943445, "seconds": 4021.8, "grad_cos": 0.1437}
+{"step": 660, "epoch": 11.0, "train_bpb": 2.9076253908033145, "val_bpb": 2.970835188302611, "seconds": 4209.1, "grad_cos": 0.1391}
+{"step": 690, "epoch": 11.5, "train_bpb": 2.8961919426839766, "val_bpb": 2.956163355049437, "seconds": 4410.7, "grad_cos": 0.126}
+{"step": 720, "epoch": 12.0, "train_bpb": 2.9066447497432537, "val_bpb": 2.9674817996416096, "seconds": 4603.6, "grad_cos": 0.1635}

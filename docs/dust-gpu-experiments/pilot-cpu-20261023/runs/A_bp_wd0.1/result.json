@@ -1,0 +1,12 @@
+{
+ "best_val_bpb": 1.901648754712799,
+ "best_val_epoch": 12.0,
+ "final": {
+  "step": 1200,
+  "epoch": 20.0,
+  "train_bpb": 0.8832085245379714,
+  "val_bpb": 2.161242523840225,
+  "seconds": 199.3
+ },
+ "test_bpb_final": 2.1815180033546313
+}
