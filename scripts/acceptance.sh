@@ -189,6 +189,8 @@ done
 . "$SRC/scripts/acceptance_campaign.sh"
 # shellcheck source=scripts/acceptance_findings.sh
 . "$SRC/scripts/acceptance_findings.sh"
+# shellcheck source=scripts/acceptance_forgery.sh
+. "$SRC/scripts/acceptance_forgery.sh"
 
 section "H. bounded worker process lifecycle (no LLM)"
 assert_ok "foreground completion, detached cleanup and operator isolation" \

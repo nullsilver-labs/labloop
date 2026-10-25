@@ -21,8 +21,9 @@ inputs = "data/final"
 labels = "$LAB_PRIVATE/ns-REPLACE-ME/final"
 
 [eval]
-# user = "labeval"               # run the evaluator as this Unix user (one sudoers line;
-                                 # see docs/labeval.md). Without it labels are hidden by
+# user = "labeval"               # run the evaluator as this Unix user (one sudoers line naming
+                                 # a root-owned evaluator: scripts/labeval-install.sh, see
+                                 # docs/labeval.md). Without it labels are hidden by
                                  # convention only and REPORT.md says so.
 timeout = "10m"
 

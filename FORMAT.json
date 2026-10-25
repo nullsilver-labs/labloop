@@ -25,6 +25,7 @@
       "campaign",
       "campaign_file",
       "campaign_sha256",
+      "evaluator_sha256",
       "status",
       "started",
       "finished",
@@ -107,7 +108,8 @@
       "redispatch_of",
       "defers",
       "seeded_from",
-      "same_output_as_parent"
+      "same_output_as_parent",
+      "eval_started"
     ],
     "fitness_note": "`fitness` is the search-split score, read by `lab eval` only; higher or lower is better per campaign.toml [report].higher_is_better. It is optimistic by construction; the final score in population.json `final` is one read of the untouched final split."
   },

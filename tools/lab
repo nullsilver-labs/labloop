@@ -334,7 +334,7 @@ def format_manifest() -> dict:
             "note": ("population.json is the live state of a campaign, written only by "
                      "`lab run`: one entry per candidate plus the campaign's status, best "
                      "candidate, budgets spent, usage-governor state, final score and claim."),
-            "keys": ["format", "campaign", "campaign_file", "campaign_sha256", "status",
+            "keys": ["format", "campaign", "campaign_file", "campaign_sha256", "evaluator_sha256", "status",
                      "started", "finished", "tick", "seed", "auth_preflight", "candidates",
                      "best", "settled", "settled_at_best", "gpu_seconds", "stop_reason",
                      "final", "claim", "usage", "memory", "updated_at", "seeded"],
@@ -355,7 +355,7 @@ def format_manifest() -> dict:
             "keys": ["id", "operator", "parents", "status", "exec", "gpu", "watch",
                      "launched", "ended", "exit_code", "fitness", "n", "fail_reason",
                      "debugged", "path", "session", "redispatch_of", "defers",
-                     "seeded_from", "same_output_as_parent"],
+                     "seeded_from", "same_output_as_parent", "eval_started"],
             "fitness_note": ("`fitness` is the search-split score, read by `lab eval` "
                              "only; higher or lower is better per campaign.toml "
                              "[report].higher_is_better. It is optimistic by construction; "

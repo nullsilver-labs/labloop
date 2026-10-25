@@ -19,6 +19,18 @@ except Exception:
 EVIDENCE = r"(candidates/|events\.jsonl|LEDGER\.md|population\.json|REPORT\.md)"
 MACHINE = r"(events\.jsonl|population\.json|FORMAT\.json|fitness\.json|finding\.json|LEDGER\.md|experiments\.sqlite3)"
 
+# A worker never changes user. With an eval user, sudo is the way to the labels: the
+# sudoers line lets this account run the evaluator as labeval, and a general line
+# (`python3`) read them outright (docs/labeval.md). Matched where a command starts,
+# including a line of a heredoc that writes a script, and as a quoted word ("sudo" in
+# an argv list); prose that mentions it passes.
+PRIV = re.compile(r"(?:^|[;&|(`{!]|\$\(|\b(?:then|do|else)\b|[\"'])\s*"
+                  r"(?:(?:\w+=\S*|(?:env|exec|command|builtin|nohup|nice|time|timeout|xargs|stdbuf)\b"
+                  r"(?:\s+-{1,2}[\w=-]+)*(?:\s+\d+[smh]?)?)\s+)*"
+                  r"(?:[\w./-]*/)?(?:sudo|doas|pkexec|run0)(?=[\"'\s;&|)]|$)", re.M)
+PRIV_WHY = ("a worker never runs anything as another user. With an eval user, sudo is the "
+            "evaluator's way to the hidden labels; fitness comes from `lab eval` after the job.")
+
 # The editing tools reach the same files without a shell: the machine files have one
 # writer whichever tool is used, and a worker edits only its own candidate dir.
 tool = data.get("tool_name")
@@ -381,6 +393,12 @@ if tool in ("Write", "Edit", "MultiEdit", "NotebookEdit"):
               "fitness.json, finding.json, events.jsonl, FORMAT.json) have exactly one writer: "
               "`tools/lab`.", file=sys.stderr)
         sys.exit(2)
+    if WORKER:
+        text = "\n".join(str(inp.get(k) or "") for k in ("content", "new_string", "new_source"))
+        text += "\n".join(str((e or {}).get("new_string") or "") for e in inp.get("edits") or [])
+        if PRIV.search(text):
+            print(f"Blocked: {tool} {fp} — {PRIV_WHY}", file=sys.stderr)
+            sys.exit(2)
     if os.environ.get("LAB_ROLE") == "worker" and fp:
         own_dir = os.path.normpath(os.environ.get("LAB_CANDIDATE_DIR", "") or "")
         own = os.path.basename(own_dir)
@@ -476,6 +494,7 @@ if os.environ.get("LAB_ROLE") == "worker":
               "Bash timeout. No background tasks or nested watchers; wait for exit, "
               "check predictions, and write summary.md before ending the session.", file=sys.stderr)
         sys.exit(2)
+    RULES.append((PRIV.pattern, PRIV_WHY))
     RULES.append((r"LAB_PRIVATE|labels\.json|/labels(?:/|\b)",
                   "a worker never reads labels. Fitness comes from `lab eval`, which is the "
                   "only reader of the search and final splits."))
@@ -532,7 +551,7 @@ if os.environ.get("LAB_ROLE") == "worker":
             sys.exit(2)
 
 for pattern, why in RULES:
-    if re.search(pattern, cmd):
+    if re.search(pattern, cmd, re.M if pattern == PRIV.pattern else 0):
         print(f"Blocked: `{cmd}` — {why}", file=sys.stderr)
         sys.exit(2)
 sys.exit(0)

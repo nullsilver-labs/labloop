@@ -8,6 +8,33 @@ implementation notes are in `docs/aira2-loop-design.md`; this file is only what 
 true now and what comes next. Milestone criteria are read from the design doc, never
 revised here after the fact.
 
+## 2026-10-25: two holes in label hiding and scoring (fixed on branch, root step open)
+
+Found while planning the tiny-LM campaign (`../tinylm-plan-20261025/PLAN.md` §10, its L0).
+- **Earlier `labeval` campaigns were not hidden by the OS against a determined worker.**
+  `/etc/sudoers.d/labloop-eval` is the general line docs/labeval.md used to recommend
+  (`<you> ALL=(labeval) NOPASSWD: /usr/bin/python3`), so any process of the operator account, a worker's
+  `code/run.sh` included, could run `sudo -n -u labeval python3 -c …` and read
+  `/srv/labloop-private`. The evaluator was owned by that account and its sha256 never checked, and
+  that account is in the `docker` and `lxd` groups, which mount any path. Their REPORTs say
+  "privilege separation for labels | on (labeval)"; read that as "hidden from a worker that
+  followed its job card", not as an OS guarantee. Whether any worker did go looking is not checked yet.
+- **A `fitness.json` lab did not write was adopted as the score.** `evaluate()` returns an
+  existing record as final, and settle quarantined a worker's `finding.json` but not its
+  `fitness.json`; `run.sh` writing `../fitness.json`, or a child copying its parent's dir,
+  scored whatever the file said. The final read had the same hole.
+- **Fixed in code:** settle renames a `fitness.json` it did not write to `fitness.worker.json`
+  and marks the candidate invalid (`eval_started` keeps a restart adopting lab's own record);
+  the final read refuses a changed `fitness.json` (quarantined, search record restored, claim
+  inconclusive); the evaluator's sha256 is frozen in population.json and checked before every
+  evaluation; the guard refuses `sudo` in worker commands and in scripts they write;
+  `lab campaign check` and REPORT.md flag an evaluator that is not root-owned. Acceptance
+  section I covers all of it.
+- **Human step, open:** `sudo bash scripts/labeval-install.sh <id> <evaluator> … --labels …`
+  per campaign (docs/labeval.md), then `--drop-general-line` once no running campaign needs the
+  old line. Still open after that: the operator account in `docker`/`lxd`, and the evaluator usable as an
+  oracle through its own sudoers line. Both need workers under an account of their own.
+
 ## Resume here: 2026-10-20
 
 Written by the operator session, 2026-10-20. **Nothing of this session's is running.**

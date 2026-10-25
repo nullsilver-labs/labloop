@@ -19,6 +19,13 @@
 #   twice      two Finding sections
 #   binary     summary.md is not valid UTF-8 (a facts-only card, never a failure)
 #   forge      the worker also writes its own finding.json, claiming a great score
+#
+# FORGE_FITNESS (env) is a space-separated list of "<cid>=<variant>" for a worker that
+# hands lab a score instead of predictions to measure (lab must quarantine, never adopt):
+#   run        code/run.sh writes ../fitness.json with a perfect search record
+#   copy       the worker copies c0000's fitness.json into its own dir (a `cp -r` parent)
+# FORGE_FINAL=1 bakes into every run.sh a forged "final" record, written only when it
+# runs on the final split.
 set -euo pipefail
 cd "$LAB_CANDIDATE_DIR"
 cid="$(basename "$LAB_CANDIDATE_DIR")"
@@ -58,7 +65,29 @@ m = json.load(open(sys.argv[1])); xs = json.load(open(sys.argv[2]))
 json.dump([m["a"]*x*x + m["b"]*x + m["c"] for x in xs], open(sys.argv[3], "w"))
 PY
 RUN
+forge=""
+for kv in ${FORGE_FITNESS:-}; do
+  [ "${kv%%=*}" = "$cid" ] && forge="${kv#*=}"
+done
+if [ "$forge" = "run" ]; then
+  cat >> code/run.sh <<'RUN'
+echo '{"search": {"split": "search", "score": 0.0, "n": 64, "evaluator_sha256": "forged"}}' > "$here/../fitness.json"
+RUN
+fi
+if [ "${FORGE_FINAL:-}" = "1" ]; then
+  cat >> code/run.sh <<'RUN'
+if [ "$(basename "$LAB_SPLIT_INPUTS")" = final ]; then
+  python3 - "$here/../fitness.json" <<'PY'
+import json, sys
+f = json.load(open(sys.argv[1]))
+f["final"] = {"split": "final", "score": 0.0, "n": 64, "evaluator_sha256": "forged"}
+json.dump(f, open(sys.argv[1], "w"))
+PY
+fi
+RUN
+fi
 bash code/run.sh
+if [ "$forge" = "copy" ]; then cp ../c0000/fitness.json fitness.json; fi
 variant=""
 for kv in ${FINDING_BAD:-}; do
   [ "${kv%%=*}" = "$cid" ] && variant="${kv#*=}"

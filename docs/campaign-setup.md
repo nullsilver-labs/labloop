@@ -31,7 +31,9 @@ status in [../NEXT.md](../NEXT.md).
    `lab run` and `lab-worker` refuse to start otherwise. Pi workers instead need their
    provider's endpoint to serve the model, see "Pi workers" below.
 7. Optional but recommended: the **`labeval` user** ([labeval.md](labeval.md)), so hidden
-   labels are hidden by the OS rather than by convention. REPORT.md states which.
+   labels are hidden by the OS rather than by convention. REPORT.md states which. The
+   root step is `scripts/labeval-install.sh`: a root-owned evaluator copy and a sudoers
+   line naming only it (the old general `python3` line gave the labels away).
 8. **Refreshing tooling** in an existing project: `scripts/sync-project.sh <project>`
    copies `tools/`, `.claude/`, `templates/`, `CLAUDE.md` and `.lab-redact` from this repo
    and touches nothing else. Never during a run.

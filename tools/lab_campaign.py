@@ -555,6 +555,21 @@ def cmd_campaign_init(args) -> None:
 then: tools/lab campaign check; see docs/campaign-setup.md (venv, trust, labeval).""")
 
 
+def evaluator_custody(cfg: dict) -> str | None:
+    """With an eval user, what keeps the evaluator out of the worker's hands: None when it
+    and every dir above it are root-owned and writable by root only (docs/labeval.md),
+    otherwise the first path that is not. The sha256 check catches a change after the
+    start; this says whether a worker running as you could have made one at all."""
+    if not cfg["eval"]["user"]:
+        return None
+    p = cfg["data"]["evaluator"].resolve()
+    for q in (p, *p.parents):
+        st = q.stat()
+        if st.st_uid != 0 or st.st_mode & 0o022:
+            return f"{q} is not root-owned and root-writable only"
+    return None
+
+
 def cmd_campaign_check(args) -> None:
     cfg = load_campaign(Path(args.file))
     if cfg["campaign"].get("seed_from"):
@@ -593,6 +608,9 @@ def cmd_campaign_check(args) -> None:
         (print if pre["embedder"]["ok"] else L.warn)(f"embedder: {pre['embedder']['detail']}")
     elif cfg["memory"]["mode"] == F.POLICY_INDEX:
         print("embedder: none configured; `lab index search` is lexical only")
+    if (custody := evaluator_custody(cfg)):
+        L.warn(f"[eval] user is set but {custody}: a worker running as you can change what "
+               "reads the labels. Install a root-owned copy (docs/labeval.md).")
 
 
 # ---------------------------------------------------------------------------
@@ -686,11 +704,14 @@ def init_pop(cfg: dict) -> dict:
         L.die(f"refusing to start: [memory.embedder]: {pre['embedder']['detail']}")
     if pre.get("claude_trust") and not pre["claude_trust"]["ok"]:
         L.die(f"refusing to start: {pre['claude_trust']['detail']}")
+    # the evaluator is frozen with the campaign: run_evaluator checks it before every call
+    cfg["eval"]["evaluator_sha256"] = sha256_file(cfg["data"]["evaluator"])
     pop = {
         "format": L.FORMAT_VERSION,
         "campaign": cfg["campaign"]["id"],
         "campaign_file": rel(cfg["path"]),
         "campaign_sha256": cfg["sha256"],
+        "evaluator_sha256": cfg["eval"]["evaluator_sha256"],
         "status": "running",          # running | stopping | finished
         "started": L.now_iso(),
         "finished": None,
@@ -1493,8 +1514,6 @@ def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
     exec_status = {"done": "completed", "failed": "failed", "killed": "killed"}.get(status, "failed")
     c["ended"] = entry.get("ended") or L.now_iso()
     c["exit_code"] = entry.get("exit_code")
-    if c.get("gpu") is not None:
-        pop["gpu_seconds"] += _duration_sec(entry.get("started"), entry.get("ended"))
     sess = read_session(cfg, cdir) if c["operator"] != "baseline" else None
     c["session"] = sess
     _record_served(cdir, sess)
@@ -1504,11 +1523,20 @@ def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
     reason = None
     kill_reason = entry.get("kill_reason") or ""
     forged = quarantine_worker_card(cid) if F.is_findings(memory_policy(pop)["policy"]) else None
-    if forged:
+    # lab writes fitness.json only from evaluate(), which settle has not called yet unless
+    # eval_started says so (a restart after the write): one that exists now is the worker's,
+    # from code/run.sh writing ../fitness.json or a copied parent dir. Never adopted, since
+    # evaluate() returns an existing record as final.
+    forged_fit = None if c.get("eval_started") else quarantine_worker_fitness(cdir)
+    if forged or forged_fit:
         # lab publishes a card only after settlement, so one that exists now was written
         # by the worker: a forged account of its own attempt. Kept, never adopted.
-        exec_status, reason = "invalid", f"worker wrote {CARD_FILE}; quarantined as {forged}"
+        exec_status = "invalid"
+        reason = "; ".join([f"worker wrote {CARD_FILE}; quarantined as {forged}"] * bool(forged)
+                           + [f"a fitness.json lab did not write; quarantined as {forged_fit}"] * bool(forged_fit))
     elif exec_status == "completed" and preds.exists():
+        c["eval_started"] = L.now_iso()
+        save_pop(pop)   # durable before the record exists: a restart adopts it as lab's own
         fit = evaluate(cfg, cdir, "search")
         if fit.get("score") is None:
             exec_status, reason = "invalid", f"evaluator: {fit.get('error', 'no score')}"
@@ -1543,6 +1571,8 @@ def settle(cfg: dict, pop: dict, cid: str, entry: dict) -> None:
         exec_status, reason = "invalid", "worker reported the contract unmet (exit 2)"
     else:
         reason = f"worker exited {entry.get('exit_code')}"
+    if c.get("gpu") is not None:   # after the eval_started save, so a restart adds it once
+        pop["gpu_seconds"] += _duration_sec(entry.get("started"), entry.get("ended"))
     c["exec"] = exec_status
     c["fail_reason"] = reason
     c["status"] = {"completed": "evaluated", "deferred": "deferred"}.get(exec_status, "failed")
@@ -1642,6 +1672,23 @@ def quarantine_worker_card(cid: str) -> str | None:
             os.rename(p, q)
             return q.name
     L.die(f"{rel(p)}: too many quarantined worker cards")
+
+
+def quarantine_worker_fitness(cdir: Path) -> str | None:
+    """A fitness.json that lab did not write: renamed (bytes kept as evidence) so that
+    evaluate() can never return it as a measurement. Returns the new name, or None."""
+    p = cdir / "fitness.json"
+    if not p.exists() and not p.is_symlink():
+        # as for cards: a crash between the rename and the saved verdict leaves the
+        # quarantined file as the durable verdict
+        prior = sorted(cdir.glob("fitness.worker*.json"))
+        return prior[-1].name if prior else None
+    for n in range(1, 100):
+        q = p.with_name(f"fitness.worker{'' if n == 1 else n}.json")
+        if not q.exists() and not q.is_symlink():
+            os.rename(p, q)
+            return q.name
+    L.die(f"{rel(p)}: too many quarantined fitness files")
 
 
 def _private_paths(cfg: dict) -> tuple[str, ...]:
@@ -1833,8 +1880,15 @@ def run_evaluator(cfg: dict, preds: Path, split: str) -> dict:
     user = cfg["eval"]["user"]
     if user:
         cmd = ["sudo", "-n", "-u", user] + cmd
+    sha, frozen = sha256_file(evaluator), cfg["eval"].get("evaluator_sha256")
+    if frozen and sha != frozen:
+        # not the candidate's fault and not a score: a tooling error that stops the loop,
+        # leaving the candidate unsettled until the frozen evaluator is back
+        L.die(f"evaluator {rel(evaluator)} changed since the campaign started (sha256 "
+              f"{sha[:12]}, frozen {frozen[:12]}): no evaluation with another evaluator. Restore it, "
+              "or start a new campaign; docs/labeval.md keeps it in a root-owned dir.")
     rec: dict[str, Any] = {"split": split, "ts": L.now_iso(), "evaluator": rel(evaluator),
-                           "evaluator_sha256": sha256_file(evaluator),
+                           "evaluator_sha256": sha,
                            "privilege_separation": bool(user), "score": None, "n": None}
     try:
         cp = subprocess.run(cmd, capture_output=True, text=True, timeout=cfg["eval"]["timeout_sec"],
@@ -1876,6 +1930,9 @@ def cmd_eval(args) -> None:
     if args.split == "final":
         L.die("the final split is read once, by `lab run`, after the search stops — "
               "never on request")
+    pop = load_pop()
+    if pop and pop.get("campaign") == cfg["campaign"]["id"]:
+        cfg["eval"]["evaluator_sha256"] = pop.get("evaluator_sha256")
     rec = evaluate(cfg, cdir, args.split)
     print(json.dumps(rec))
     if rec.get("score") is None:
@@ -2213,11 +2270,14 @@ def run_final(cfg: dict, pop: dict, poll_sec: float) -> None:
         env = worker_env(cfg, best, "final", c["gpu"], split="final")
         budget_min = max(1, math.ceil(cfg["resources"]["job_wall_clock_sec"] / 60))
         env.pop("LAB_ROLE", None)
+        # what lab left in fitness.json before the candidate's code runs again: the final
+        # run may not change it (a forged "final" record would be returned as the read)
+        before = _read_json(cdir / "fitness.json")
         cp = _lab("watch", "start", "--op", f"final-{best}", "--budget-min", str(budget_min),
                   "--candidate-dir", str(cdir),
                   "--", "bash", "-c", f"cd {cdir} && bash code/run.sh", env=env)
         fin = {"candidate": best, "watch": cp.stdout.strip().splitlines()[-1],
-               "started": L.now_iso(), "score": None, "n": None}
+               "started": L.now_iso(), "score": None, "n": None, "fitness_before": before}
         pop["final"] = fin
         save_pop(pop)
     while True:
@@ -2232,7 +2292,20 @@ def run_final(cfg: dict, pop: dict, poll_sec: float) -> None:
     if not fin.get("error"):
         if entry.get("status") != "done":
             fin["error"] = f"final run {entry.get('status')}: {entry.get('kill_reason') or entry.get('exit_code')}"
+        elif not fin.get("eval_started") and "fitness_before" in fin \
+                and (_read_json(cdir / "fitness.json") != fin["fitness_before"]
+                     or (cdir / "fitness.json").is_symlink()):
+            # the frozen candidate's code rewrote lab's record during the final run: its
+            # file is kept as evidence, lab's search record restored, and no read is made
+            q = quarantine_worker_fitness(cdir)
+            if fin["fitness_before"] is not None:
+                L.write_json_atomic(cdir / "fitness.json", fin["fitness_before"])
+            fin["error"] = (f"the final run changed fitness.json; {f'quarantined as {q}' if q else 'it removed it'}, "
+                            "lab's search record restored, final split not read")
         else:
+            fin["eval_started"] = L.now_iso()
+            pop["final"] = fin
+            save_pop(pop)   # a restart after evaluate() wrote the record adopts it as lab's own
             rec = evaluate(cfg, cdir, "final")
             fin["score"], fin["n"] = rec.get("score"), rec.get("n")
             if rec.get("score") is None:
@@ -2301,7 +2374,10 @@ def write_report(cfg: dict, pop: dict) -> None:
         + (f"; min free VRAM {cfg['resources']['min_free_vram_mb']} MiB" if cfg['resources']['min_free_vram_mb'] else "") + " |",
         f"| wall clock | {wall:.2f} h |",
         f"| stop reason | {pop.get('stop_reason') or '—'} |",
-        f"| privilege separation for labels | {'on (' + cfg['eval']['user'] + ')' if cfg['eval']['user'] else 'OFF — labels were readable to the evaluator user only by convention'} |",
+        f"| privilege separation for labels | {'on (' + cfg['eval']['user'] + ')' if cfg['eval']['user'] else 'OFF — labels were readable to the evaluator user only by convention'}"
+        + (f"; but {evaluator_custody(cfg)}, so it held against a careless worker, not a determined one "
+           "(docs/labeval.md)" if evaluator_custody(cfg) else "") + " |",
+        f"| evaluator sha256 | `{(pop.get('evaluator_sha256') or '—')[:16]}`, frozen at the start and checked before every evaluation |",
         f"| auth preflight | {'ok' if pop['auth_preflight']['ok'] else 'FAILED'} at {pop['auth_preflight']['checked_at']} |",
         f"| campaign.toml sha256 | `{pop['campaign_sha256'][:16]}` |",
         f"| memory | {memory_policy(pop)['policy']}"
@@ -2538,6 +2614,13 @@ def cmd_run(args) -> None:
         print(f"campaign {pop['campaign']} is finished; see {REPORT_FILE}")
         return
     pop.setdefault("usage", usage_defaults())
+    if not pop.get("evaluator_sha256"):
+        # a population from before the evaluator was frozen: frozen from here on
+        pop["evaluator_sha256"] = sha256_file(cfg["data"]["evaluator"])
+        L.warn(f"{POP_FILE} records no evaluator sha256 (an older campaign): freezing "
+               f"{rel(cfg['data']['evaluator'])} at {pop['evaluator_sha256'][:12]} now, not at its start")
+        save_pop(pop)
+    cfg["eval"]["evaluator_sha256"] = pop["evaluator_sha256"]
     mem = memory_policy(pop)
     if mem["policy"] == "legacy" and cfg["memory"]["mode"] != "legacy":
         L.warn(f"{POP_FILE} has no memory policy snapshot: this campaign stays legacy "
