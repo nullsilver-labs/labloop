@@ -1870,6 +1870,23 @@ def evaluate(cfg: dict, cdir: Path, split: str) -> dict:
     return rec
 
 
+def share_with_eval_user(cdir: Path) -> None:
+    """Make a candidate dir readable by the eval user before it is evaluated: o+r on files, o+rx
+    on dirs, symlinks untouched. The eval user is another account, so a file a worker's code
+    wrote 0600 is unreadable to it (2026-10-26: safetensors 0.8 writes every model 0600, and
+    tinylm-wild-p1's baseline went invalid on a PermissionError). Labels never sit in a
+    candidate dir, and workers run as the owner and could read it anyway."""
+    for root, dirs, files in os.walk(cdir):
+        for name, bits in [(d, 0o005) for d in dirs] + [(f, 0o004) for f in files] + [("", 0o005)]:
+            p = os.path.join(root, name) if name else root
+            try:
+                st = os.lstat(p)
+                if not os.path.islink(p) and st.st_mode & bits != bits:
+                    os.chmod(p, (st.st_mode & 0o7777) | bits)
+            except OSError:
+                pass                                 # not ours, or gone: the evaluator reports it
+
+
 def run_evaluator(cfg: dict, preds: Path, split: str) -> dict:
     """One evaluator call, as `lab eval` makes it (as the eval user when there is one); the
     record is returned, never written. evaluate() stores it; B2's re-score compares it."""
@@ -1880,6 +1897,7 @@ def run_evaluator(cfg: dict, preds: Path, split: str) -> dict:
     user = cfg["eval"]["user"]
     if user:
         cmd = ["sudo", "-n", "-u", user] + cmd
+        share_with_eval_user(preds.parent.parent)
     sha, frozen = sha256_file(evaluator), cfg["eval"].get("evaluator_sha256")
     if frozen and sha != frozen:
         # not the candidate's fault and not a score: a tooling error that stops the loop,

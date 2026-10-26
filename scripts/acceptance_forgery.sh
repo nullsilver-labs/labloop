@@ -138,6 +138,18 @@ git checkout -q eval_mse.py 2>/dev/null || cp scripts/fixtures/campaign/eval_mse
 assert_ok   "campaign check warns when an eval user's evaluator is not root-owned" \
             bash -c '"$0" campaign check evaluser.toml 2>&1 | grep -q "not root-owned"' "$LABG"
 rm -f evaluser.toml
+# a file a worker's code wrote 0600 (safetensors does) must reach the eval user, another account
+_sh="$WORKG/share-test"
+mkdir -p "$_sh/out/model/sub" && printf x > "$_sh/out/model/m.bin" && printf x > "$_sh/out/model/sub/n.bin" \
+  && chmod 600 "$_sh/out/model/m.bin" "$_sh/out/model/sub/n.bin" && chmod 700 "$_sh/out/model/sub" \
+  && ln -s /nonexistent "$_sh/out/model/dangling"
+assert_ok   "lab makes a candidate readable by the eval user before evaluating it" \
+            python3 -c 'import sys; sys.path.insert(0, "tools"); import lab_campaign as C; from pathlib import Path
+d = Path(sys.argv[1]); C.share_with_eval_user(d)
+m = lambda p: (d / p).lstat().st_mode & 0o777
+assert m("out/model/m.bin") == 0o604 and m("out/model/sub/n.bin") == 0o604, (oct(m("out/model/m.bin")), oct(m("out/model/sub/n.bin")))
+assert m("out/model/sub") == 0o705, oct(m("out/model/sub"))' "$_sh"
+rm -rf "$_sh"
 unset FORGE_FITNESS FORGE_FINAL
 
 # --- sudo: a worker never changes user ---------------------------------------------------
