@@ -1,0 +1,72 @@
+/* Nullsilver design 1.1.0: the app register.
+ * Written by nullsilver/design (scripts/build.mjs) from src/tokens.mjs. Never edit this file: change the
+ * tokens there, build, and sync the product (node scripts/sync.mjs <product>). */
+
+:root {
+	/* App: Recall, Savant, Amalgam. A rail, the work, a side; used every day, in both tones */
+	--shape-inner: 8px;
+	--text-display: 2.125rem; /* 34: an app's page does not grow with the window */
+	--text-statement: 1.1875rem; /* 19 */
+	--app-rail-w: 256px;
+	--app-side-w: 320px;
+	--app-top-h: 56px; /* the bar of pills over the work */
+	/* Press: the app register's own feel (see registers/app.md) */
+	--app-press: 0.965; /* a pill pressed under the pointer shrinks to this */
+}
+
+:root,
+[data-tone='night'] {
+	/* App: Recall, Savant, Amalgam. A rail, the work, a side; used every day, in both tones */
+	--app-rail: #0f0f0e; /* the rail of places, a step behind the page: darker at night, between page and fill by day */
+	--app-edge: rgb(222 218 210 / 0.22); /* the edge of a field you type in, a scrollbar: a rule that must be found */
+	--app-on-fill: #32312f; /* a pill or a choice set on a fill sheet */
+	--app-dock: #262524; /* the phone's bar of places, floating over the work */
+	--app-on-dock: #dedad2;
+	--app-on-dock-clay: rgb(222 218 210 / 0.58);
+	--app-dock-current: rgb(222 218 210 / 0.1);
+	/* A whole in four parts (kinds of study time), told apart by tone and never by hue */
+	--app-part-1: #8a857c;
+	--app-part-2: #dedad2; /* the heaviest part is ink */
+	--app-part-3: #5e5a53;
+	--app-part-4: #b5b0a6;
+	/* Press: the app register's own feel (see registers/app.md) */
+	--app-lift: inset 0 1px 0 rgb(255 255 255 / 0.55), 0 1px 2px rgb(0 0 0 / 0.5), 0 6px 14px -8px rgb(0 0 0 / 0.8); /* the solid pill and a chosen count stand a little off the sheet */
+}
+
+[data-tone='day'] {
+	/* App: Recall, Savant, Amalgam. A rail, the work, a side; used every day, in both tones */
+	--app-rail: #efeeea;
+	--app-edge: rgb(21 20 20 / 0.24);
+	--app-on-fill: #f7f6f3;
+	--app-dock: #151414;
+	--app-on-dock: #f7f6f3;
+	--app-on-dock-clay: rgb(247 246 243 / 0.6);
+	--app-dock-current: rgb(247 246 243 / 0.14);
+	/* A whole in four parts (kinds of study time), told apart by tone and never by hue */
+	--app-part-1: #a39e95;
+	--app-part-2: #151414;
+	--app-part-3: #6b675f;
+	--app-part-4: #d3cfc7;
+	/* Press: the app register's own feel (see registers/app.md) */
+	--app-lift: inset 0 1px 0 rgb(255 255 255 / 0.14), 0 1px 2px rgb(28 27 25 / 0.22), 0 6px 14px -8px rgb(28 27 25 / 0.45);
+}
+
+@media (prefers-color-scheme: light) {
+	[data-tone='system'] {
+		/* App: Recall, Savant, Amalgam. A rail, the work, a side; used every day, in both tones */
+		--app-rail: #efeeea;
+		--app-edge: rgb(21 20 20 / 0.24);
+		--app-on-fill: #f7f6f3;
+		--app-dock: #151414;
+		--app-on-dock: #f7f6f3;
+		--app-on-dock-clay: rgb(247 246 243 / 0.6);
+		--app-dock-current: rgb(247 246 243 / 0.14);
+		/* A whole in four parts (kinds of study time), told apart by tone and never by hue */
+		--app-part-1: #a39e95;
+		--app-part-2: #151414;
+		--app-part-3: #6b675f;
+		--app-part-4: #d3cfc7;
+		/* Press: the app register's own feel (see registers/app.md) */
+		--app-lift: inset 0 1px 0 rgb(255 255 255 / 0.14), 0 1px 2px rgb(28 27 25 / 0.22), 0 6px 14px -8px rgb(28 27 25 / 0.45);
+	}
+}

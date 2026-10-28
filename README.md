@@ -56,6 +56,10 @@ Two other ideas didn't hold up. Spending more of a campaign on fresh attempts he
 
 ![tools/lab campaign status after a campaign finished](docs/assets/labloop-status-finished.png)
 
+`lab run` also serves the campaign in a browser while it runs (the url is printed and written to `.lab/ui.json`; `--no-ui` leaves it out). `tools/lab ui` serves the same view on its own, for a finished campaign or one started from another shell. It is read-only: the search over time with each candidate's lineage, the candidates with their summaries, code and records, the jobs on their GPUs, the campaign's documents, and questions answered by a local model that can read the campaign's files and change none of them. Set `LAB_UI_HOST` to reach it from another machine.
+
+With a Telegram bot configured, `lab run` also posts the campaign to your chat: each result quietly, a new best and the end out loud, and a digest every few hours. The numbers are the bot's; the two sentences under each result are the local model's reading of the worker's summary, marked as such. From the chat you can ask about a candidate, mute the results for a while, or stop the campaign. Setup and the full list are in [docs/campaign-setup.md](docs/campaign-setup.md#telegram).
+
 The status view shows the claim and the final score, the usage window, and every candidate with its parents, its time, its cost, the model that answered and its search score, both while a campaign runs and after it ends. In the campaign above, one attempt was stopped at its time limit, the repair after it recovered it, and a later attempt became the best.
 
 The rest of the setup is in [docs/campaign-setup.md](docs/campaign-setup.md): the Python environment for candidates, the optional `labeval` user that hides labels at the operating-system level, local models, and every configuration key. [nullsilver.com/labloop/inputs](https://nullsilver.com/labloop/inputs) lists every input a campaign is given and which part of the loop reads it. `scripts/acceptance.sh` runs the whole loop with scripted agents, so you can test it before any model is involved.
