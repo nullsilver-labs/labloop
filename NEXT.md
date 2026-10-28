@@ -8,7 +8,18 @@ implementation notes are in `docs/aira2-loop-design.md`; this file is only what 
 true now and what comes next. Milestone criteria are read from the design doc, never
 revised here after the fact.
 
-## 2026-10-28 eve: the Telegram bot moved in (`lab telegram`), uncommitted
+## 2026-10-28 night: usage admission (P2's kill/re-dispatch loop), merged a428bfb
+
+- P2 (`../labloop-tinylm-p2-20261026`) burned c0039–c0115: at hard both jobs were killed, the kill freed their
+  reservation, the estimate fell under soft, both were re-dispatched and killed again, every ~20 s.
+- Fix: `usage_state()` reads soft when one more session's reservation would reach hard, and `tick()` re-reads the
+  level before each launch, so a second free slot never launches into the first one's reservation. Acceptance E4
+  (P2's numbers + a 2-slot run near hard: no kills, no deferrals, no burned ids). **725 passed, 0 failed**
+  (`logs/acceptance-usage-admission-20261028b.log`).
+- Open: a session whose reservation alone is ≥ hard × budget waits forever (no guard yet); a killed session's
+  cost is never recorded, so the estimate undercounts after a kill.
+
+## 2026-10-28 eve: the Telegram bot moved in (`lab telegram`), committed 48a7cee
 
 - `tools/lab_telegram.py` (stdlib), from `../tinylm-plan-20261025/p2-telegram/bot.py`, whose systemd user unit
   `labloop-telegram-p2.service` is stopped and disabled (unit file and old code left in place). `lab run` starts
