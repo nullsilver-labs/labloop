@@ -175,4 +175,42 @@ assert_eq   "peak window estimate exceeded hard"               "$(pj "p['usage']
 assert_eq   "campaign finished with the claim read"            "$(pj "(p['status'], p['claim'] in ('supported','not_supported'))")" "('finished', True)"
 unset FAKE_CLAUDE_COST FAKE_CLAUDE_SLEEP_c0001 FAKE_CLAUDE_COST_c0002
 
-[ "${KEEP:-0}" = "1" ] || rm -rf "$WORKU" "$WORKR" "$WORKH"
+# --- E4: dispatch never crosses hard by itself (P2 tinylm-wild-v1's kill/re-dispatch loop) ---
+# Two free slots, spend under soft, and two reservations that would reach hard: before the fix
+# both jobs launched, were killed at hard, freed their reservation, were re-dispatched, and so on
+# every tick. Now one job launches, the second slot waits, and nothing is killed or deferred.
+WORKO="$(mktemp -d "${TMPDIR:-/tmp}/nullsilver-oscillation.XXXXXX")"
+worker_repo "$WORKO" acc-usage-oscillation
+usage_toml "$WORKO" 4 2 'window = "15s"' 'window_budget = 1.0' 'soft = 0.5' 'hard = 0.65' 'session_cost = 0.3'
+cd "$WORKO" || return 1
+export LAB_ROOT="$WORKO"
+LABU="$WORKO/tools/lab"
+export FAKE_CLAUDE_COST=0.2 FAKE_CLAUDE_SLEEP_c0002=4 FAKE_CLAUDE_SLEEP_c0003=4
+assert_eq   "admission: P2's window takes one more session, not two; a reservation alone can hold dispatch" \
+  "$(python3 -c "
+import sys, time; sys.path.insert(0, 'tools'); import lab_campaign as m
+now = time.time()
+def pop(costs, running=0):
+    c = {f'c{i:04d}': {'operator': 'draft', 'status': 'evaluated', 'session': {'cost_usd': x},
+         'ended': m._epoch_iso(now - 600 * i)} for i, x in enumerate(costs, 1)}
+    c.update({f'r{i}': {'operator': 'draft', 'status': 'running'} for i in range(running)})
+    return {'usage': {}, 'candidates': c}
+p2 = {'usage': {'window_sec': 5 * 3600, 'window_budget': 12.0, 'soft': 0.7, 'hard': 0.9, 'session_cost': 0.5}}
+spent = [1.385] * 5 + [1.365]   # \$8.29 in the window, median \$1.385, as at P2's 08:51Z resume
+small = {'usage': {'window_sec': 3600, 'window_budget': 1.0, 'soft': 0.5, 'hard': 0.65, 'session_cost': 0.3}}
+held = m.usage_state(small, pop([0.4]), now)
+print(m.usage_state(p2, pop(spent), now)['level'], m.usage_state(p2, pop(spent, 1), now)['level'],
+      held['level'], 'one more session (\$0.30) would reach hard 65%' in held['reason'])")" "ok soft soft True"
+assert_ok   "campaign with two free slots near hard runs to completion" timeout 150 "$LABU" run --poll-sec 1
+assert_eq   "nothing was killed at hard or deferred"           "$(pj "(p['usage']['hard_kills'], p['usage']['deferred'])")" "(0, 0)"
+assert_eq   "no candidate id was burned"                       "$(pj "sorted(p['candidates'])")" "['c0000', 'c0001', 'c0002', 'c0003']"
+assert_eq   "the peak estimate stayed under hard"              "$(pj "p['usage']['peak_fraction'] < 0.65")" True
+assert_eq   "c0003 launched only after c0002 settled"          "$(python3 -c "
+import json
+ev = [json.loads(l) for l in open('events.jsonl')]
+at = lambda t, cid: min(n for n, e in enumerate(ev) if e['type'] == t and (e.get('data') or {}).get('candidate', e.get('candidate')) == cid)
+print(at('candidate.done', 'c0002') < at('candidate.launch', 'c0003'))")" True
+assert_eq   "campaign finished with the claim read"            "$(pj "(p['status'], p['claim'] in ('supported','not_supported'))")" "('finished', True)"
+unset FAKE_CLAUDE_COST FAKE_CLAUDE_SLEEP_c0002 FAKE_CLAUDE_SLEEP_c0003
+
+[ "${KEEP:-0}" = "1" ] || rm -rf "$WORKU" "$WORKR" "$WORKH" "$WORKO"

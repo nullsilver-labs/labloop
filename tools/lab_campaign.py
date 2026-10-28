@@ -2029,20 +2029,27 @@ def usage_state(cfg: dict, pop: dict, now: float | None = None) -> dict:
     if budget:
         frac = (spend + reserved) / budget
         st["fraction"] = round(frac, 4)
-        level = "hard" if frac >= ucfg["hard"] else "soft" if frac >= ucfg["soft"] else "ok"
+        # Admission: a new session is dispatched only if its own reservation keeps the
+        # estimate under hard. Without this, dispatching into the last of the window
+        # crosses hard, the kill frees the reservation, the estimate drops, the jobs are
+        # re-dispatched, and the loop repeats every tick (P2 tinylm-wild-v1, c0039–c0115).
+        next_hard = (spend + reserved + reserve_each) / budget >= ucfg["hard"]
+        level = "hard" if frac >= ucfg["hard"] else "soft" if frac >= ucfg["soft"] or next_hard else "ok"
         if level != "ok":
             remaining = spend + reserved
+            room = min(ucfg["soft"] * budget, ucfg["hard"] * budget - reserve_each)
             t = None
             for end, cost in sorted(in_window):
                 remaining -= cost
-                if remaining < ucfg["soft"] * budget:
+                if remaining < room:
                     t = end + win
                     break
             t = t or (now + win)
             reason = (f"window estimate {frac:.0%} of budget ${budget:g} "
                       f"(${spend:.2f} spent in the last {win // 3600}h{(win % 3600) // 60:02d}m"
                       + (f" + ${reserved:.2f} reserved for {running} running" if running else "")
-                      + f") ≥ {level} {ucfg[level]:.0%}")
+                      + (f") ≥ {level} {ucfg[level]:.0%}" if frac >= ucfg["soft"] else
+                         f"); one more session (${reserve_each:.2f}) would reach hard {ucfg['hard']:.0%}"))
             if st["level"] != "blocked" or (st["next_eligible"] and _iso_epoch(st["next_eligible"]) < t):
                 st["level"], st["reason"], st["next_eligible"] = level, reason, _epoch_iso(t)
             elif st["level"] == "blocked":
@@ -2588,6 +2595,10 @@ def tick(cfg: dict, pop: dict) -> None:
             # past max_candidates and the campaign settles more than it was asked for.
             if cap and pop["settled"] + sum(1 for c in pop["candidates"].values()
                                             if c["status"] in ("queued", "running")) >= cap:
+                break
+            # govern() read the window before this tick's launches; each launch adds a
+            # reservation, so a second free slot asks again (the next tick pauses)
+            if usage_state(cfg, pop)["level"] != "ok":
                 break
             job = pick_job(cfg, pop, rng, in_flight)
             if job is None:
