@@ -36,12 +36,13 @@ svg { display: block; }
 .code { font-family: var(--font-mono); font-size: 12px; }
 .ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .plate { flex: none; color: var(--color-ink); }
-.sq { --mk: 8px; width: var(--mk); height: var(--mk); flex: none; border-radius: 2px; display: inline-block; }
+/* markers round in proportion, a quarter of their size: the swatch and the lamp read as one family */
+.sq { --mk: 8px; width: var(--mk); height: var(--mk); flex: none; border-radius: calc(var(--mk) / 4); display: inline-block; }
 /* a marker on its words' first line: a box one line tall, the mark centred in it */
 .mk { display: inline-flex; align-items: center; justify-content: center; height: 1lh; flex: none; align-self: flex-start; }
 .mk svg { width: 9px; height: 9px; overflow: visible; }
 .dot { width: 7px; height: 7px; border-radius: 999px; background: currentColor; display: inline-block; flex: none; }
-.lamp { --mk: 6px; width: var(--mk); height: var(--mk); flex: none; background: currentColor; display: inline-block; }
+.lamp { --mk: 6px; width: var(--mk); height: var(--mk); flex: none; border-radius: calc(var(--mk) / 4); background: currentColor; display: inline-block; }
 .lamp--now { color: var(--color-signal); }
 .ok { color: var(--color-right); }
 .up { color: var(--color-right); }
@@ -265,8 +266,8 @@ body.dragging iframe, body.dragging .panel { pointer-events: none; }
 /* ------------------------------------------------------------------ the inspector */
 .ib { padding: 16px 18px 28px; display: flex; flex-direction: column; gap: 22px; }
 .ihead { display: flex; flex-direction: column; gap: 8px; }
-.ihead .meta { display: flex; align-items: center; gap: 8px; color: var(--color-clay); font-size: 12.5px; flex-wrap: wrap; }
-.ihead .meta .pill, .ihead .meta .chip { margin-left: auto; }
+/* space-between, not an auto margin: the chip sits right while it fits, and starts the line when it wraps */
+.ihead .meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--color-clay); font-size: 12.5px; flex-wrap: wrap; }
 .ihead h1 { font-size: 19px; font-weight: 500; line-height: 1.3; letter-spacing: -0.014em; text-wrap: pretty; }
 .ihead h1.long { font-size: 15px; line-height: 1.45; font-weight: 500; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .ihead h1.long.open { display: block; }
@@ -452,6 +453,7 @@ details.rec pre { margin: 0 6px 6px; padding: 9px 11px; border-radius: 8px; back
 /* focus rings: outside a free-standing control, inside anything that sits in a row, a track or a clipped list */
 :is(.seg > button, .tabs > button, .r, .item, .files > button, .toc a, .sugg > button):focus-visible { outline-offset: -2px; border-radius: 8px; }
 :is(.rsearch, .clist .search, .compose form):focus-within { box-shadow: 0 0 0 1px var(--color-ink); }
+:is(.rsearch, .clist .search, .compose form) :is(input, textarea):focus-visible { outline: none; }   /* the field rings, not the bare control inside it */
 .compose textarea:disabled { opacity: .5; cursor: not-allowed; }
 .rsearch { background: transparent; box-shadow: inset 0 0 0 1px var(--app-edge); }
 .files > button { align-items: baseline; }

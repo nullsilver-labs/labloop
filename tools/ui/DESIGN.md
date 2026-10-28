@@ -55,3 +55,5 @@ title. Figures use tabular digits, not mono. Mono is kept for code, paths and co
 - **The Documents reader is set justified and hyphenated**, at about 76 characters a line. Nothing else is
   justified: in the panels' narrow columns, justified text opens uneven gaps.
 - `--color-signal` marks only now: a running job, the live lamp.
+- **Markers are small squares rounded to a quarter of their size**: the lamp at 6px (1.5px corners), a swatch at 6
+  to 8px. Lamp and swatch are one family; no circles beside words. nullsilver.com's lamp is still sharp.
