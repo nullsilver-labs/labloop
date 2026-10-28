@@ -265,7 +265,8 @@ def cand(i, op, status, fit=None, gpu=None):
 cfg = {'selection': {'temperature': 1.0, 'crossover_p': 0.0, 'max_debug_retries': 1},
        'report': {'higher_is_better': True},
        'resources': {'max_parallel_jobs': 2, 'gpus': [], 'min_free_vram_mb': 0, 'gpu_hours_total': 0},
-       'stop': {'max_candidates': 4, 'no_improvement_for': 0, 'wall_clock_sec': 0}}
+       'stop': {'max_candidates': 4, 'no_improvement_for': 0, 'wall_clock_sec': 0},
+       'usage': {'window_sec': 18000, 'window_budget': None, 'soft': 0.7, 'hard': 0.9, 'session_cost': 0.5}}
 def pop(settled, *cs):
     return {'campaign': 'acc-cap', 'seed': 7, 'tick': 0, 'status': 'running', 'settled': settled,
             'settled_at_best': 0, 'gpu_seconds': 0.0, 'best': None, 'started': '2026-01-01T00:00:00Z',
