@@ -48,6 +48,8 @@ export LAB_PRIVATE=~/.local/share/labloop-private
 tools/lab campaign check
 tools/lab run campaign.toml --poll-sec 10        # or under: lab watch start --op campaign --budget-min N -- tools/lab run …
 tools/lab campaign status                        # live view from another shell; --once one frame, --plain text
+tools/lab ui [--host H] [--port P]               # the same campaign in a browser, read-only (lab run serves it too; --no-ui)
+tools/lab telegram setup|run|preview             # the campaign in a Telegram chat (lab run posts too when a bot is configured; --no-telegram)
 tools/lab campaign stop [--now]                  # stop dispatching (and kill running jobs)
 ```
 
@@ -531,3 +533,57 @@ useful. The comparison that would show that is `finding-cards-plan.md` §7.
 `scripts/mem_replay_selector.py <project>` replays a finished campaign's dispatches under
 both policies and reports cross-branch coverage, cards shown to nobody, and whether a
 repeated idea was visible to the job that repeated it. It is read-only, with no LLM.
+
+## The web view
+
+`lab run` serves a read-only web view of the campaign from a thread of its own, for as long as it runs:
+`--no-ui` leaves it out, and a `--once` or `--max-ticks` run (or `LAB_UI=0`, which the acceptance suite sets)
+never starts it. A view that cannot bind a port is a warning, never a reason for the campaign not to run.
+`tools/lab ui` serves the same view on its own. The host is `--ui-host`/`--host`, else `$LAB_UI_HOST`, else
+127.0.0.1; the port is the first free one from 5390 unless given. The url goes to stderr and `.lab/ui.json`.
+
+It reads what `lab campaign status` reads, plus each candidate's `summary.md`, finding card, records and
+files, and the campaign's own documents (REPORT, READ, task, LEDGER, RESUME, PREREG, CLAUDE, campaign.toml).
+A file is served only from inside a candidate dir, after resolving links. Labels are never in the campaign dir,
+so the view cannot serve them; it writes nothing but `.lab/ui.json`.
+
+*Ask* sends a question to `nullsilver-slm ask` (found on `$NULLSILVER_SLM`, `PATH`, or
+`/mnt/data/projects/nullsilver/slm/bin`), a local model under Pi with read-only tools confined to the campaign
+dir, with a short briefing built from the population. One question at a time. The page is in the app register
+of the Nullsilver design system (`tools/ui/ns/`, synced by `node ../design/scripts/sync.mjs .` from
+`nullsilver.json`; `kit.css` is copied from `../design/dist/` by hand). What it adds is in `tools/ui/DESIGN.md`.
+
+## Telegram
+
+`lab run` also posts the campaign to a Telegram chat whenever a bot is configured: `TELEGRAM_TOKEN` and
+`TELEGRAM_CHAT_ID` in the environment or in `~/.config/labloop-telegram/env` (create the bot with BotFather,
+message it once, then `tools/lab telegram setup` prints the chat id). `--no-telegram` leaves it out, and a
+`--once` or `--max-ticks` run (or `LAB_TELEGRAM=0`, which the acceptance suite sets) never starts it. Like the
+web view it runs on threads of its own, and a bot that cannot start is a line on stderr, never a reason for the
+campaign not to run. Before `lab run` exits it posts what is left in the feed, so the campaign's end arrives.
+`tools/lab telegram run` does the same for a campaign started without it, and `tools/lab telegram preview
+[cNNNN …]` prints result posts as they would be sent, without sending them.
+
+What is posted, and how loud. Results are posted silently; a new best, the campaign's start, its stopping and its
+end come with a notification. Launches, usage pauses and the kills of a `stop --now` are not posted. A digest of
+what happened since the last one comes every `$LAB_TELEGRAM_DIGEST_HOURS` (default 6; 0 for none) and on
+`/digest`. `/mute [hours]` holds results back (new bests and the end still come, silently) until `/unmute`;
+`LAB_TELEGRAM_QUIET=23-8` makes every post silent between those local hours. State (feed offsets, mute, the last
+digest) is in `.lab/telegram.json`; a restarted `lab run` goes on from there, and a bot that finds no state on a
+campaign that has already settled candidates posts from now on.
+
+A result post's numbers are the bot's, from `population.json`: the search score against the parents, the best
+before it and the baseline, and the score's parts. Two sentences under them, what was changed and what the
+worker concluded, are written by the local model (`nullsilver-slm ask --no-tools`, about 10 s on the CPU) from
+only the Change and Interpretation lines of the candidate's `summary.md`, and the post marks them as its reading.
+The 2B model shortens faithfully most of the time and sometimes muddles a comparison, so the summary itself is
+one button away. Without those two lines, without the model, or with `LAB_TELEGRAM_SLM=0`, the post carries the
+summary's first line instead.
+
+Commands, answered only in the configured chat: `/status` (with the web view's url when it is up), `/digest`,
+`/top [n]`, `/summary cNNNN` (or a bare candidate id), `/ask QUESTION`, `/mute [h]`, `/unmute`, `/stop`. A reply
+to a result, or the *Ask about it* button, asks the local model about that candidate with read-only tools inside
+the campaign dir, as the web view's Ask does. `/stop` asks first, with buttons that expire after five minutes:
+stop after the running jobs, or stop now and kill them. Either runs `lab campaign stop [--now]`, the same stop a
+human types, and the final split is read as usual. One bot token serves one polling process: with two campaigns
+on the same bot, both post, and commands are answered by whichever polled first (the other logs the conflict).

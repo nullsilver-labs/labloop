@@ -1,0 +1,185 @@
+/* Nullsilver design 1.1.0: the core.
+ * Written by nullsilver/design (scripts/build.mjs) from src/tokens.mjs. Never edit this file: change the
+ * tokens there, build, and sync the product (node scripts/sync.mjs <product>). */
+
+/* The faces: Satoshi (Fontshare Free Font License), IBM Plex Mono, Instrument Serif and Source Serif 4 (SIL OFL 1.1). */
+@font-face { font-family: 'Satoshi'; src: url('/fonts/nullsilver/satoshi-variable.woff2') format('woff2'); font-weight: 300 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Satoshi'; src: url('/fonts/nullsilver/satoshi-variable-italic.woff2') format('woff2'); font-weight: 300 900; font-style: italic; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('/fonts/nullsilver/ibm-plex-mono-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('/fonts/nullsilver/ibm-plex-mono-500.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Instrument Serif'; src: url('/fonts/nullsilver/instrument-serif-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Instrument Serif'; src: url('/fonts/nullsilver/instrument-serif-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Source Serif 4'; src: url('/fonts/nullsilver/source-serif-4-opsz.woff2') format('woff2'); font-weight: 200 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Source Serif 4'; src: url('/fonts/nullsilver/source-serif-4-opsz-italic.woff2') format('woff2'); font-weight: 200 900; font-style: italic; font-display: swap; }
+
+:root {
+	/* Type: four faces, each with one job */
+	--font-sans: 'Satoshi', 'Helvetica Neue', Helvetica, Arial, ui-sans-serif, system-ui, sans-serif; /* everything we write, and the interface */
+	--font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace; /* code, and a column of figures that must align */
+	--font-title: 'Instrument Serif', Georgia, serif; /* a name or a title at display size, never prose and never a label. A register may leave it out */
+	--font-cited: 'Source Serif 4', Georgia, serif; /* someone else's words: a paper's findings, a quotation. A cited work's name in its italic */
+	--weight-large: 300; /* large is light */
+	--weight-small: 400; /* small is regular. No bold: hierarchy is ink against clay */
+	--text-display: clamp(2.125rem, 0.71rem + 2.63vw, 2.75rem); /* 34 to 44: one per page */
+	--text-statement: clamp(1.1875rem, 1rem + 0.45vw, 1.375rem); /* 19 to 22: a sentence that stands alone */
+	--text-read: 1.0625rem; /* 17: prose read end to end */
+	--text-label: 0.875rem; /* 14: a pill, a row, a caption, a table */
+	--text-note: 0.8125rem; /* 13: code, a key, a remark beside a label. The floor */
+	--leading-display: 1.08;
+	--leading-statement: 1.3;
+	--leading-read: 1.62;
+	--leading-label: 1.35;
+	--tracking-display: -0.03em;
+	--tracking-statement: -0.012em;
+	/* Shape: two, and a smaller one inside. A register sets the values */
+	--shape-pill: 999px; /* one line tall */
+	--shape-sheet: 12px; /* taller than a line */
+	--shape-inner: 6px; /* anything inside a sheet: no large radius inside another */
+	/* Space */
+	--gap: 6px; /* the one gap: pill to pill, pill to its object */
+	--pad: 12px; /* inside a pill, left and right */
+	--pad-sheet: 18px; /* inside a sheet */
+	--gap-block: 24px; /* between blocks */
+	--pill-h: 1.75rem; /* 28; 32 on a phone */
+	--row-h: 2.125rem; /* 34: a pill and the gap, so a table keeps the pitch of a stack of pills */
+	/* Motion: one curve; in fast, out slow */
+	--ease: cubic-bezier(0.22, 0.61, 0.24, 1);
+	--dur-in: 160ms; /* arriving under the pointer */
+	--dur-out: 520ms; /* leaving */
+	--dur-move: 420ms; /* a nudge, a fade */
+}
+
+:root,
+[data-tone='night'] {
+	color-scheme: dark;
+	/* Surfaces: four steps and the cut. At night each is a step lighter than the one before; by day a step darker */
+	--color-void: #0a0a0a; /* the cut: a value that is not there, a plate in a print. One step past the page */
+	--color-paper: #151414; /* the page */
+	--color-fill: #1d1d1c; /* a pill or a sheet at rest */
+	--color-stock: #262524; /* a figure's sheet; a pill under the pointer where solid would mean chosen */
+	--color-raised: #32312f; /* a step past stock: a pill on a stock sheet, a panel's inner cell over a map */
+	/* Ink: three voices and one rule */
+	--color-ink: #dedad2; /* words, lines, marks. 13.2:1 at night, 17.0:1 by day */
+	--color-clay: rgb(222 218 210 / 0.66); /* the second voice: 6.3:1 at night, 5.7:1 by day */
+	--color-faint: rgb(222 218 210 / 0.44); /* the third voice, 3.5:1 at night and 3.4:1 by day: a placeholder, an axis, a remark that can be missed. Never a sentence */
+	--color-line: rgb(222 218 210 / 0.14); /* the one rule: a hairline between ruled cells */
+	--color-wash: rgb(222 218 210 / 0.07); /* a tile inside a sheet, a track under a bar, a ghost pill under the pointer */
+	--color-on-void: rgb(222 218 210 / 0.66); /* words in a void */
+	--color-focus: #dedad2; /* the focus ring */
+	/* The one solid: the page you are on, the one action, the best row, a pill under the pointer */
+	--color-silver: #dedad2; /* silver at night, ink by day: the name keeps the role, not the colour */
+	--color-on-silver: #0a0a0a;
+	--color-on-silver-clay: rgb(10 10 10 / 0.68);
+	--color-line-on-silver: rgb(10 10 10 / 0.14);
+	--color-wash-on-silver: rgb(10 10 10 / 0.1); /* a key cap or a count inside a solid pill */
+	/* Print: a page that is someone else's (a paper, a slide), in their words. Always light */
+	--color-print: #dedad2;
+	--color-on-print: #151414;
+	--color-line-on-print: rgb(21 20 20 / 0.16);
+	--color-mark: #785f28; /* a match or a quoted span, marked under words */
+	--color-mark-on-print: #ffd579; /* the same mark on a print, which is light in both tones */
+	/* State: only for what was checked. Untested or unknown is a void, never a colour */
+	--color-right: #85c9a1; /* checked and holds: a right answer, a supported claim. 8.7:1 at night, 5.4:1 by day on a fill */
+	--color-right-wash: rgb(133 201 161 / 0.12);
+	--color-wrong: #f69c8d; /* checked and fails: a wrong answer, a claim not supported. 8.1:1 and 6.0:1 */
+	--color-wrong-wash: rgb(246 156 141 / 0.12);
+	--color-signal: #789ef9; /* now, and only now: the current item, a lamp lit while something runs, today */
+	--color-signal-wash: rgb(120 158 249 / 0.16);
+	/* Data: the answer in full ink, everything else measured thinned; three series for kinds that must be told apart */
+	--color-data: #dedad2;
+	--color-data-muted: rgb(222 218 210 / 0.44); /* 3.3:1 on a figure's sheet */
+	--color-data-grid: rgb(222 218 210 / 0.14);
+	--color-series-1: #80b7e7; /* blue */
+	--color-series-2: #d3a96f; /* ochre */
+	--color-series-3: #dd9ab9; /* rose. At least 3.8:1 each on a fill, in both tones */
+}
+
+[data-tone='day'] {
+	color-scheme: light;
+	/* Surfaces: four steps and the cut. At night each is a step lighter than the one before; by day a step darker */
+	--color-void: #ffffff;
+	--color-paper: #f7f6f3;
+	--color-fill: #eceae5;
+	--color-stock: #e2dfd9;
+	--color-raised: #d6d2cb;
+	/* Ink: three voices and one rule */
+	--color-ink: #151414;
+	--color-clay: rgb(21 20 20 / 0.66);
+	--color-faint: rgb(21 20 20 / 0.5);
+	--color-line: rgb(21 20 20 / 0.12);
+	--color-wash: rgb(21 20 20 / 0.05);
+	--color-on-void: rgb(21 20 20 / 0.66);
+	--color-focus: #151414;
+	/* The one solid: the page you are on, the one action, the best row, a pill under the pointer */
+	--color-silver: #151414;
+	--color-on-silver: #f7f6f3;
+	--color-on-silver-clay: rgb(247 246 243 / 0.66);
+	--color-line-on-silver: rgb(247 246 243 / 0.16);
+	--color-wash-on-silver: rgb(247 246 243 / 0.16);
+	/* Print: a page that is someone else's (a paper, a slide), in their words. Always light */
+	--color-print: #ffffff;
+	--color-on-print: #151414;
+	--color-line-on-print: rgb(21 20 20 / 0.14);
+	--color-mark: #ffd579;
+	--color-mark-on-print: #ffd579;
+	/* State: only for what was checked. Untested or unknown is a void, never a colour */
+	--color-right: #246a47;
+	--color-right-wash: rgb(36 106 71 / 0.1);
+	--color-wrong: #8e3f34;
+	--color-wrong-wash: rgb(142 63 52 / 0.1);
+	--color-signal: #355cd4;
+	--color-signal-wash: rgb(53 92 212 / 0.12);
+	/* Data: the answer in full ink, everything else measured thinned; three series for kinds that must be told apart */
+	--color-data: #151414;
+	--color-data-muted: rgb(21 20 20 / 0.5);
+	--color-data-grid: rgb(21 20 20 / 0.12);
+	--color-series-1: #3c7aab;
+	--color-series-2: #966b27;
+	--color-series-3: #a05b7d;
+}
+
+@media (prefers-color-scheme: light) {
+	[data-tone='system'] {
+		color-scheme: light;
+		/* Surfaces: four steps and the cut. At night each is a step lighter than the one before; by day a step darker */
+		--color-void: #ffffff;
+		--color-paper: #f7f6f3;
+		--color-fill: #eceae5;
+		--color-stock: #e2dfd9;
+		--color-raised: #d6d2cb;
+		/* Ink: three voices and one rule */
+		--color-ink: #151414;
+		--color-clay: rgb(21 20 20 / 0.66);
+		--color-faint: rgb(21 20 20 / 0.5);
+		--color-line: rgb(21 20 20 / 0.12);
+		--color-wash: rgb(21 20 20 / 0.05);
+		--color-on-void: rgb(21 20 20 / 0.66);
+		--color-focus: #151414;
+		/* The one solid: the page you are on, the one action, the best row, a pill under the pointer */
+		--color-silver: #151414;
+		--color-on-silver: #f7f6f3;
+		--color-on-silver-clay: rgb(247 246 243 / 0.66);
+		--color-line-on-silver: rgb(247 246 243 / 0.16);
+		--color-wash-on-silver: rgb(247 246 243 / 0.16);
+		/* Print: a page that is someone else's (a paper, a slide), in their words. Always light */
+		--color-print: #ffffff;
+		--color-on-print: #151414;
+		--color-line-on-print: rgb(21 20 20 / 0.14);
+		--color-mark: #ffd579;
+		--color-mark-on-print: #ffd579;
+		/* State: only for what was checked. Untested or unknown is a void, never a colour */
+		--color-right: #246a47;
+		--color-right-wash: rgb(36 106 71 / 0.1);
+		--color-wrong: #8e3f34;
+		--color-wrong-wash: rgb(142 63 52 / 0.1);
+		--color-signal: #355cd4;
+		--color-signal-wash: rgb(53 92 212 / 0.12);
+		/* Data: the answer in full ink, everything else measured thinned; three series for kinds that must be told apart */
+		--color-data: #151414;
+		--color-data-muted: rgb(21 20 20 / 0.5);
+		--color-data-grid: rgb(21 20 20 / 0.12);
+		--color-series-1: #3c7aab;
+		--color-series-2: #966b27;
+		--color-series-3: #a05b7d;
+	}
+}

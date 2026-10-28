@@ -1310,6 +1310,18 @@ def main(argv: list[str] | None = None) -> None:
     except Exception as e:  # pragma: no cover
         warn(f"graph commands unavailable: {e}")
 
+    try:
+        import lab_ui
+        lab_ui.register(sub, sys.modules[__name__])
+    except Exception as e:  # pragma: no cover
+        warn(f"ui commands unavailable: {e}")
+
+    try:
+        import lab_telegram
+        lab_telegram.register(sub, sys.modules[__name__])
+    except Exception as e:  # pragma: no cover
+        warn(f"telegram commands unavailable: {e}")
+
     args = p.parse_args(argv)
 
     # events.jsonl and LEDGER.md are read-modify-write; `lab run` and a hand-run

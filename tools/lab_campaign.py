@@ -2644,18 +2644,30 @@ def cmd_run(args) -> None:
         L.warn(f"{POP_FILE} has no memory policy snapshot: this campaign stays legacy "
                f"(campaign.toml asks for {cfg['memory']['mode']}, which applies to new campaigns)")
 
+    if not (args.no_ui or args.once or args.max_ticks or os.environ.get("LAB_UI") == "0"):
+        import lab_ui
+        lab_ui.start_background(args.ui_host, args.ui_port)
+    bot = None
+    if not (args.no_telegram or args.once or args.max_ticks or os.environ.get("LAB_TELEGRAM") == "0"):
+        import lab_telegram
+        bot = lab_telegram.start_background()
+
     ticks = 0
-    while True:
-        tick(cfg, pop)
-        ticks += 1
-        running = [c for c in pop["candidates"].values() if c["status"] in ("queued", "running")]
-        if pop["status"] == "stopping" and not running:
-            finish(cfg, pop, args.poll_sec)
-            print(f"finished: claim {pop['claim']}; see {REPORT_FILE}")
-            return
-        if args.once or (args.max_ticks and ticks >= args.max_ticks):
-            break
-        time.sleep(args.poll_sec)
+    try:
+        while True:
+            tick(cfg, pop)
+            ticks += 1
+            running = [c for c in pop["candidates"].values() if c["status"] in ("queued", "running")]
+            if pop["status"] == "stopping" and not running:
+                finish(cfg, pop, args.poll_sec)
+                print(f"finished: claim {pop['claim']}; see {REPORT_FILE}")
+                return
+            if args.once or (args.max_ticks and ticks >= args.max_ticks):
+                break
+            time.sleep(args.poll_sec)
+    finally:
+        if bot:
+            bot.close()  # posts what is left in the feed, the campaign's end included
     print(json.dumps({"status": pop["status"], "tick": pop["tick"], "settled": pop["settled"],
                       "running": len([c for c in pop["candidates"].values() if c["status"] == "running"]),
                       "best": pop["best"], "next_eligible": pop["usage"].get("next_eligible")}))
@@ -2884,4 +2896,12 @@ def register(sub, lab_module) -> None:
     sp.add_argument("--once", action="store_true", help="one tick, then exit")
     sp.add_argument("--max-ticks", type=int, default=0)
     sp.add_argument("--poll-sec", type=float, default=15.0)
+    sp.add_argument("--no-ui", action="store_true",
+                    help="do not serve the web view (`lab ui`) while the campaign runs; "
+                         "a --once or --max-ticks run never serves it, nor does LAB_UI=0")
+    sp.add_argument("--ui-host", help="address for the web view ($LAB_UI_HOST, else 127.0.0.1)")
+    sp.add_argument("--ui-port", type=int, help="port for the web view (first free from 5390)")
+    sp.add_argument("--no-telegram", action="store_true",
+                    help="do not post to Telegram (`lab telegram`) even when a bot is configured; "
+                         "a --once or --max-ticks run never posts, nor does LAB_TELEGRAM=0")
     sp.set_defaults(func=cmd_run)

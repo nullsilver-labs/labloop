@@ -28,3 +28,7 @@ cache/
 WHITEPAPER.md
 SPEC.md
 SPEC_HAIKU.md
+
+# web view faces whose licence texts are not in the repo yet (tools/ui/fonts/nullsilver/LICENSES.md)
+tools/ui/fonts/nullsilver/satoshi-*.woff2
+tools/ui/fonts/nullsilver/ibm-plex-mono-*.woff2

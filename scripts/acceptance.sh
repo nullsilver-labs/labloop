@@ -47,6 +47,8 @@ export LAB_ROOT="$WORK"
 # Do not inherit the invoking driver's role or model into synthetic sessions.
 unset CLAUDE_PROJECT_DIR LAB_ROLE LAB_MODEL
 export NULLSILVER_TOKEN="tok_supersecret_value_0987"   # must never reach the feed
+export LAB_UI=0                                       # lab run serves no web view under test
+export LAB_TELEGRAM=0                                 # nor posts to a configured bot
 unset NULLSILVER_INGEST_URL
 LAB="$WORK/tools/lab"
 

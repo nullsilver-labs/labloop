@@ -8,6 +8,50 @@ implementation notes are in `docs/aira2-loop-design.md`; this file is only what 
 true now and what comes next. Milestone criteria are read from the design doc, never
 revised here after the fact.
 
+## 2026-10-28 eve: the Telegram bot moved in (`lab telegram`), uncommitted
+
+- `tools/lab_telegram.py` (stdlib), from `../tinylm-plan-20261025/p2-telegram/bot.py`, whose systemd user unit
+  `labloop-telegram-p2.service` is stopped and disabled (unit file and old code left in place). `lab run` starts
+  it when `TELEGRAM_TOKEN`/`TELEGRAM_CHAT_ID` are set (env or `~/.config/labloop-telegram/env`), and posts what
+  is left in the feed before it exits; `--no-telegram`, `--once`, `--max-ticks`, `LAB_TELEGRAM=0` (acceptance.sh)
+  leave it out. Docs: docs/campaign-setup.md "Telegram", README.
+- New against the old bot: results silent, only new best/start/stopping/end notify; no launch, pause or stop-kill
+  posts; digest (6 h, `/digest`); `/mute [h]`, quiet hours; `/stop` with confirm buttons → `lab campaign stop
+  [--now]`; buttons on results (Summary, Ask about it); deltas vs parents, best before it and baseline; web view
+  url in /status; 409 (two pollers on one token) degrades to posting only.
+- Model lines: `nullsilver-slm ask --no-tools` on only the Change + Interpretation lines (~10 s). Tried on P2's
+  c0011/c0025/c0040/c0043: faithful in substance, sometimes muddled (c0040 "early-training speedup confounding
+  LR/card/seed"; with the whole Finding section it named the wrong comparison, hence two lines only). Marked
+  in each post as the model's reading.
+- Checked offline only: replay of P2's whole feed through a fake Api (47 posts for 118 launches and 43 results; 12 notify: start, 10 new
+  bests, stopping, end; a re-drain posts nothing),
+  commands and the stop buttons with `cmd_campaign_stop` stubbed; the fake Api checks Telegram's HTML subset
+  (tags, nesting, entities, length) on every message and all 118 P2 summaries. Every message is HTML now
+  (`md_html` turns summaries and model answers into it; a part Telegram refuses goes plain, with a log line).
+  Demos sent to the real chat twice (plain, then HTML) from a scratch copy of P2, and `lab telegram run` left
+  on it under watch `20261028T1954-telegram-demo` (60 min). Acceptance with the bot: 718 passed, 0 failed
+  (`logs/acceptance-telegram-20261028.log`, before the HTML rework, which touches only lab_telegram.py).
+- Older campaigns carry their own tools/: `LAB_ROOT=<dir> tools/lab telegram run` from main.
+
+## 2026-10-28: the web view (`lab ui`), uncommitted
+
+- `tools/lab_ui.py` + `tools/ui/` (stdlib server, one static page, no build step; second design after the first read as one more Recall, see tools/ui/DESIGN.md): overview with the field of jobs by hour,
+  time and lineage on hover, candidates (summary, parts of the score, files, records), lineage with families,
+  timeline of jobs on GPUs with usage waits, the campaign's documents, and Ask (the local `nullsilver-slm`,
+  read-only in the campaign dir). `lab run` serves it from a daemon thread by default; `--no-ui`, `--once`,
+  `--max-ticks` and `LAB_UI=0` (set by acceptance.sh) leave it out. Docs: README, docs/campaign-setup.md
+  ("The web view"), tools/ui/DESIGN.md. Design draft `labloop-the-campaign-view` waits for review in the gallery.
+- Acceptance with the change: **718 passed, 0 failed** (2026-10-28, `logs/acceptance-ui-20261028.log`, ANTHROPIC_BASE_URL unset).
+- Running for review: `lab watch` 20261028T1634-labloop-ui-5390 (720 min) serving ../labloop-tinylm-p2-20261026
+  at http://10.8.0.5:5390. Static files are read per request; a change to lab_ui.py needs a restart
+  (`tools/lab watch kill <id> --reason ...`, then the same `watch start`).
+- Fonts (decided 2026-10-28): Instrument Serif and Source Serif are committed with their OFL texts; Satoshi and
+  Plex Mono are gitignored (local only) until their licence texts are in `tools/ui/fonts/nullsilver/`, so a
+  fresh clone shows the view in system sans and mono. **For the human:** add those two texts (Fontshare FFL,
+  Plex's OFL), then un-ignore the files.
+- Existing campaigns carry their own copy of tools/ and do not have the view; run main's `tools/lab ui` with
+  `LAB_ROOT=<campaign dir>` against them.
+
 ## 2026-10-25: two holes in label hiding and scoring (fixed on branch, root step open)
 
 Found while planning the tiny-LM campaign (`../tinylm-plan-20261025/PLAN.md` §10, its L0).
